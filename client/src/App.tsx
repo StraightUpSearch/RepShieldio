@@ -4,11 +4,13 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
+import Scan from "@/pages/scan";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/scan" component={Scan} />
       <Route>
         <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
           <div className="text-center">

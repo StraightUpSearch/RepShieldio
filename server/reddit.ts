@@ -71,7 +71,13 @@ class RedditAPI {
     });
 
     if (!response.ok) {
-      throw new Error(`Reddit auth failed: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('Reddit auth failed:');
+      console.error('Status:', response.status);
+      console.error('Response:', errorText);
+      console.error('Client ID:', this.clientId);
+      console.error('User Agent:', this.userAgent);
+      throw new Error(`Reddit auth failed: ${response.statusText} - ${errorText}`);
     }
 
     const data: RedditAuthResponse = await response.json();
