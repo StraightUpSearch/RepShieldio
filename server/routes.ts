@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { insertAuditRequestSchema, insertQuoteRequestSchema, insertBrandScanTicketSchema } from "@shared/schema";
 import { getChatbotResponse, analyzeRedditUrl } from "./openai";
 import { sendQuoteNotification, sendContactNotification } from "./email";
+import { redditAPI } from "./reddit";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Audit request submission endpoint
@@ -203,6 +204,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: "Internal server error"
+      });
+    }
+  });
+
+  // Reddit brand scanning endpoint
+  app.post("/api/scan-brand", async (req, res) => {
+    try {
+      const { brandName } = req.body;
+      
+      if (!brandName || typeof brandName !== 'string') {
+        return res.status(400).json({ 
+          success: false,
+          error: "Brand name is required" 
+        });
+      }
+      
+      const results = await redditAPI.searchBrand(brandName.trim());
+      res.json({
+        success: true,
+        data: results
+      });
+    } catch (error) {
+      console.error("Reddit API error:", error);
+      res.status(500).json({ 
+        success: false,
+        error: "Failed to scan Reddit for brand mentions" 
       });
     }
   });
