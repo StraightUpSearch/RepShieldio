@@ -2,10 +2,10 @@ import { Laptop, ShoppingCart } from "lucide-react";
 
 export default function Results() {
   const metrics = [
-    { value: "98.2%", label: "Removal Success Rate", color: "text-navy-deep" },
-    { value: "48hr", label: "Average Response Time", color: "text-reddit-orange" },
-    { value: "2,847", label: "Posts Successfully Removed", color: "text-success-green" },
-    { value: "$2.4M", label: "Revenue Protected", color: "text-purple-600" }
+    { value: "95%+", label: "Removal Success Rate", color: "text-navy-deep" },
+    { value: "24hr", label: "Average Response Time", color: "text-reddit-orange" },
+    { value: "1,650+", label: "Posts Successfully Removed", color: "text-success-green" },
+    { value: "$3.2M", label: "Revenue Protected", color: "text-purple-600" }
   ];
 
   const caseStudies = [

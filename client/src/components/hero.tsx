@@ -200,18 +200,18 @@ export default function Hero() {
         </div>
         
         {/* Trust Indicators */}
-        <div className="grid grid-cols-3 gap-8 pt-12 border-t border-slate-700 max-w-2xl mx-auto">
+        <div className="grid grid-cols-3 gap-4 md:gap-8 pt-8 md:pt-12 border-t border-slate-700 max-w-2xl mx-auto">
           <div className="text-center">
-            <div className="text-3xl font-bold text-reddit-orange">99%</div>
-            <div className="text-sm text-slate-400">Success Rate</div>
+            <div className="text-2xl md:text-3xl font-bold text-reddit-orange">95%+</div>
+            <div className="text-xs md:text-sm text-slate-400">Success Rate</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-reddit-orange">2,847+</div>
-            <div className="text-sm text-slate-400">Posts Removed</div>
+            <div className="text-2xl md:text-3xl font-bold text-reddit-orange">1,650+</div>
+            <div className="text-xs md:text-sm text-slate-400">Removals Done</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-reddit-orange">24hrs</div>
-            <div className="text-sm text-slate-400">Response Time</div>
+            <div className="text-2xl md:text-3xl font-bold text-reddit-orange">24hrs</div>
+            <div className="text-xs md:text-sm text-slate-400">Response Time</div>
           </div>
         </div>
       </div>

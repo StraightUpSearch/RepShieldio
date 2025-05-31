@@ -12,35 +12,36 @@ export default function Pricing() {
 
   const plans = [
     {
-      name: "Essential",
-      price: "$297",
-      period: "per incident",
-      description: "Perfect for small businesses",
+      name: "Comment Removal",
+      price: "$186",
+      period: "per comment",
+      description: "Individual comment removal",
       features: [
-        "Up to 5 posts/comments removed",
-        "48-72 hour response time",
-        "Basic violation documentation",
+        "Single Reddit comment removal",
+        "24-hour response time",
+        "95%+ success rate guarantee",
+        "Legal compliance verification",
         "Email progress updates",
-        "30-day monitoring included"
+        "Free re-removal if it returns"
       ],
-      buttonText: "Get Started",
+      buttonText: "Remove Comment",
       buttonStyle: "bg-gray-100 text-gray-700 hover:bg-gray-200",
       isPopular: false
     },
     {
-      name: "Professional",
-      price: "$897",
-      period: "per month",
-      description: "For growing businesses",
+      name: "Post Removal",
+      price: "$780",
+      period: "per post",
+      description: "Complete Reddit post removal",
       features: [
-        "Unlimited post/comment removal",
-        "24-hour response guarantee",
+        "Full Reddit post removal",
+        "24-48 hour completion",
+        "95%+ success rate guarantee",
         "Advanced legal documentation",
-        "24/7 monitoring & alerts",
-        "Weekly reputation reports",
-        "Dedicated account manager"
+        "Priority support",
+        "3-day re-removal warranty"
       ],
-      buttonText: "Start Free Trial",
+      buttonText: "Remove Post",
       buttonStyle: "bg-reddit-orange text-white hover:bg-red-600",
       isPopular: true
     },
@@ -48,14 +49,14 @@ export default function Pricing() {
       name: "Enterprise",
       price: "Custom",
       period: "contact us",
-      description: "For established brands",
+      description: "For multiple removals & ongoing protection",
       features: [
-        "Everything in Professional",
-        "Multi-brand management",
-        "Custom SLA agreements",
-        "Priority escalation channels",
-        "API access & integrations",
-        "Legal team consultation"
+        "Bulk removal discounts",
+        "Account suspension services",
+        "Subreddit management",
+        "24/7 monitoring & alerts",
+        "Dedicated removal specialist",
+        "Custom SLA agreements"
       ],
       buttonText: "Contact Sales",
       buttonStyle: "bg-navy-deep text-white hover:bg-navy-light",
