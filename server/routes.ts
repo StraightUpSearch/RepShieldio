@@ -19,9 +19,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await sendContactNotification({
           name: validatedData.name,
           email: validatedData.email,
-          company: validatedData.company,
-          website: validatedData.website,
-          message: validatedData.message
+          company: validatedData.company || '',
+          website: validatedData.website || 'Not provided',
+          message: validatedData.message || 'No message provided'
         });
       } catch (error) {
         console.error("Failed to send email notification:", error);

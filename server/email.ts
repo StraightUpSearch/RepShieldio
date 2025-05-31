@@ -50,8 +50,8 @@ export async function sendQuoteNotification(data: {
 export async function sendContactNotification(data: {
   name: string;
   email: string;
-  company?: string;
-  website?: string;
+  company: string;
+  website: string;
   message: string;
 }) {
   const msg = {
