@@ -4,6 +4,7 @@ import { z } from "zod";
 import { storage } from "./storage";
 import { insertAuditRequestSchema, insertQuoteRequestSchema } from "@shared/schema";
 import { getChatbotResponse, analyzeRedditUrl } from "./openai";
+import { sendQuoteNotification, sendContactNotification } from "./email";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Audit request submission endpoint
@@ -12,6 +13,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertAuditRequestSchema.parse(req.body);
       
       const auditRequest = await storage.createAuditRequest(validatedData);
+      
+      // Send email notification
+      try {
+        await sendContactNotification({
+          name: validatedData.name,
+          email: validatedData.email,
+          company: validatedData.company,
+          website: validatedData.website,
+          message: validatedData.message
+        });
+      } catch (error) {
+        console.error("Failed to send email notification:", error);
+        // Continue even if email fails
+      }
       
       res.status(201).json({
         success: true,
@@ -129,12 +144,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validatedData = insertQuoteRequestSchema.parse(req.body);
       
+      // Get AI analysis of the Reddit URL
+      let analysis = null;
+      try {
+        analysis = await analyzeRedditUrl(validatedData.redditUrl);
+      } catch (error) {
+        console.error("AI analysis failed:", error);
+        // Continue without analysis if AI fails
+      }
+      
       const quoteRequest = await storage.createQuoteRequest(validatedData);
+      
+      // Send email notification
+      try {
+        await sendQuoteNotification({
+          redditUrl: validatedData.redditUrl,
+          email: validatedData.email,
+          analysis
+        });
+      } catch (error) {
+        console.error("Failed to send email notification:", error);
+        // Continue even if email fails
+      }
       
       res.status(201).json({
         success: true,
         message: "Quote request submitted successfully",
-        id: quoteRequest.id
+        id: quoteRequest.id,
+        analysis
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
