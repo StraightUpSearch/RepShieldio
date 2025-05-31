@@ -11,7 +11,7 @@ export default function Footer() {
               <div className="w-10 h-10 gradient-navy rounded-lg flex items-center justify-center">
                 <SiReddit className="text-white text-xl" />
               </div>
-              <span className="text-2xl font-bold">RedditShield</span>
+              <span className="text-2xl font-bold">RepShield</span>
             </div>
             <p className="text-gray-400 mb-6 max-w-md">
               Professional Reddit reputation management for businesses. We ethically remove false, 

@@ -10,7 +10,7 @@ const openai = new OpenAI({
 
 export async function getChatbotResponse(userMessage: string, conversationHistory: string[] = []): Promise<string> {
   try {
-    const systemPrompt = `You are a helpful assistant for RedditShield, a professional Reddit reputation management service. 
+    const systemPrompt = `You are a helpful assistant for RepShield, a professional Reddit reputation management service. 
 
 Key information about our services:
 - Reddit post removal: $899 per post

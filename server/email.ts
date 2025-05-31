@@ -33,7 +33,7 @@ export async function sendQuoteNotification(data: {
       
       <hr>
       <p style="font-size: 12px; color: #666;">
-        RedditShield Quote Request System
+        RepShield Quote Request System
       </p>
     `,
   };
@@ -74,7 +74,7 @@ export async function sendContactNotification(data: {
       
       <hr>
       <p style="font-size: 12px; color: #666;">
-        RedditShield Contact Form System
+        RepShield Contact Form System
       </p>
     `,
   };

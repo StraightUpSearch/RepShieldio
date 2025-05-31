@@ -22,7 +22,7 @@ export default function Header() {
             <div className="w-10 h-10 gradient-navy rounded-lg flex items-center justify-center">
               <SiReddit className="text-white text-xl" />
             </div>
-            <span className="text-2xl font-bold text-navy-deep">RedditShield</span>
+            <span className="text-2xl font-bold text-navy-deep">RepShield</span>
           </div>
           
           <nav className="hidden md:flex items-center space-x-8">
