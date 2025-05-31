@@ -5,6 +5,7 @@ import Services from "@/components/services";
 import Process from "@/components/process";
 import Results from "@/components/results";
 import Pricing from "@/components/pricing";
+import SecurityBadges from "@/components/security-badges";
 import Testimonials from "@/components/testimonials";
 import FAQ from "@/components/faq";
 import CTA from "@/components/cta";
@@ -21,6 +22,7 @@ export default function Home() {
       <Process />
       <Results />
       <Pricing />
+      <SecurityBadges />
       <Testimonials />
       <FAQ />
       <CTA />

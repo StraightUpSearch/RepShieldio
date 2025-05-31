@@ -13,8 +13,8 @@ export async function getChatbotResponse(userMessage: string, conversationHistor
     const systemPrompt = `You are a helpful assistant for RedditShield, a professional Reddit reputation management service. 
 
 Key information about our services:
-- Reddit post removal: $780 per post (base cost $650 + 20% service fee)
-- Reddit comment removal: $186 per comment (base cost $155 + 20% service fee)
+- Reddit post removal: $899 per post
+- Reddit comment removal: $199 per comment
 - 95%+ success rate guaranteed
 - 24-48 hour completion time for posts
 - 24 hour completion time for comments

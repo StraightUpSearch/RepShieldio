@@ -13,7 +13,7 @@ export default function Pricing() {
   const plans = [
     {
       name: "Comment Removal",
-      price: "$186",
+      price: "$199",
       period: "per comment",
       description: "Individual comment removal",
       features: [
@@ -30,7 +30,7 @@ export default function Pricing() {
     },
     {
       name: "Post Removal",
-      price: "$780",
+      price: "$899",
       period: "per post",
       description: "Complete Reddit post removal",
       features: [
