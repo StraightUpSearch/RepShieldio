@@ -22,7 +22,7 @@ export default function Footer() {
                 <SiLinkedin className="w-6 h-6" />
               </a>
               <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <SiTwitter className="w-6 h-6" />
+                <SiX className="w-6 h-6" />
               </a>
               <a href="#" className="text-gray-400 hover:text-white transition-colors">
                 <Mail className="w-6 h-6" />
