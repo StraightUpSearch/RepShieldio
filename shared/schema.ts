@@ -21,6 +21,16 @@ export const quoteRequests = pgTable("quote_requests", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const brandScanTickets = pgTable("brand_scan_tickets", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull(),
+  company: text("company").notNull(),
+  brandName: text("brand_name").notNull(),
+  processed: boolean("processed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const insertAuditRequestSchema = createInsertSchema(auditRequests).omit({
   id: true,
   processed: true,
@@ -33,8 +43,17 @@ export const insertQuoteRequestSchema = createInsertSchema(quoteRequests).omit({
   createdAt: true,
 });
 
+export const insertBrandScanTicketSchema = createInsertSchema(brandScanTickets).omit({
+  id: true,
+  processed: true,
+  createdAt: true,
+});
+
 export type InsertAuditRequest = z.infer<typeof insertAuditRequestSchema>;
 export type AuditRequest = typeof auditRequests.$inferSelect;
 
 export type InsertQuoteRequest = z.infer<typeof insertQuoteRequestSchema>;
 export type QuoteRequest = typeof quoteRequests.$inferSelect;
+
+export type InsertBrandScanTicket = z.infer<typeof insertBrandScanTicketSchema>;
+export type BrandScanTicket = typeof brandScanTickets.$inferSelect;

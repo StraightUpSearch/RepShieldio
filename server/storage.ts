@@ -1,10 +1,13 @@
 import { 
   auditRequests, 
   quoteRequests,
+  brandScanTickets,
   type AuditRequest, 
   type InsertAuditRequest,
   type QuoteRequest,
-  type InsertQuoteRequest 
+  type InsertQuoteRequest,
+  type BrandScanTicket,
+  type InsertBrandScanTicket
 } from "@shared/schema";
 
 export interface IStorage {
@@ -17,19 +20,28 @@ export interface IStorage {
   getQuoteRequests(): Promise<QuoteRequest[]>;
   getQuoteRequest(id: number): Promise<QuoteRequest | undefined>;
   updateQuoteRequestStatus(id: number, processed: boolean): Promise<QuoteRequest | undefined>;
+
+  createBrandScanTicket(request: InsertBrandScanTicket): Promise<BrandScanTicket>;
+  getBrandScanTickets(): Promise<BrandScanTicket[]>;
+  getBrandScanTicket(id: number): Promise<BrandScanTicket | undefined>;
+  updateBrandScanTicketStatus(id: number, processed: boolean): Promise<BrandScanTicket | undefined>;
 }
 
 export class MemStorage implements IStorage {
   private auditRequests: Map<number, AuditRequest>;
   private quoteRequests: Map<number, QuoteRequest>;
+  private brandScanTickets: Map<number, BrandScanTicket>;
   private currentAuditId: number;
   private currentQuoteId: number;
+  private currentBrandScanId: number;
 
   constructor() {
     this.auditRequests = new Map();
     this.quoteRequests = new Map();
+    this.brandScanTickets = new Map();
     this.currentAuditId = 1;
     this.currentQuoteId = 1;
+    this.currentBrandScanId = 1;
   }
 
   async createAuditRequest(insertRequest: InsertAuditRequest): Promise<AuditRequest> {
