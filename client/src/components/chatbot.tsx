@@ -67,7 +67,7 @@ export default function Chatbot() {
     mutationFn: async ({ message, history }: { message: string; history: string[] }) => {
       return await apiRequest("POST", "/api/chatbot", { message, conversationHistory: history });
     },
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       const botMessage: Message = {
         id: messages.length + 1,
         text: response.response,
