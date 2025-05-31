@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, MessageCircle, Send, Bot, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Message {
   id: number;
@@ -59,41 +61,36 @@ export default function Chatbot() {
     }
   }, [isOpen, messages.length]);
 
-  const botResponses = [
-    {
-      triggers: ['post', 'posts', 'thread', 'threads'],
-      response: "Reddit post removal typically costs $780 (includes our 95%+ success rate guarantee). We can usually complete removal within 24-48 hours. Would you like me to connect you with our removal specialist?",
-      price: "$780"
+  const [isTyping, setIsTyping] = useState(false);
+
+  const sendChatMessage = useMutation({
+    mutationFn: async ({ message, history }: { message: string; history: string[] }) => {
+      return await apiRequest("POST", "/api/chatbot", { message, conversationHistory: history });
     },
-    {
-      triggers: ['comment', 'comments', 'reply', 'replies'],
-      response: "Reddit comment removal is $186 per comment. Our success rate is 95%+ and most comments are removed within 24 hours. How many comments need to be removed?",
-      price: "$186"
+    onSuccess: (response) => {
+      const botMessage: Message = {
+        id: messages.length + 1,
+        text: response.response,
+        isBot: true,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, botMessage]);
+      setIsTyping(false);
     },
-    {
-      triggers: ['account', 'profile', 'user'],
-      response: "Account removal or suspension services vary based on the situation. Let me connect you with our specialist who can provide a custom quote. This typically involves more complex procedures.",
-      price: "Custom"
-    },
-    {
-      triggers: ['how fast', 'how long', 'time', 'quickly', 'speed'],
-      response: "We're incredibly fast! Most Reddit posts are removed within 24-48 hours, and comments within 24 hours. Our 95%+ success rate means if we can't remove it, almost nobody can. Want to get started?",
-      price: null
-    },
-    {
-      triggers: ['price', 'cost', 'pricing', 'how much', 'fee'],
-      response: "Our pricing is transparent: Reddit posts ($780), Comments ($186 each). No hidden fees, no long-term contracts. 95%+ success rate guaranteed. Ready for a custom quote?",
-      price: null
-    },
-    {
-      triggers: ['help', 'hello', 'hi', 'start'],
-      response: "I can help you remove unwanted Reddit content quickly and legally. What specific content do you need removed - posts, comments, or something else?",
-      price: null
+    onError: (error) => {
+      const errorMessage: Message = {
+        id: messages.length + 1,
+        text: "I'm experiencing technical difficulties. Please use our contact form for immediate assistance with Reddit content removal.",
+        isBot: true,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+      setIsTyping(false);
     }
-  ];
+  });
 
   const handleSendMessage = () => {
-    if (!input.trim()) return;
+    if (!input.trim() || sendChatMessage.isPending) return;
 
     const userMessage: Message = {
       id: messages.length + 1,
@@ -103,27 +100,16 @@ export default function Chatbot() {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    setIsTyping(true);
 
-    // Find appropriate bot response
-    const lowerInput = input.toLowerCase();
-    let botResponse = "I understand you need help with Reddit content removal. Our team has a 95%+ success rate and works within 24-48 hours. Would you like to speak with a specialist for a custom quote?";
-    
-    for (const response of botResponses) {
-      if (response.triggers.some(trigger => lowerInput.includes(trigger))) {
-        botResponse = response.response;
-        break;
-      }
-    }
+    // Create conversation history for context
+    const conversationHistory = messages.map(msg => msg.text);
 
-    setTimeout(() => {
-      const botMessage: Message = {
-        id: messages.length + 2,
-        text: botResponse,
-        isBot: true,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botMessage]);
-    }, 1000);
+    // Send to AI chatbot
+    sendChatMessage.mutate({ 
+      message: input, 
+      history: conversationHistory 
+    });
 
     setInput("");
     setCurrentStep(prev => prev + 1);
@@ -220,6 +206,24 @@ export default function Chatbot() {
                 </div>
               </div>
             ))}
+
+            {/* Typing indicator */}
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="flex items-start space-x-2 max-w-[80%]">
+                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                    <Bot className="h-4 w-4 text-gray-600" />
+                  </div>
+                  <div className="bg-gray-100 text-gray-900 px-4 py-2 rounded-2xl">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Quick Actions */}
             {currentStep === 0 && (

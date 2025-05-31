@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { z } from "zod";
 import { storage } from "./storage";
 import { insertAuditRequestSchema, insertQuoteRequestSchema } from "@shared/schema";
+import { getChatbotResponse, analyzeRedditUrl } from "./openai";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Audit request submission endpoint
@@ -165,6 +166,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: "Internal server error"
+      });
+    }
+  });
+
+  // Chatbot endpoint
+  app.post("/api/chatbot", async (req, res) => {
+    try {
+      const { message, conversationHistory = [] } = req.body;
+      
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: "Message is required"
+        });
+      }
+
+      const response = await getChatbotResponse(message, conversationHistory);
+      
+      res.json({
+        success: true,
+        response
+      });
+    } catch (error) {
+      console.error("Error in chatbot:", error);
+      res.status(500).json({
+        success: false,
+        message: "Chatbot service unavailable",
+        response: "I'm experiencing technical difficulties. Please use our contact form for immediate assistance with Reddit content removal."
+      });
+    }
+  });
+
+  // URL analysis endpoint
+  app.post("/api/analyze-url", async (req, res) => {
+    try {
+      const { url } = req.body;
+      
+      if (!url || typeof url !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: "URL is required"
+        });
+      }
+
+      const analysis = await analyzeRedditUrl(url);
+      
+      res.json({
+        success: true,
+        analysis
+      });
+    } catch (error) {
+      console.error("Error analyzing URL:", error);
+      res.status(500).json({
+        success: false,
+        message: "URL analysis unavailable",
+        analysis: {
+          contentType: "Reddit content",
+          estimatedPrice: "$780",
+          description: "We can analyze and remove this content. Contact us for a detailed quote."
+        }
       });
     }
   });
