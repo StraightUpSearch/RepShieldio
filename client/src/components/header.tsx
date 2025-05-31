@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Search } from "lucide-react";
 import { SiReddit } from "react-icons/si";
+import { Link } from "wouter";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -26,6 +27,10 @@ export default function Header() {
           </div>
           
           <nav className="hidden md:flex items-center space-x-8">
+            <Link href="/scan" className="text-gray-700 hover:text-navy-deep transition-colors flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              Live Scanner
+            </Link>
             <button 
               onClick={() => scrollToSection('services')}
               className="text-gray-700 hover:text-navy-deep transition-colors"
