@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
 import { storage } from "./storage";
-import { insertAuditRequestSchema, insertQuoteRequestSchema } from "@shared/schema";
+import { insertAuditRequestSchema, insertQuoteRequestSchema, insertBrandScanTicketSchema } from "@shared/schema";
 import { getChatbotResponse, analyzeRedditUrl } from "./openai";
 import { sendQuoteNotification, sendContactNotification } from "./email";
 
@@ -264,6 +264,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
           description: "We can analyze and remove this content. Contact us for a detailed quote."
         }
       });
+    }
+  });
+
+  // Brand scan ticket submission endpoint
+  app.post("/api/brand-scan-ticket", async (req, res) => {
+    try {
+      const validatedData = insertBrandScanTicketSchema.parse(req.body);
+      
+      const ticket = await storage.createBrandScanTicket(validatedData);
+      
+      // Send email notification
+      try {
+        await sendContactNotification({
+          name: validatedData.name,
+          email: validatedData.email,
+          company: validatedData.company,
+          website: 'Brand Scan Ticket',
+          message: `Brand scan ticket created for: ${validatedData.brandName}. Specialist analysis requested.`
+        });
+      } catch (error) {
+        console.error("Failed to send email notification:", error);
+        // Continue even if email fails
+      }
+      
+      res.status(201).json({
+        success: true,
+        message: "Brand scan ticket created successfully",
+        ticketId: ticket.id
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        res.status(400).json({
+          success: false,
+          message: "Invalid request data",
+          errors: error.errors
+        });
+      } else {
+        console.error("Error creating brand scan ticket:", error);
+        res.status(500).json({
+          success: false,
+          message: "Internal server error"
+        });
+      }
     }
   });
 

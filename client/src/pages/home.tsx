@@ -1,6 +1,7 @@
 import Header from "@/components/header";
 import Hero from "@/components/hero";
 import ProblemSection from "@/components/problem-section";
+import BrandScanner from "@/components/brand-scanner";
 import Services from "@/components/services";
 import Process from "@/components/process";
 import Results from "@/components/results";
@@ -17,6 +18,7 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       <Header />
       <Hero />
+      <BrandScanner />
       <ProblemSection />
       <Services />
       <Process />

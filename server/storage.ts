@@ -109,6 +109,36 @@ export class MemStorage implements IStorage {
     }
     return undefined;
   }
+
+  async createBrandScanTicket(insertRequest: InsertBrandScanTicket): Promise<BrandScanTicket> {
+    const id = this.currentBrandScanId++;
+    const request: BrandScanTicket = {
+      id,
+      ...insertRequest,
+      processed: false,
+      createdAt: new Date()
+    };
+    this.brandScanTickets.set(id, request);
+    return request;
+  }
+
+  async getBrandScanTickets(): Promise<BrandScanTicket[]> {
+    return Array.from(this.brandScanTickets.values());
+  }
+
+  async getBrandScanTicket(id: number): Promise<BrandScanTicket | undefined> {
+    return this.brandScanTickets.get(id);
+  }
+
+  async updateBrandScanTicketStatus(id: number, processed: boolean): Promise<BrandScanTicket | undefined> {
+    const request = this.brandScanTickets.get(id);
+    if (request) {
+      request.processed = processed;
+      this.brandScanTickets.set(id, request);
+      return request;
+    }
+    return undefined;
+  }
 }
 
 export const storage = new MemStorage();
