@@ -1,4 +1,4 @@
-import { SiReddit, SiLinkedin, SiTwitter } from "react-icons/si";
+import { SiReddit, SiLinkedin, SiX } from "react-icons/si";
 import { Mail } from "lucide-react";
 
 export default function Footer() {
