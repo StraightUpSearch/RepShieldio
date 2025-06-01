@@ -565,7 +565,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ip: req.ip || req.connection?.remoteAddress,
           userAgent: req.get('User-Agent')
         };
-        await telegramBot.sendChatbotInteraction(message, response, userInfo);
+        
+        // Check if this needs escalation to human
+        const needsEscalation = message.toLowerCase().includes('complex') || 
+                               message.toLowerCase().includes('difficult') || 
+                               message.toLowerCase().includes('urgent') || 
+                               message.toLowerCase().includes('lawsuit') || 
+                               message.toLowerCase().includes('emergency') || 
+                               message.toLowerCase().includes('immediately') ||
+                               response.includes('connect you with our specialist');
+        
+        if (needsEscalation) {
+          // Send priority escalation notification
+          await telegramBot.sendMessage(parseInt(process.env.TELEGRAM_ADMIN_CHAT_ID!), 
+            `🚨 URGENT ESCALATION NEEDED\n\n` +
+            `👤 User Message: "${message}"\n` +
+            `🤖 Bot Response: "${response}"\n\n` +
+            `⚡ This visitor needs immediate human assistance!\n` +
+            `📱 IP: ${userInfo.ip}\n` +
+            `💻 Browser: ${userInfo.userAgent?.substring(0, 50)}...\n` +
+            `⏰ Time: ${new Date().toLocaleString()}`
+          );
+        } else {
+          // Send regular chatbot interaction notification
+          await telegramBot.sendChatbotInteraction(message, response, userInfo);
+        }
+        
         notificationManager.broadcastChatbotInteraction(message, response, userInfo);
       } catch (notificationError) {
         console.error("Failed to send notifications:", notificationError);
