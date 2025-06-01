@@ -22,6 +22,7 @@ export interface IStorage {
   // User operations for authentication
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
   
   // Ticket operations
   createTicket(ticket: InsertTicket): Promise<Ticket>;
@@ -30,6 +31,7 @@ export interface IStorage {
   getTicket(id: number): Promise<Ticket | undefined>;
   updateTicketStatus(id: number, status: string, assignedTo?: string): Promise<Ticket | undefined>;
   updateTicketNotes(id: number, notes: string): Promise<Ticket | undefined>;
+  getTicketsWithUsers(): Promise<any[]>;
   
   // Legacy operations (keeping for backwards compatibility)
   createAuditRequest(request: InsertAuditRequest): Promise<AuditRequest>;

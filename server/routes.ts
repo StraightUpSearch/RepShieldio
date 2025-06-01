@@ -85,6 +85,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin endpoints
+  app.get('/api/admin/stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const allUsers = await storage.getAllUsers();
+      const allOrders = await storage.getTickets();
+      
+      const totalRevenue = allOrders
+        .filter(order => order.status === 'completed' && order.amount)
+        .reduce((sum, order) => sum + parseFloat(order.amount || '0'), 0);
+
+      const stats = {
+        totalUsers: allUsers.length,
+        totalOrders: allOrders.length,
+        totalRevenue: totalRevenue.toFixed(2),
+        pendingOrders: allOrders.filter(order => order.status === 'pending').length,
+        completedOrders: allOrders.filter(order => order.status === 'completed').length,
+        activeUsers: allUsers.filter(user => user.role === 'user').length
+      };
+
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      console.error("Error fetching admin stats:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch stats" });
+    }
+  });
+
+  app.get('/api/admin/orders', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const orders = await storage.getTicketsWithUsers();
+      res.json({ success: true, data: orders });
+    } catch (error) {
+      console.error("Error fetching admin orders:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch orders" });
+    }
+  });
+
+  app.get('/api/admin/users', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const users = await storage.getAllUsers();
+      res.json({ success: true, data: users });
+    } catch (error) {
+      console.error("Error fetching admin users:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch users" });
+    }
+  });
+
+  app.patch('/api/admin/orders/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.claims.sub);
+      if (user?.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const orderId = parseInt(req.params.id);
+      const { status, assignedTo, notes } = req.body;
+
+      const updatedOrder = await storage.updateTicketStatus(orderId, status, assignedTo);
+      if (notes) {
+        await storage.updateTicketNotes(orderId, notes);
+      }
+
+      res.json({ success: true, data: updatedOrder });
+    } catch (error) {
+      console.error("Error updating order:", error);
+      res.status(500).json({ success: false, message: "Failed to update order" });
+    }
+  });
+
   // Admin endpoints for ticket management
   app.get('/api/admin/tickets', async (req, res) => {
     // Basic admin check - in production you'd verify admin role

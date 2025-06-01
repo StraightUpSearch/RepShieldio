@@ -22,6 +22,8 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   role: varchar("role").default("user").notNull(), // 'user' or 'admin'
+  accountBalance: varchar("account_balance").default("0.00"),
+  creditsRemaining: integer("credits_remaining").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -30,16 +32,32 @@ export const users = pgTable("users", {
 export const tickets = pgTable("tickets", {
   id: serial("id").primaryKey(),
   userId: varchar("user_id").notNull().references(() => users.id),
-  type: varchar("type").notNull(), // 'brand_scan', 'quote_request', 'audit_request'
-  status: varchar("status").default("pending").notNull(), // 'pending', 'in_progress', 'completed', 'cancelled'
+  type: varchar("type").notNull(), // 'reddit_post_removal', 'reddit_comment_removal', 'brand_scan', 'quote_request', 'audit_request'
+  status: varchar("status").default("pending").notNull(), // 'pending', 'processing', 'completed', 'failed', 'refunded'
   priority: varchar("priority").default("standard").notNull(), // 'premium', 'standard'
   assignedTo: varchar("assigned_to"), // Admin who takes the ticket
   title: text("title").notNull(),
   description: text("description"),
+  redditUrl: text("reddit_url"), // For Reddit removal orders
+  amount: varchar("amount"), // Order amount
+  progress: integer("progress").default(0), // Progress percentage 0-100
   requestData: jsonb("request_data"), // Store original form data
   notes: text("notes"), // Internal admin notes
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Transactions table for financial tracking
+export const transactions = pgTable("transactions", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  ticketId: integer("ticket_id").references(() => tickets.id),
+  type: varchar("type").notNull(), // 'payment', 'refund', 'credit_purchase', 'wallet_topup'
+  amount: varchar("amount").notNull(),
+  description: text("description"),
+  stripePaymentId: varchar("stripe_payment_id"),
+  status: varchar("status").default("completed").notNull(), // 'pending', 'completed', 'failed'
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const auditRequests = pgTable("audit_requests", {
@@ -101,12 +119,25 @@ export type BrandScanTicket = typeof brandScanTickets.$inferSelect;
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   tickets: many(tickets),
+  transactions: many(transactions),
 }));
 
-export const ticketsRelations = relations(tickets, ({ one }) => ({
+export const ticketsRelations = relations(tickets, ({ one, many }) => ({
   user: one(users, {
     fields: [tickets.userId],
     references: [users.id],
+  }),
+  transactions: many(transactions),
+}));
+
+export const transactionsRelations = relations(transactions, ({ one }) => ({
+  user: one(users, {
+    fields: [transactions.userId],
+    references: [users.id],
+  }),
+  ticket: one(tickets, {
+    fields: [transactions.ticketId],
+    references: [tickets.id],
   }),
 }));
 
