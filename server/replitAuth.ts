@@ -57,12 +57,18 @@ function updateUserSession(
 async function upsertUser(
   claims: any,
 ) {
+  // Set role based on email - jamie@straightupsearch.com gets admin privileges
+  const role = claims["email"] === "jamie@straightupsearch.com" ? "admin" : "user";
+  
   await storage.upsertUser({
     id: claims["sub"],
     email: claims["email"],
     firstName: claims["first_name"],
     lastName: claims["last_name"],
     profileImageUrl: claims["profile_image_url"],
+    role: role,
+    accountBalance: "0.00",
+    creditsRemaining: role === "admin" ? 1000 : 0, // Give admin credits
   });
 }
 

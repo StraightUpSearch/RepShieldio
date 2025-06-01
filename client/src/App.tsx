@@ -9,6 +9,7 @@ import Dashboard from "@/pages/dashboard";
 import AdminPanel from "@/pages/admin";
 import MyAccount from "@/pages/my-account";
 import AdminDashboard from "@/pages/admin-dashboard";
+import DataAdmin from "@/pages/data-admin";
 
 function Router() {
   return (
@@ -19,6 +20,7 @@ function Router() {
       <Route path="/my-account" component={MyAccount} />
       <Route path="/admin" component={AdminPanel} />
       <Route path="/admin-dashboard" component={AdminDashboard} />
+      <Route path="/data-admin" component={DataAdmin} />
       <Route>
         <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
           <div className="text-center">
