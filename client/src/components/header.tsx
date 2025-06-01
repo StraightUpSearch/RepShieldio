@@ -31,6 +31,9 @@ export default function Header() {
               <Search className="h-4 w-4" />
               Live Scanner
             </Link>
+            <Link href="/my-account" className="text-gray-700 hover:text-navy-deep transition-colors">
+              My Account
+            </Link>
             <button 
               onClick={() => scrollToSection('services')}
               className="text-gray-700 hover:text-navy-deep transition-colors"
