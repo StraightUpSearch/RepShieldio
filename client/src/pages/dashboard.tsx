@@ -89,6 +89,9 @@ export default function Dashboard() {
     );
   }
 
+  // Fallback to empty array if cases is undefined
+  const safeCases = cases || [];
+
   return (
     <>
       <SEOHead
@@ -177,9 +180,9 @@ export default function Dashboard() {
             <div className="grid gap-6">
               <h2 className="text-xl font-semibold">All Cases</h2>
               
-              {cases && cases.length > 0 ? (
+              {safeCases && safeCases.length > 0 ? (
                 <div className="grid gap-4">
-                  {cases.map((case_) => (
+                  {safeCases.map((case_) => (
                     <Card key={case_.id} className="hover:shadow-md transition-shadow">
                       <CardContent className="p-6">
                         <div className="flex items-start justify-between mb-4">
@@ -212,6 +215,29 @@ export default function Dashboard() {
                         </div>
 
                         <p className="text-gray-700 mb-4">{case_.description}</p>
+
+                        {/* Assigned Specialist */}
+                        {case_.specialist && (
+                          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+                            <div className="flex items-start gap-3">
+                              <img 
+                                src={case_.specialist.avatar} 
+                                alt={case_.specialist.name}
+                                className="w-12 h-12 rounded-full object-cover border-2 border-blue-300"
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="font-semibold text-blue-900 text-sm">{case_.specialist.name}</h4>
+                                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                                    {case_.specialist.successRate} Success
+                                  </Badge>
+                                </div>
+                                <p className="text-blue-700 font-medium text-xs mb-1">{case_.specialist.title}</p>
+                                <p className="text-blue-600 text-xs">{case_.specialist.experience}</p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         {case_.updates && case_.updates.length > 0 && (
                           <div className="border-t pt-4">

@@ -510,7 +510,7 @@ export class MemStorage implements IStorage {
   private currentCaseId: number = 1;
 
   constructor() {
-    // Add a test case ready for payment
+    // Add a test case ready for payment with assigned specialist
     this.removalCases.set(1, {
       id: 1,
       userId: 'test-user',
@@ -520,10 +520,19 @@ export class MemStorage implements IStorage {
       description: 'Remove defamatory post about company practices from r/technology. High visibility post with 250+ comments requiring strategic approach.',
       createdAt: new Date().toISOString(),
       progress: 0,
+      specialist: {
+        name: 'Sarah Mitchell',
+        title: 'Senior Content Removal Specialist',
+        avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b5bc?w=150&h=150&fit=crop&crop=face',
+        experience: '5+ years experience',
+        specialties: ['High-visibility posts', 'Technology subreddits', 'Corporate reputation'],
+        successRate: '96%',
+        bio: 'Sarah specializes in removing sensitive corporate content from major technology communities. She has successfully handled over 500 similar cases.'
+      },
       updates: [
         {
           id: 1,
-          message: 'Analysis complete. Removal strategy prepared and ready for approval.',
+          message: 'Hi! I\'m Sarah, your assigned specialist. I\'ve completed the analysis and prepared a targeted removal strategy for your case.',
           timestamp: new Date().toISOString(),
           type: 'info'
         }
