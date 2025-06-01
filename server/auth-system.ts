@@ -132,6 +132,11 @@ export function setupAuth(app: Express) {
     }
   );
 
+  // Disable Replit OAuth completely
+  app.get('/api/login', (req, res) => {
+    res.redirect('/login');
+  });
+
   app.post('/auth/register', async (req, res, next) => {
     try {
       const { email, password, firstName, lastName } = req.body;

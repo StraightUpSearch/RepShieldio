@@ -29,8 +29,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication endpoints
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const user = req.user; // User is already available from session
       res.json(user);
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -41,7 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User account data endpoints
   app.get('/api/user/orders', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const orders = await storage.getUserTickets(userId);
       res.json({ success: true, data: orders });
     } catch (error) {
@@ -52,7 +51,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/user/stats', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const orders = await storage.getUserTickets(userId);
       
       const totalOrders = orders.length;
