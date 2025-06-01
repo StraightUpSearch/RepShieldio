@@ -232,7 +232,17 @@ export default function Dashboard() {
                           </div>
                         )}
 
-                        <div className="flex justify-end mt-4">
+                        <div className="flex justify-end gap-2 mt-4">
+                          {case_.status === 'quoted' && (
+                            <Button 
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => setCheckoutCase(case_)}
+                            >
+                              <CreditCard className="w-4 h-4 mr-2" />
+                              Pay {case_.estimatedPrice}
+                            </Button>
+                          )}
                           <Button variant="outline" size="sm">
                             View Details
                           </Button>
@@ -258,6 +268,24 @@ export default function Dashboard() {
         </main>
 
         <Footer />
+
+        {/* Checkout Dialog */}
+        <Dialog open={!!checkoutCase} onOpenChange={() => setCheckoutCase(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Complete Payment</DialogTitle>
+            </DialogHeader>
+            {checkoutCase && (
+              <Checkout
+                caseId={checkoutCase.id}
+                amount={checkoutCase.estimatedPrice}
+                description={checkoutCase.description}
+                onSuccess={handlePaymentSuccess}
+                onCancel={() => setCheckoutCase(null)}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );
