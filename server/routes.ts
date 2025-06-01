@@ -168,6 +168,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Data administration endpoints (fallback access)
+  app.get('/api/data-admin/users', async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json({ success: true, data: users });
+    } catch (error) {
+      console.error("Error fetching users for data admin:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch users" });
+    }
+  });
+
+  app.get('/api/data-admin/orders', async (req, res) => {
+    try {
+      const orders = await storage.getTicketsWithUsers();
+      res.json({ success: true, data: orders });
+    } catch (error) {
+      console.error("Error fetching orders for data admin:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch orders" });
+    }
+  });
+
+  app.post('/api/data-admin/users', async (req, res) => {
+    try {
+      const { email, firstName, lastName, role, accountBalance, creditsRemaining } = req.body;
+      
+      const userData = {
+        id: `manual_${Date.now()}`,
+        email,
+        firstName,
+        lastName,
+        role,
+        accountBalance,
+        creditsRemaining
+      };
+
+      const user = await storage.upsertUser(userData);
+      res.json({ success: true, data: user });
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ success: false, message: "Failed to create user" });
+    }
+  });
+
+  app.post('/api/data-admin/orders', async (req, res) => {
+    try {
+      const { userId, type, status, title, redditUrl, amount, progress } = req.body;
+      
+      const orderData = {
+        userId,
+        type,
+        status,
+        priority: 'medium',
+        title,
+        description: `Manual order created via data admin`,
+        redditUrl,
+        amount,
+        progress: progress || 0,
+        requestData: JSON.stringify({ source: 'data-admin', createdAt: new Date().toISOString() })
+      };
+
+      const order = await storage.createTicket(orderData);
+      res.json({ success: true, data: order });
+    } catch (error) {
+      console.error("Error creating order:", error);
+      res.status(500).json({ success: false, message: "Failed to create order" });
+    }
+  });
+
   // Admin endpoints for ticket management
   app.get('/api/admin/tickets', async (req, res) => {
     // Basic admin check - in production you'd verify admin role
