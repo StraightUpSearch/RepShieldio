@@ -122,15 +122,245 @@ export default function Hero() {
             Clean up your online presence with our proven 99% success rate. Legal. Ethical. Confidential.
           </p>
           
-          {/* Social Proof - Inspired by Fyli.ai */}
+          {/* Social Proof - Reddit Pixel Art Avatars */}
           <div className="flex flex-col items-center mb-12 relative z-10">
             <div className="flex items-center space-x-1 mb-3">
               <div className="flex -space-x-2">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border-2 border-white flex items-center justify-center text-white font-semibold text-sm">J</div>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 border-2 border-white flex items-center justify-center text-white font-semibold text-sm">M</div>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 border-2 border-white flex items-center justify-center text-white font-semibold text-sm">A</div>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 border-2 border-white flex items-center justify-center text-white font-semibold text-sm">S</div>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 border-2 border-white flex items-center justify-center text-white font-semibold text-sm">L</div>
+                {/* Reddit-style pixel art avatars */}
+                <div className="w-10 h-10 border-2 border-white relative overflow-hidden" style={{
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #FF4500 0%, #FF6B35 100%)',
+                  imageRendering: 'pixelated'
+                }}>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-6 h-6 grid grid-cols-6 gap-0" style={{imageRendering: 'pixelated'}}>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-transparent"></div>
+                      <div className="bg-transparent"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="w-10 h-10 border-2 border-white relative overflow-hidden" style={{
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #9C27B0 0%, #E91E63 100%)',
+                  imageRendering: 'pixelated'
+                }}>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-6 h-6 grid grid-cols-6 gap-0">
+                      <div className="bg-transparent"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-transparent"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-transparent"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-transparent"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="w-10 h-10 border-2 border-white relative overflow-hidden" style={{
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%)',
+                  imageRendering: 'pixelated'
+                }}>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-6 h-6 grid grid-cols-6 gap-0">
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="w-10 h-10 border-2 border-white relative overflow-hidden" style={{
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #2196F3 0%, #03A9F4 100%)',
+                  imageRendering: 'pixelated'
+                }}>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-6 h-6 grid grid-cols-6 gap-0">
+                      <div className="bg-transparent"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-transparent"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-transparent"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-transparent"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="w-10 h-10 border-2 border-white relative overflow-hidden" style={{
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #FF5722 0%, #FF9800 100%)',
+                  imageRendering: 'pixelated'
+                }}>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-6 h-6 grid grid-cols-6 gap-0">
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-black"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                      <div className="bg-white opacity-90"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className="flex items-center ml-4">
                 <div className="flex">
