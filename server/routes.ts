@@ -15,6 +15,52 @@ async function sendBrandScanNotification(data: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Brand scanning with real Reddit data
+  app.post("/api/scan-brand", async (req, res) => {
+    try {
+      const { brandName } = req.body;
+      if (!brandName) {
+        return res.status(400).json({ message: "Brand name is required" });
+      }
+
+      console.log(`Scanning Reddit for brand: ${brandName}`);
+      const scanResults = await redditAPI.searchBrand(brandName);
+      
+      // Format results for frontend with real URLs
+      const previewMentions = [
+        ...scanResults.posts.slice(0, 2).map(post => ({
+          subreddit: post.subreddit,
+          timeAgo: `${Math.floor((Date.now() - post.created_utc * 1000) / (1000 * 60 * 60 * 24))} days ago`,
+          sentiment: scanResults.sentiment,
+          previewText: post.title.substring(0, 120),
+          url: `https://reddit.com${post.permalink}`,
+          score: post.score
+        })),
+        ...scanResults.comments.slice(0, 1).map(comment => ({
+          subreddit: comment.subreddit,
+          timeAgo: `${Math.floor((Date.now() - comment.created_utc * 1000) / (1000 * 60 * 60 * 24))} days ago`,
+          sentiment: scanResults.sentiment,
+          previewText: comment.body.substring(0, 120),
+          url: `https://reddit.com${comment.permalink}`,
+          score: comment.score
+        }))
+      ];
+
+      const response = {
+        totalMentions: scanResults.totalFound,
+        posts: scanResults.posts.length,
+        comments: scanResults.comments.length,
+        riskLevel: scanResults.riskScore > 7 ? 'high' : scanResults.riskScore > 4 ? 'medium' : 'low',
+        previewMentions: previewMentions.slice(0, 3)
+      };
+
+      res.json(response);
+    } catch (error) {
+      console.error("Reddit scan error:", error);
+      res.status(500).json({ message: "Failed to scan Reddit data" });
+    }
+  });
+
   // Audit request submission endpoint
   app.post("/api/audit-request", async (req, res) => {
     try {
