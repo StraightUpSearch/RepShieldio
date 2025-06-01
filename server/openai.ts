@@ -53,8 +53,44 @@ Do not:
     return response.choices[0].message.content || "I'm here to help with Reddit content removal. What specific content do you need removed?";
   } catch (error) {
     console.error("OpenAI API error:", error);
-    return "I'm experiencing technical difficulties. Please try our contact form for immediate assistance with Reddit content removal.";
+    // Use fallback responses when OpenAI is unavailable
+    return getFallbackResponse(userMessage);
   }
+}
+
+function getFallbackResponse(userMessage: string): string {
+  const message = userMessage.toLowerCase();
+  
+  if (message.includes('price') || message.includes('cost') || message.includes('quote')) {
+    return "Reddit post removal costs $899 and comments cost $199. We have a 95%+ success rate with 24-48 hour completion. Would you like a custom quote for your specific content?";
+  }
+  
+  if (message.includes('remove') && message.includes('post')) {
+    return "I can help you remove Reddit posts for $899 each. We complete most post removals within 24-48 hours with a 95%+ success rate using only legal methods. Share your Reddit URL for a detailed quote.";
+  }
+  
+  if (message.includes('remove') && message.includes('comment')) {
+    return "Reddit comment removal costs $199 per comment with 24-hour completion time. We use only legal and ethical methods with a 95%+ success rate. What Reddit comments need removing?";
+  }
+  
+  if (message.includes('how') || message.includes('process')) {
+    return "Our process is simple: 1) Analyze your Reddit content, 2) Provide instant quote, 3) Remove content within 24-48 hours using legal methods. We've completed 1,650+ successful removals. What content do you need removed?";
+  }
+  
+  if (message.includes('time') || message.includes('fast') || message.includes('quick')) {
+    return "We remove Reddit posts in 24-48 hours and comments in 24 hours. Our legal removal methods have a 95%+ success rate. Need something removed urgently?";
+  }
+  
+  if (message.includes('legal') || message.includes('safe') || message.includes('method')) {
+    return "We only use legal and ethical removal methods with a 95%+ success rate. All removals comply with Reddit's terms and applicable laws. Plus, we offer free re-removal if content returns within 3 days.";
+  }
+  
+  if (message.includes('guarantee') || message.includes('success')) {
+    return "We guarantee a 95%+ success rate for all Reddit removals using legal methods. If content returns within 3 days, we'll remove it again for free. Ready to get started?";
+  }
+  
+  // Default response
+  return "Hi! I help with Reddit content removal. We remove posts ($899) and comments ($199) with 95%+ success rate in 24-48 hours using only legal methods. What Reddit content do you need removed?";
 }
 
 export async function analyzeRedditUrl(url: string): Promise<{ contentType: string; estimatedPrice: string; description: string }> {
