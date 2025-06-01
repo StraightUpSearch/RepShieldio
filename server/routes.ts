@@ -9,6 +9,7 @@ import { sendQuoteNotification, sendContactNotification } from "./email";
 import { redditAPI } from "./reddit";
 import { telegramBot } from "./telegram";
 import { webScrapingService } from "./webscraping";
+import { errorRecovery } from "./error-recovery";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -129,18 +130,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Brand scanning endpoint (alias for backward compatibility)
+  // Brand scanning endpoint with automatic error recovery
   app.post("/api/brand-scan", async (req, res) => {
-    try {
-      const { brandName, includePlatforms = ['reddit'], recaptchaToken } = req.body;
-      if (!brandName) {
-        return res.status(400).json({ success: false, error: "Brand name is required" });
-      }
+    const { brandName, includePlatforms = ['reddit'], recaptchaToken } = req.body;
+    if (!brandName) {
+      return res.status(400).json({ success: false, error: "Brand name is required" });
+    }
 
+    const scanOperation = async () => {
       console.log(`Scanning Reddit for brand: ${brandName}`);
       const redditResults = await redditAPI.searchBrand(brandName);
       
-      const results = {
+      return {
         totalMentions: redditResults.totalFound,
         posts: redditResults.posts.length,
         comments: redditResults.comments.length,
@@ -167,15 +168,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }))
         ]
       };
+    };
 
-      res.json({ success: true, data: results });
-    } catch (error: any) {
-      console.error("Brand scan error:", error);
-      res.status(500).json({ 
-        success: false, 
-        error: "Failed to scan Reddit data",
-        details: error.message 
-      });
+    const result = await errorRecovery.executeWithRecovery(scanOperation, 'Reddit Brand Scanning');
+    
+    if (result.success) {
+      res.json({ success: true, data: result.data });
+    } else {
+      // If auto-recovery failed, ask user to check Reddit API credentials
+      if (result.diagnosis?.issue.includes('Authentication')) {
+        res.status(500).json({ 
+          success: false, 
+          error: "Reddit API authentication failed. Please verify your Reddit API credentials are correctly configured.",
+          needsUserAction: true,
+          diagnosis: result.diagnosis
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          error: "Failed to scan Reddit data. Please try again.",
+          diagnosis: result.diagnosis
+        });
+      }
     }
   });
 
