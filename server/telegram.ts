@@ -122,20 +122,42 @@ class TelegramBot {
     const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
     if (!adminChatId) return;
 
-    const message = `
-🚨 <b>New RepShield Lead!</b>
+    let message = `🚨 <b>NEW LEAD: ${leadData.type || 'Brand Scanner'}</b>\n\n`;
+    message += `👤 <b>Name:</b> ${leadData.name}\n`;
+    message += `📧 <b>Email:</b> ${leadData.email}\n`;
+    message += `🏢 <b>Company:</b> ${leadData.company}\n`;
+    
+    if (leadData.phone) {
+      message += `📱 <b>Phone:</b> ${leadData.phone}\n`;
+    }
+    
+    if (leadData.brandName) {
+      message += `🏷️ <b>Brand:</b> ${leadData.brandName}\n`;
+    }
+    
+    if (leadData.leadType) {
+      message += `💎 <b>Type:</b> ${leadData.leadType === 'premium' ? 'PREMIUM' : 'Standard'}\n`;
+    }
+    
+    if (leadData.scanSummary) {
+      message += `\n📊 <b>SCAN RESULTS:</b>\n`;
+      message += `• Mentions Found: ${leadData.scanSummary.totalMentions}\n`;
+      message += `• Risk Level: ${leadData.scanSummary.riskLevel.toUpperCase()}\n`;
+      message += `• Overall Sentiment: ${leadData.scanSummary.sentiment}\n`;
+    }
+    
+    if (leadData.ticketId) {
+      message += `\n🎫 <b>Ticket:</b> #${leadData.ticketId}\n`;
+    }
+    
+    message += `\n📅 ${new Date().toLocaleString()}\n`;
+    message += `\n💼 <b>ACTION:</b> Contact within 2 hours for conversion`;
 
-👤 <b>Name:</b> ${leadData.name}
-📧 <b>Email:</b> ${leadData.email || 'Not provided'}
-📱 <b>Phone:</b> ${leadData.phone || 'Not provided'}
-🏢 <b>Company:</b> ${leadData.company}
-🎯 <b>Brand:</b> ${leadData.brandName}
-⭐ <b>Lead Type:</b> ${leadData.leadType === 'premium' ? 'Premium Business' : 'Standard Consultation'}
-
-<b>Time:</b> ${new Date().toLocaleString()}
-    `;
-
-    await this.sendMessage(parseInt(adminChatId), message);
+    try {
+      await this.sendMessage(parseInt(adminChatId), message);
+    } catch (error) {
+      console.error('Failed to send lead notification to Jamie:', error);
+    }
   }
 }
 
