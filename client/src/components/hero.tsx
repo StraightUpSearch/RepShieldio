@@ -94,7 +94,12 @@ export default function Hero() {
   };
 
   return (
-    <section className="pt-24 pb-16 bg-gradient-to-br from-slate-900 via-navy-deep to-slate-800 text-white relative">
+    <section className="pt-24 pb-16 bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900 text-white relative overflow-hidden">
+      {/* Modern 2025 Background Elements */}
+      <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 via-blue-500/10 to-purple-500/5"></div>
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-cyan-400/15 to-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-400/15 to-blue-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full bg-gradient-to-r from-transparent via-cyan-500/3 to-transparent rotate-12"></div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <div className="flex justify-center items-center space-x-2 mb-6">
@@ -113,12 +118,35 @@ export default function Hero() {
             Comments Removed – Fast
           </h1>
           
-          <p className="text-xl text-slate-300 mb-12 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-slate-300 mb-8 max-w-3xl mx-auto leading-relaxed">
             Clean up your online presence with our proven 99% success rate. Legal. Ethical. Confidential.
           </p>
           
+          {/* Social Proof - Inspired by Fyli.ai */}
+          <div className="flex flex-col items-center mb-12 relative z-10">
+            <div className="flex items-center space-x-1 mb-3">
+              <div className="flex -space-x-2">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 border-2 border-white flex items-center justify-center text-white font-semibold text-sm">J</div>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 border-2 border-white flex items-center justify-center text-white font-semibold text-sm">M</div>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-green-600 border-2 border-white flex items-center justify-center text-white font-semibold text-sm">A</div>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 border-2 border-white flex items-center justify-center text-white font-semibold text-sm">S</div>
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pink-400 to-pink-600 border-2 border-white flex items-center justify-center text-white font-semibold text-sm">L</div>
+              </div>
+              <div className="flex items-center ml-4">
+                <div className="flex">
+                  {[...Array(5)].map((_, i) => (
+                    <svg key={i} className="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <p className="text-sm text-slate-400">Trusted by founders and marketers</p>
+          </div>
+          
           {/* Lead Capture Form */}
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 max-w-2xl mx-auto border border-slate-700">
+          <div className="bg-gradient-to-br from-slate-800/60 via-slate-700/40 to-slate-800/60 backdrop-blur-sm rounded-3xl p-8 max-w-2xl mx-auto border border-slate-600/50 shadow-2xl relative z-10">
             <form onSubmit={handleQuoteSubmit} className="space-y-4">
               {!showEmailCapture ? (
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -132,7 +160,7 @@ export default function Hero() {
                   <Button 
                     type="submit"
                     size="lg"
-                    className="bg-reddit-orange text-white hover:bg-red-600 transition-colors font-semibold text-lg px-8 h-14"
+                    className="bg-gradient-to-r from-orange-500 via-red-500 to-orange-600 text-white hover:from-orange-600 hover:via-red-600 hover:to-orange-700 transition-all duration-300 font-semibold text-lg px-8 h-14 shadow-lg hover:shadow-xl transform hover:scale-105"
                   >
                     Get My Free Quote
                   </Button>
@@ -155,7 +183,7 @@ export default function Hero() {
                       type="submit"
                       disabled={submitQuote.isPending}
                       size="lg"
-                      className="bg-reddit-orange text-white hover:bg-red-600 transition-colors font-semibold text-lg px-8 h-14"
+                      className="bg-gradient-to-r from-orange-500 via-red-500 to-orange-600 text-white hover:from-orange-600 hover:via-red-600 hover:to-orange-700 transition-all duration-300 font-semibold text-lg px-8 h-14 shadow-lg hover:shadow-xl transform hover:scale-105"
                     >
                       {submitQuote.isPending ? "Analyzing..." : "Get Quote"}
                       <ArrowRight className="w-5 h-5 ml-2" />

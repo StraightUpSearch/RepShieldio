@@ -15,7 +15,7 @@ import Chatbot from "@/components/chatbot";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-white via-slate-50 to-gray-100">
       <Header />
       <Hero />
       <BrandScanner />
