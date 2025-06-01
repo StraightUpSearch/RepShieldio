@@ -123,6 +123,33 @@ export default function Dashboard() {
     return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  const handleUrlSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!redditUrl.trim()) {
+      toast({
+        title: "URL Required",
+        description: "Please enter a Reddit URL to analyze.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user?.email) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to analyze URLs.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    analyzeUrlMutation.mutate({
+      redditUrl: redditUrl.trim(),
+      email: user.email
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -325,7 +352,7 @@ export default function Dashboard() {
                     <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">No cases yet</h3>
                     <p className="text-gray-600 mb-6">Submit a Reddit URL for analysis to get started</p>
-                    <Button onClick={() => window.location.href = '/#analyzer'}>
+                    <Button onClick={() => setShowUrlDialog(true)}>
                       Analyze Reddit URL
                     </Button>
                   </CardContent>
@@ -336,6 +363,51 @@ export default function Dashboard() {
         </main>
 
         <Footer />
+
+        {/* URL Analysis Dialog */}
+        <Dialog open={showUrlDialog} onOpenChange={setShowUrlDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <ExternalLink className="h-5 w-5" />
+                Analyze Reddit URL
+              </DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleUrlSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="reddit-url">Reddit URL</Label>
+                <Input
+                  id="reddit-url"
+                  type="url"
+                  placeholder="https://reddit.com/r/..."
+                  value={redditUrl}
+                  onChange={(e) => setRedditUrl(e.target.value)}
+                  required
+                />
+                <p className="text-sm text-gray-500">
+                  Enter the full URL of the Reddit post, comment, or thread you want analyzed
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowUrlDialog(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={analyzeUrlMutation.isPending}
+                  className="flex-1"
+                >
+                  {analyzeUrlMutation.isPending ? "Analyzing..." : "Analyze URL"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         {/* Checkout Dialog */}
         <Dialog open={!!checkoutCase} onOpenChange={() => setCheckoutCase(null)}>
