@@ -46,6 +46,14 @@ export interface IStorage {
   getBrandScanTickets(): Promise<BrandScanTicket[]>;
   getBrandScanTicket(id: number): Promise<BrandScanTicket | undefined>;
   updateBrandScanTicketStatus(id: number, processed: boolean): Promise<BrandScanTicket | undefined>;
+
+  // Blog CMS operations
+  getBlogPosts(): Promise<any[]>;
+  getBlogCategories(): Promise<any[]>;
+  getBlogPostBySlug(slug: string): Promise<any | undefined>;
+  createBlogPost(data: any): Promise<any>;
+  updateBlogPost(id: number, data: any): Promise<any>;
+  deleteBlogPost(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -423,6 +431,72 @@ export class MemStorage implements IStorage {
       return request;
     }
     return undefined;
+  }
+
+  // Blog CMS methods
+  async getBlogPosts(): Promise<any[]> {
+    return [
+      {
+        id: 1,
+        title: "Complete Guide to Reddit Content Removal in 2024",
+        slug: "reddit-content-removal-guide-2024",
+        excerpt: "Learn professional strategies for removing unwanted Reddit posts and comments with our comprehensive 2024 guide.",
+        content: "Reddit content removal has become increasingly important for brand reputation management...",
+        metaTitle: "Reddit Content Removal Guide 2024 - RepShield",
+        metaDescription: "Professional Reddit removal strategies with 95% success rate. Complete guide to removing posts, comments, and protecting your brand reputation.",
+        keywords: "reddit removal, content removal, reputation management",
+        author: "RepShield Team",
+        status: "published",
+        category: "Reddit Removal",
+        tags: ["reddit", "removal", "reputation"],
+        readingTime: 8,
+        publishedAt: new Date(Date.now() - 86400000).toISOString(),
+        createdAt: new Date().toISOString()
+      }
+    ];
+  }
+
+  async getBlogCategories(): Promise<any[]> {
+    return [
+      { 
+        id: 1,
+        name: "Reddit Removal", 
+        slug: "reddit-removal", 
+        description: "Complete guides for Reddit content removal"
+      },
+      { 
+        id: 2,
+        name: "Brand Protection", 
+        slug: "brand-protection", 
+        description: "Strategies to protect your brand online"
+      }
+    ];
+  }
+
+  async getBlogPostBySlug(slug: string): Promise<any | undefined> {
+    const posts = await this.getBlogPosts();
+    return posts.find(post => post.slug === slug);
+  }
+
+  async createBlogPost(data: any): Promise<any> {
+    return { 
+      id: Date.now(), 
+      ...data, 
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  async updateBlogPost(id: number, data: any): Promise<any> {
+    return { 
+      id, 
+      ...data, 
+      updatedAt: new Date().toISOString() 
+    };
+  }
+
+  async deleteBlogPost(id: number): Promise<void> {
+    // Implementation for deleting blog post
   }
 }
 
