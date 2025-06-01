@@ -7,6 +7,7 @@ import { getChatbotResponse, analyzeRedditUrl } from "./openai";
 import { sendQuoteNotification, sendContactNotification } from "./email";
 import { redditAPI } from "./reddit";
 import { telegramBot } from "./telegram";
+import { webScrapingService } from "./webscraping";
 
 // Brand scanning with real Reddit data
 async function sendBrandScanNotification(data: any) {
@@ -96,10 +97,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to create subscription" });
     }
   });
-  // Brand scanning with real Reddit data  
+  // Comprehensive brand scanning with multi-platform web scraping
   app.post("/api/scan-brand", async (req, res) => {
     try {
-      const { brandName, userEmail } = req.body;
+      const { brandName, includePlatforms = ['reddit', 'reviews', 'social', 'news'] } = req.body;
       if (!brandName) {
         return res.status(400).json({ message: "Brand name is required" });
       }

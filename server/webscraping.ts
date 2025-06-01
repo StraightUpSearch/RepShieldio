@@ -51,6 +51,12 @@ class WebScrapingService {
       const envKey = `${provider.name.toUpperCase().replace(' ', '_')}_API_KEY`;
       provider.apiKey = process.env[envKey];
     });
+    
+    // Set ScrapingBee API key directly
+    const scrapingBeeProvider = this.providers.find(p => p.name === 'ScrapingBee');
+    if (scrapingBeeProvider) {
+      scrapingBeeProvider.apiKey = process.env.SCRAPINGBEE_API_KEY || 'PMZK9JAU5MSMYBSWHNL0Y4FI513EGQB96TGVO4649XQIPDKUOSAU8IEMJX66TRGPJIQN8JPPLREG1YGJ';
+    }
   }
 
   async searchBrandMentions(brandName: string): Promise<WebScrapingResult[]> {
