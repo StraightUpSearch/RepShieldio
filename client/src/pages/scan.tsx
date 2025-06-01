@@ -47,6 +47,41 @@ export default function Scan() {
   const [results, setResults] = useState<ScanResults | null>(null);
   const { toast } = useToast();
 
+  const createTicketMutation = useMutation({
+    mutationFn: async (data: { type: string; brandName: string; scanResults: any }) => {
+      const response = await apiRequest("POST", "/api/tickets", {
+        subject: `Brand Scan Analysis - ${data.brandName}`,
+        description: `Customer requested specialist analysis for ${data.type} found in Reddit scan. Brand: ${data.brandName}. Risk Score: ${data.scanResults.riskScore}%. Total mentions: ${data.scanResults.totalFound}.`,
+        priority: data.scanResults.riskScore > 70 ? 'high' : 'medium',
+        category: 'Brand Scan',
+        userEmail: 'anonymous@scan.com', // For anonymous scans
+        userName: 'Anonymous Scanner'
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Specialist Contacted",
+        description: "Our Reddit specialist will analyze your results and contact you within 1 hour.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Request Submitted",
+        description: "Your specialist request has been received. We'll contact you shortly.",
+      });
+    }
+  });
+
+  const handleCreateTicket = (type: string) => {
+    if (!results) return;
+    createTicketMutation.mutate({
+      type,
+      brandName,
+      scanResults: results
+    });
+  };
+
   const generateFakeData = (brand: string): ScanResults => {
     const subreddits = ["entrepreneur", "smallbusiness", "reviews", "CustomerService", "CompanyFails", "mildlyinfuriating", "LegalAdvice", "personalfinance"];
     const negativeComments = [
@@ -284,84 +319,110 @@ export default function Scan() {
                 </CardContent>
               </Card>
 
-              {/* Posts */}
+              {/* Posts Preview with Paywall */}
               {results.posts.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Reddit Posts ({results.posts.length})</CardTitle>
+                    <CardDescription>Critical issues detected that require immediate attention</CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="relative">
                     <div className="space-y-4">
-                      {results.posts.slice(0, 10).map((post) => (
-                        <div key={post.id} className="border rounded-lg p-4">
+                      {results.posts.slice(0, 3).map((post, index) => (
+                        <div key={post.id} className={`border rounded-lg p-4 ${index >= 1 ? 'blur-sm' : ''}`}>
                           <div className="flex items-start justify-between mb-2">
                             <h3 className="font-semibold text-slate-900 dark:text-white line-clamp-2">
-                              {post.title}
+                              {index === 0 ? post.title : "███████ ████ ██████ - ████ ██████"}
                             </h3>
-                            <Badge variant="outline">r/{post.subreddit}</Badge>
+                            <Badge variant="outline">r/{index === 0 ? post.subreddit : "██████"}</Badge>
                           </div>
                           {post.selftext && (
                             <p className="text-slate-600 dark:text-slate-300 text-sm mb-2 line-clamp-3">
-                              {post.selftext}
+                              {index === 0 ? post.selftext : "██████ ████████████ ████ ████████ ██████ ████████ ████████ ████"}
                             </p>
                           )}
                           <div className="flex items-center justify-between text-xs text-slate-500">
-                            <span>by u/{post.author} • {formatDate(post.created_utc)}</span>
+                            <span>by u/{index === 0 ? post.author : "██████"} • {index === 0 ? formatDate(post.created_utc) : "█ days ago"}</span>
                             <div className="flex items-center gap-4">
-                              <span>{post.score} points</span>
-                              <span>{post.num_comments} comments</span>
-                              <a 
-                                href={post.permalink} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
-                              >
-                                View <ExternalLink className="h-3 w-3" />
-                              </a>
+                              <span>{index === 0 ? post.score : "██"} points</span>
+                              <span>{index === 0 ? post.num_comments : "██"} comments</span>
+                              <Badge className="bg-red-100 text-red-800">negative</Badge>
                             </div>
                           </div>
                         </div>
                       ))}
                     </div>
+
+                    {/* Paywall Overlay for Posts */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/70 to-transparent flex items-end justify-center pb-8">
+                      <div className="text-center space-y-4 max-w-md">
+                        <div className="bg-white rounded-lg shadow-xl p-6 border-2 border-orange-200">
+                          <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                            ⚠️ {results.posts.length - 1} More Critical Posts Hidden
+                          </h3>
+                          <p className="text-slate-600 text-sm mb-4">
+                            View all {results.posts.length} posts, detailed analysis, and get removal quotes from our specialists.
+                          </p>
+                          <Button className="w-full bg-orange-600 hover:bg-orange-700" onClick={() => handleCreateTicket('posts')}>
+                            Get Specialist Analysis
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               )}
 
-              {/* Comments */}
+              {/* Comments Preview with Paywall */}
               {results.comments.length > 0 && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Reddit Comments ({results.comments.length})</CardTitle>
+                    <CardDescription>
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-red-100 text-red-800">negative</Badge>
+                        Full details in report
+                      </div>
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="relative">
                     <div className="space-y-4">
-                      {results.comments.slice(0, 10).map((comment) => (
-                        <div key={comment.id} className="border rounded-lg p-4">
+                      {results.comments.slice(0, 5).map((comment, index) => (
+                        <div key={comment.id} className={`border rounded-lg p-4 ${index >= 2 ? 'blur-md' : index >= 1 ? 'blur-sm' : ''}`}>
                           <div className="flex items-start justify-between mb-2">
                             <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                              {comment.link_title}
+                              {index === 0 ? `r/${comment.subreddit}` : "r/█████████"}
                             </span>
-                            <Badge variant="outline">r/{comment.subreddit}</Badge>
+                            <span className="text-xs text-slate-500">
+                              {index === 0 ? formatDate(comment.created_utc) : "█ days ago"}
+                            </span>
                           </div>
-                          <p className="text-slate-600 dark:text-slate-300 text-sm mb-2 line-clamp-3">
-                            {comment.body}
+                          <p className="text-slate-600 dark:text-slate-300 text-sm mb-2 line-clamp-2">
+                            {index === 0 ? comment.body : "██████ ████████ ████ ██████ ████████████ ██████ ████ ██████ ████████ ████"}
                           </p>
                           <div className="flex items-center justify-between text-xs text-slate-500">
-                            <span>by u/{comment.author} • {formatDate(comment.created_utc)}</span>
-                            <div className="flex items-center gap-4">
-                              <span>{comment.score} points</span>
-                              <a 
-                                href={comment.permalink} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1 text-blue-600 hover:text-blue-800"
-                              >
-                                View <ExternalLink className="h-3 w-3" />
-                              </a>
-                            </div>
+                            <span>{index === 0 ? `↓ ${comment.score}` : "↓ ██"}</span>
+                            <Badge className="bg-red-100 text-red-800">negative</Badge>
                           </div>
                         </div>
                       ))}
+                    </div>
+
+                    {/* Paywall Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/80 to-transparent flex items-end justify-center pb-8">
+                      <div className="text-center space-y-4 max-w-md">
+                        <div className="bg-white rounded-lg shadow-xl p-6 border-2 border-blue-200">
+                          <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                            🔒 Full Report Available
+                          </h3>
+                          <p className="text-slate-600 text-sm mb-4">
+                            Get complete analysis of all {results.comments.length} comments, risk assessment, and removal recommendations from our Reddit specialists.
+                          </p>
+                          <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => handleCreateTicket('comments')}>
+                            Talk to Specialist Now
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -378,11 +439,24 @@ export default function Scan() {
                   </CardHeader>
                   <CardContent>
                     <p className="text-red-700 dark:text-red-300 mb-4">
-                      Your brand scan revealed potential reputation risks. Consider professional reputation management to address negative mentions.
+                      Your brand scan revealed potential reputation risks. Our specialists can provide detailed analysis and removal quotes for the detected content.
                     </p>
-                    <Button className="bg-red-600 hover:bg-red-700 text-white">
-                      Get Professional Help
-                    </Button>
+                    <div className="flex gap-3">
+                      <Button 
+                        className="bg-red-600 hover:bg-red-700 text-white flex-1"
+                        onClick={() => handleCreateTicket('urgent')}
+                        disabled={createTicketMutation.isPending}
+                      >
+                        {createTicketMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Connecting...
+                          </>
+                        ) : (
+                          'Get Specialist Help'
+                        )}
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               )}
