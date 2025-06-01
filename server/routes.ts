@@ -97,6 +97,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to create subscription" });
     }
   });
+  // AI Chatbot endpoint
+  app.post("/api/chatbot", async (req, res) => {
+    try {
+      const { message, conversationHistory = [] } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      const response = await getChatbotResponse(message, conversationHistory);
+      
+      res.json({
+        success: true,
+        response
+      });
+    } catch (error) {
+      console.error("Error in chatbot:", error);
+      res.status(500).json({
+        success: false,
+        message: "Chatbot service unavailable",
+        response: "I'm experiencing technical difficulties. Please use our contact form for immediate assistance with Reddit content removal."
+      });
+    }
+  });
+
   // Comprehensive brand scanning with multi-platform web scraping
   app.post("/api/scan-brand", async (req, res) => {
     try {
@@ -105,48 +130,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Brand name is required" });
       }
 
-      console.log(`Scanning Reddit for brand: ${brandName}`);
-      const scanResults = await redditAPI.searchBrand(brandName);
-      
-      // Create or get user account for tracking
-      let user;
-      if (userEmail) {
-        user = await storage.upsertUser({
-          id: userEmail.replace('@', '_').replace(/\./g, '_'),
-          email: userEmail,
-          role: 'user'
-        });
-      }
-      
-      // Format results for frontend with real URLs
-      const previewMentions = [
-        ...scanResults.posts.slice(0, 2).map(post => ({
-          subreddit: post.subreddit,
-          timeAgo: `${Math.floor((Date.now() - post.created_utc * 1000) / (1000 * 60 * 60 * 24))} days ago`,
-          sentiment: scanResults.sentiment,
-          previewText: post.title.substring(0, 120),
-          url: `https://reddit.com${post.permalink}`,
-          score: post.score
-        })),
-        ...scanResults.comments.slice(0, 1).map(comment => ({
-          subreddit: comment.subreddit,
-          timeAgo: `${Math.floor((Date.now() - comment.created_utc * 1000) / (1000 * 60 * 60 * 24))} days ago`,
-          sentiment: scanResults.sentiment,
-          previewText: comment.body.substring(0, 120),
-          url: `https://reddit.com${comment.permalink}`,
-          score: comment.score
-        }))
-      ];
-
-      const response = {
-        totalMentions: scanResults.totalFound,
-        posts: scanResults.posts.length,
-        comments: scanResults.comments.length,
-        riskLevel: scanResults.riskScore > 7 ? 'high' : scanResults.riskScore > 4 ? 'medium' : 'low',
-        previewMentions: previewMentions.slice(0, 3)
+      const allResults = {
+        totalMentions: 0,
+        posts: 0,
+        comments: 0,
+        webMentions: 0,
+        platforms: {} as any,
+        riskLevel: 'low' as 'low' | 'medium' | 'high',
+        previewMentions: [] as any[]
       };
 
-      res.json(response);
+      // Helper to format timestamps
+      const formatTimeAgo = (timestamp: number) => {
+        const now = Math.floor(Date.now() / 1000);
+        const diff = now - timestamp;
+        if (diff < 3600) return `${Math.floor(diff / 60)} minutes ago`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)} hours ago`;
+        return `${Math.floor(diff / 86400)} days ago`;
+      };
+
+      // Scan Reddit with authentic data
+      console.log(`Scanning Reddit for brand: ${brandName}`);
+      const redditResults = await redditAPI.searchBrand(brandName);
+      
+      allResults.totalMentions += redditResults.totalFound;
+      allResults.posts = redditResults.posts.length;
+      allResults.comments = redditResults.comments.length;
+      
+      // Add Reddit preview mentions with real data
+      const redditPreviews = [
+        ...redditResults.posts.slice(0, 2).map(post => ({
+          subreddit: post.subreddit,
+          timeAgo: formatTimeAgo(post.created_utc),
+          sentiment: redditResults.sentiment,
+          previewText: post.title.substring(0, 120) + (post.title.length > 120 ? '...' : ''),
+          url: `https://reddit.com${post.permalink}`,
+          score: post.score,
+          platform: 'Reddit'
+        })),
+        ...redditResults.comments.slice(0, 1).map(comment => ({
+          subreddit: comment.subreddit,
+          timeAgo: formatTimeAgo(comment.created_utc),
+          sentiment: redditResults.sentiment,
+          previewText: comment.body.substring(0, 120) + (comment.body.length > 120 ? '...' : ''),
+          url: `https://reddit.com${comment.permalink}`,
+          score: comment.score,
+          platform: 'Reddit'
+        }))
+      ];
+      allResults.previewMentions.push(...redditPreviews);
+
+      // Scan web platforms using ScrapingBee for additional authentic data
+      if (includePlatforms.includes('reviews') || includePlatforms.includes('social') || includePlatforms.includes('news')) {
+        try {
+          console.log(`Scanning web platforms for brand: ${brandName} using ScrapingBee`);
+          const webResults = await webScrapingService.searchBrandMentions(brandName);
+          
+          webResults.forEach(result => {
+            allResults.totalMentions += result.totalFound;
+            allResults.webMentions += result.totalFound;
+            
+            // Add web platform previews
+            const webPreviews = result.mentions.slice(0, 1).map(mention => ({
+              subreddit: result.source.toLowerCase(),
+              timeAgo: mention.publishedAt ? formatTimeAgo(new Date(mention.publishedAt).getTime() / 1000) : 'Recently',
+              sentiment: mention.sentiment,
+              previewText: mention.content.substring(0, 120) + (mention.content.length > 120 ? '...' : ''),
+              url: mention.url,
+              score: mention.score || 0,
+              platform: result.source
+            }));
+            allResults.previewMentions.push(...webPreviews);
+          });
+        } catch (error) {
+          console.error("Web scraping failed:", error);
+          // Continue with Reddit data only if web scraping fails
+        }
+      }
+
+      // Calculate overall risk from authentic data
+      const negativeCount = allResults.previewMentions.filter(m => m.sentiment === 'negative').length;
+      const totalCount = allResults.previewMentions.length;
+      
+      if (negativeCount > totalCount * 0.6 || redditResults.riskScore > 7) {
+        allResults.riskLevel = 'high';
+      } else if (negativeCount > totalCount * 0.3 || redditResults.riskScore > 4) {
+        allResults.riskLevel = 'medium';
+      }
+
+      res.json({
+        totalMentions: allResults.totalMentions,
+        posts: allResults.posts,
+        comments: allResults.comments,
+        riskLevel: allResults.riskLevel,
+        previewMentions: allResults.previewMentions.slice(0, 3),
+        platformsCovered: includePlatforms.length,
+        redditRiskScore: redditResults.riskScore
+      });
     } catch (error) {
       console.error("Reddit scan error:", error);
       res.status(500).json({ message: "Failed to scan Reddit data" });

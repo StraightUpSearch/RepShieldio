@@ -31,6 +31,7 @@ interface MentionPreview {
   previewText: string;
   url: string;
   score: number;
+  platform?: string;
 }
 
 export default function BrandScanner() {
@@ -391,7 +392,10 @@ export default function BrandScanner() {
               </div>
               <div className="mt-2">
                 <span className="text-xs text-gray-500">
-                  https://reddit.com/r/{mention.subreddit}/comments/*****/******
+                  {mention.platform === 'Reddit' 
+                    ? `https://reddit.com/r/${mention.subreddit}/comments/*****/******`
+                    : `${mention.platform?.toLowerCase()}.com/*****/******`
+                  }
                 </span>
               </div>
             </div>
