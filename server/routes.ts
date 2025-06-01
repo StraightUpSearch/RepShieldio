@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { z } from "zod";
 import Stripe from "stripe";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./auth-system";
+import { setupAuth, isAuthenticated } from "./google-auth";
 import { insertAuditRequestSchema, insertQuoteRequestSchema, insertBrandScanTicketSchema } from "@shared/schema";
 import { getChatbotResponse, analyzeRedditUrl } from "./openai";
 import { sendQuoteNotification, sendContactNotification } from "./email";
