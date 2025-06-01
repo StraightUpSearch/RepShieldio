@@ -1,212 +1,245 @@
-import { useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { useToast } from "@/hooks/use-toast";
-import { Card } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
+import { Clock, CheckCircle, AlertCircle, FileText, Calendar, DollarSign } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, User, FileText, AlertCircle, CheckCircle, ArrowRight } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { isUnauthorizedError } from "@/lib/authUtils";
+import { Progress } from "@/components/ui/progress";
+import Header from "@/components/header";
+import Footer from "@/components/footer";
+import SEOHead from "@/components/seo-head";
 
-interface Ticket {
+interface RemovalCase {
   id: number;
-  type: string;
-  status: string;
-  priority: string;
-  title: string;
+  redditUrl: string;
+  status: 'analyzing' | 'quoted' | 'approved' | 'in_progress' | 'completed' | 'failed';
+  estimatedPrice: string;
   description: string;
-  assignedTo: string | null;
   createdAt: string;
-  updatedAt: string;
+  completedAt?: string;
+  progress: number;
+  updates: CaseUpdate[];
+}
+
+interface CaseUpdate {
+  id: number;
+  message: string;
+  timestamp: string;
+  type: 'info' | 'success' | 'warning' | 'error';
 }
 
 export default function Dashboard() {
-  const { toast } = useToast();
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const [location] = useLocation();
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const caseId = urlParams.get('case');
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to view your dashboard.",
-        variant: "destructive",
-      });
-      setTimeout(() => {
-        window.location.href = "/api/login";
-      }, 1000);
-      return;
-    }
-  }, [isAuthenticated, isLoading, toast]);
-
-  const { data: tickets, isLoading: ticketsLoading } = useQuery({
-    queryKey: ["/api/user/tickets"],
-    enabled: isAuthenticated,
-    retry: (failureCount, error) => {
-      if (isUnauthorizedError(error as Error)) {
-        toast({
-          title: "Session Expired",
-          description: "Please log in again.",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 1000);
-        return false;
-      }
-      return failureCount < 3;
-    },
+  const { data: cases, isLoading } = useQuery<RemovalCase[]>({
+    queryKey: ['/api/user/cases'],
   });
 
-  if (isLoading || ticketsLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full"></div>
-      </div>
-    );
-  }
+  const { data: activeCase } = useQuery<RemovalCase>({
+    queryKey: ['/api/user/cases', caseId],
+    enabled: !!caseId,
+  });
 
-  if (!isAuthenticated) {
-    return null; // Will redirect in useEffect
-  }
-
-  const getStatusBadge = (status: string) => {
-    const styles = {
-      pending: "bg-yellow-100 text-yellow-800",
-      in_progress: "bg-blue-100 text-blue-800", 
-      completed: "bg-green-100 text-green-800",
-      cancelled: "bg-gray-100 text-gray-800"
-    };
-    return styles[status as keyof typeof styles] || styles.pending;
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed': return 'text-green-600 bg-green-50 border-green-200';
+      case 'in_progress': return 'text-blue-600 bg-blue-50 border-blue-200';
+      case 'failed': return 'text-red-600 bg-red-50 border-red-200';
+      case 'analyzing': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+    }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed': return <CheckCircle className="w-4 h-4" />;
       case 'in_progress': return <Clock className="w-4 h-4" />;
-      case 'cancelled': return <AlertCircle className="w-4 h-4" />;
-      default: return <FileText className="w-4 h-4" />;
+      case 'failed': return <AlertCircle className="w-4 h-4" />;
+      default: return <Clock className="w-4 h-4" />;
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-gray-600">Manage your reputation protection requests</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <User className="w-5 h-5 text-gray-400" />
-                <span className="text-sm text-gray-700">{user?.email}</span>
-              </div>
-              <Button 
-                variant="outline" 
-                onClick={() => window.location.href = "/api/logout"}
-              >
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
+  const formatStatus = (status: string) => {
+    return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
       </div>
+    );
+  }
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Quick Actions */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button 
-              onClick={() => window.location.href = "/#brand-scanner"}
-              className="bg-orange-500 hover:bg-orange-600 text-white h-12"
-            >
-              <ArrowRight className="w-4 h-4 mr-2" />
-              New Brand Scan
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => window.location.href = "/#contact"}
-              className="h-12"
-            >
-              Contact Support
-            </Button>
-            <Button 
-              variant="outline"
-              className="h-12"
-              disabled
-            >
-              Monitoring Setup (Coming Soon)
-            </Button>
-          </div>
-        </div>
+  return (
+    <>
+      <SEOHead
+        title="Dashboard - Track Your Reddit Removal Cases | RepShield"
+        description="Monitor the progress of your Reddit content removal cases with real-time updates and detailed tracking."
+        keywords="reddit removal dashboard, case tracking, content removal progress"
+      />
+      
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        
+        <main className="pt-20 pb-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-gray-900">Removal Dashboard</h1>
+              <p className="text-gray-600 mt-2">Track your Reddit content removal cases and progress</p>
+            </div>
 
-        {/* Tickets */}
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Requests</h2>
-          
-          {tickets && tickets.length > 0 ? (
-            <div className="space-y-4">
-              {tickets.map((ticket: Ticket) => (
-                <Card key={ticket.id} className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        {getStatusIcon(ticket.status)}
-                        <h3 className="text-lg font-medium text-gray-900">
-                          {ticket.title}
-                        </h3>
-                        <Badge className={getStatusBadge(ticket.status)}>
-                          {ticket.status.replace('_', ' ')}
-                        </Badge>
-                        {ticket.priority === 'premium' && (
-                          <Badge className="bg-purple-100 text-purple-800">
-                            Premium
-                          </Badge>
-                        )}
-                      </div>
-                      
-                      <p className="text-gray-600 mb-3">{ticket.description}</p>
-                      
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <span>Created: {new Date(ticket.createdAt).toLocaleDateString()}</span>
-                        <span>Updated: {new Date(ticket.updatedAt).toLocaleDateString()}</span>
-                        {ticket.assignedTo && (
-                          <span>Assigned to: {ticket.assignedTo}</span>
-                        )}
-                      </div>
+            {/* Active Case Highlight */}
+            {activeCase && (
+              <Card className="mb-8 border-blue-200 bg-blue-50">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-blue-600" />
+                      Case #{activeCase.id} - Active
+                    </CardTitle>
+                    <Badge className={`${getStatusColor(activeCase.status)} flex items-center gap-1`}>
+                      {getStatusIcon(activeCase.status)}
+                      {formatStatus(activeCase.status)}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-2">Target URL:</p>
+                      <p className="font-medium break-all">{activeCase.redditUrl}</p>
                     </div>
                     
-                    <div className="ml-4">
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
+                    <div>
+                      <p className="text-sm text-gray-600 mb-2">Description:</p>
+                      <p>{activeCase.description}</p>
                     </div>
+
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-600">Estimated Cost</p>
+                        <p className="text-lg font-semibold text-green-600">{activeCase.estimatedPrice}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Progress</p>
+                        <div className="flex items-center gap-2">
+                          <Progress value={activeCase.progress} className="flex-1" />
+                          <span className="text-sm font-medium">{activeCase.progress}%</span>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Created</p>
+                        <p className="font-medium">{new Date(activeCase.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+
+                    {activeCase.status === 'quoted' && (
+                      <div className="bg-white p-4 rounded-lg border">
+                        <h4 className="font-semibold mb-2">Ready to Approve</h4>
+                        <p className="text-gray-600 mb-4">Your removal strategy is ready. Approve to begin the removal process.</p>
+                        <div className="flex gap-3">
+                          <Button className="bg-green-600 hover:bg-green-700">
+                            <DollarSign className="w-4 h-4 mr-2" />
+                            Approve & Pay {activeCase.estimatedPrice}
+                          </Button>
+                          <Button variant="outline">View Details</Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* All Cases */}
+            <div className="grid gap-6">
+              <h2 className="text-xl font-semibold">All Cases</h2>
+              
+              {cases && cases.length > 0 ? (
+                <div className="grid gap-4">
+                  {cases.map((case_) => (
+                    <Card key={case_.id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="font-semibold">Case #{case_.id}</h3>
+                              <Badge className={`${getStatusColor(case_.status)} flex items-center gap-1`}>
+                                {getStatusIcon(case_.status)}
+                                {formatStatus(case_.status)}
+                              </Badge>
+                            </div>
+                            <p className="text-gray-600 break-all text-sm">{case_.redditUrl}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-green-600">{case_.estimatedPrice}</p>
+                            <p className="text-sm text-gray-500">
+                              {new Date(case_.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-sm text-gray-600">Progress</span>
+                              <span className="text-sm font-medium">{case_.progress}%</span>
+                            </div>
+                            <Progress value={case_.progress} className="h-2" />
+                          </div>
+                        </div>
+
+                        <p className="text-gray-700 mb-4">{case_.description}</p>
+
+                        {case_.updates && case_.updates.length > 0 && (
+                          <div className="border-t pt-4">
+                            <h4 className="font-medium mb-2">Latest Update</h4>
+                            <div className="flex items-start gap-2">
+                              <div className={`w-2 h-2 rounded-full mt-2 ${
+                                case_.updates[0].type === 'success' ? 'bg-green-500' :
+                                case_.updates[0].type === 'warning' ? 'bg-yellow-500' :
+                                case_.updates[0].type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+                              }`}></div>
+                              <div className="flex-1">
+                                <p className="text-sm">{case_.updates[0].message}</p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {new Date(case_.updates[0].timestamp).toLocaleString()}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="flex justify-end mt-4">
+                          <Button variant="outline" size="sm">
+                            View Details
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">No cases yet</h3>
+                    <p className="text-gray-600 mb-6">Submit a Reddit URL for analysis to get started</p>
+                    <Button onClick={() => window.location.href = '/#analyzer'}>
+                      Analyze Reddit URL
+                    </Button>
+                  </CardContent>
                 </Card>
-              ))}
+              )}
             </div>
-          ) : (
-            <Card className="p-8 text-center">
-              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No requests yet</h3>
-              <p className="text-gray-600 mb-4">
-                Start by scanning your brand to see what people are saying about you on Reddit.
-              </p>
-              <Button 
-                onClick={() => window.location.href = "/#brand-scanner"}
-                className="bg-orange-500 hover:bg-orange-600 text-white"
-              >
-                Start Brand Scan
-              </Button>
-            </Card>
-          )}
-        </div>
+          </div>
+        </main>
+
+        <Footer />
       </div>
-    </div>
+    </>
   );
 }

@@ -54,6 +54,12 @@ export interface IStorage {
   createBlogPost(data: any): Promise<any>;
   updateBlogPost(id: number, data: any): Promise<any>;
   deleteBlogPost(id: number): Promise<void>;
+
+  // Removal case operations
+  createRemovalCase(data: any): Promise<any>;
+  getUserRemovalCases(userId: string): Promise<any[]>;
+  getRemovalCase(id: number): Promise<any | undefined>;
+  updateRemovalCaseStatus(id: number, status: string, progress?: number): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -497,6 +503,54 @@ export class MemStorage implements IStorage {
 
   async deleteBlogPost(id: number): Promise<void> {
     // Implementation for deleting blog post
+  }
+
+  // Removal case methods
+  private removalCases: Map<number, any> = new Map();
+  private currentCaseId: number = 1;
+
+  async createRemovalCase(data: any): Promise<any> {
+    const caseData = {
+      id: this.currentCaseId++,
+      ...data,
+      createdAt: new Date().toISOString(),
+      updates: [{
+        id: 1,
+        message: "Case created and initial analysis completed",
+        timestamp: new Date().toISOString(),
+        type: 'info'
+      }]
+    };
+    this.removalCases.set(caseData.id, caseData);
+    return caseData;
+  }
+
+  async getUserRemovalCases(userId: string): Promise<any[]> {
+    const userCases = Array.from(this.removalCases.values())
+      .filter(case_ => case_.userId === userId);
+    return userCases;
+  }
+
+  async getRemovalCase(id: number): Promise<any | undefined> {
+    return this.removalCases.get(id);
+  }
+
+  async updateRemovalCaseStatus(id: number, status: string, progress?: number): Promise<any> {
+    const case_ = this.removalCases.get(id);
+    if (case_) {
+      case_.status = status;
+      if (progress !== undefined) {
+        case_.progress = progress;
+      }
+      case_.updates.unshift({
+        id: case_.updates.length + 1,
+        message: `Status updated to ${status}`,
+        timestamp: new Date().toISOString(),
+        type: 'info'
+      });
+      this.removalCases.set(id, case_);
+    }
+    return case_;
   }
 }
 

@@ -487,7 +487,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // URL analysis endpoint
+  // Enhanced URL analysis with account creation
+  app.post("/api/analyze-and-create-account", async (req, res) => {
+    try {
+      const { redditUrl, email } = req.body;
+      
+      if (!redditUrl || !email) {
+        return res.status(400).json({
+          success: false,
+          message: "Reddit URL and email are required"
+        });
+      }
+
+      // Analyze the URL using OpenAI
+      const analysis = await analyzeRedditUrl(redditUrl);
+      
+      // Create user account if doesn't exist
+      const userId = email.replace('@', '_').replace(/\./g, '_');
+      const user = await storage.upsertUser({
+        id: userId,
+        email: email,
+        role: 'user'
+      });
+
+      // Create removal case
+      const removalCase = await storage.createRemovalCase({
+        userId: user.id,
+        redditUrl,
+        status: 'analyzing',
+        estimatedPrice: analysis.estimatedPrice,
+        description: analysis.description,
+        progress: 15
+      });
+
+      // Send notification to admin
+      await telegramBot.sendNewLeadNotification({
+        type: 'URL Analysis & Account Creation',
+        email,
+        redditUrl,
+        caseId: removalCase.id,
+        estimatedPrice: analysis.estimatedPrice,
+        description: analysis.description
+      });
+
+      res.json({
+        success: true,
+        accountCreated: true,
+        caseId: removalCase.id,
+        analysis,
+        user: { id: user.id, email: user.email }
+      });
+    } catch (error) {
+      console.error("Error in URL analysis and account creation:", error);
+      res.status(500).json({
+        success: false,
+        message: "Analysis failed. Please try again or contact support."
+      });
+    }
+  });
+
+  // User dashboard endpoints
+  app.get("/api/user/cases", async (req, res) => {
+    try {
+      // In a real app, get userId from authenticated session
+      const userId = req.headers['x-user-id'] as string || 'demo_user';
+      const cases = await storage.getUserRemovalCases(userId);
+      res.json(cases);
+    } catch (error) {
+      console.error("Error fetching user cases:", error);
+      res.status(500).json({ message: "Failed to fetch cases" });
+    }
+  });
+
+  app.get("/api/user/cases/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const case_ = await storage.getRemovalCase(parseInt(id));
+      if (!case_) {
+        return res.status(404).json({ message: "Case not found" });
+      }
+      res.json(case_);
+    } catch (error) {
+      console.error("Error fetching case:", error);
+      res.status(500).json({ message: "Failed to fetch case" });
+    }
+  });
+
+  // URL analysis endpoint (legacy)
   app.post("/api/analyze-url", async (req, res) => {
     try {
       const { url } = req.body;
