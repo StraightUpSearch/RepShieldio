@@ -84,7 +84,7 @@ export default function AuthPage() {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = "/auth/google";
+    window.location.href = "/api/auth/google";
   };
 
   if (isLoading) {

@@ -22,6 +22,7 @@ function Router() {
       <Route path="/my-account" component={MyAccount} />
       <Route path="/about" component={About} />
       <Route path="/login" component={AuthPage} />
+      <Route path="/auth" component={AuthPage} />
       <Route path="/admin" component={AdminPanel} />
       <Route path="/admin-dashboard" component={AdminDashboard} />
       <Route path="/data-admin" component={DataAdmin} />
