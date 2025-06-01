@@ -53,8 +53,8 @@ export default function MyAccount() {
     enabled: !!user,
   });
 
-  const orders: Order[] = ordersResponse?.success ? ordersResponse.data : [];
-  const stats: AccountStats = statsResponse?.success ? statsResponse.data : {
+  const orders: Order[] = ordersResponse?.data || [];
+  const stats: AccountStats = statsResponse?.data || {
     totalOrders: 0,
     successfulRemovals: 0,
     accountBalance: 0,
