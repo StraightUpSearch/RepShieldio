@@ -130,66 +130,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Brand scanning endpoint with automatic error recovery
+  // Brand scanning endpoint with direct Reddit API integration
   app.post("/api/brand-scan", async (req, res) => {
     const { brandName, includePlatforms = ['reddit'], recaptchaToken } = req.body;
     if (!brandName) {
       return res.status(400).json({ success: false, error: "Brand name is required" });
     }
 
-    const scanOperation = async () => {
+    try {
       console.log(`Scanning Reddit for brand: ${brandName}`);
-      const redditResults = await redditAPI.searchBrand(brandName);
       
-      return {
-        totalMentions: redditResults.totalFound,
-        posts: redditResults.posts.length,
-        comments: redditResults.comments.length,
-        riskLevel: redditResults.riskScore > 70 ? 'high' : redditResults.riskScore > 40 ? 'medium' : 'low',
-        sentiment: redditResults.sentiment,
-        previewMentions: [
-          ...redditResults.posts.slice(0, 3).map(post => ({
-            subreddit: post.subreddit,
-            timeAgo: `${Math.floor((Date.now() / 1000 - post.created_utc) / 86400)} days ago`,
-            sentiment: redditResults.sentiment,
-            previewText: post.title.substring(0, 120) + (post.title.length > 120 ? '...' : ''),
-            url: `https://reddit.com/r/${post.subreddit}/comments/*****/******`,
-            score: post.score,
-            platform: 'Reddit'
-          })),
-          ...redditResults.comments.slice(0, 2).map(comment => ({
-            subreddit: comment.subreddit,
-            timeAgo: `${Math.floor((Date.now() / 1000 - comment.created_utc) / 86400)} days ago`,
-            sentiment: redditResults.sentiment,
-            previewText: comment.body.substring(0, 120) + (comment.body.length > 120 ? '...' : ''),
-            url: `https://reddit.com/r/${comment.subreddit}/comments/*****/******`,
-            score: comment.score,
-            platform: 'Reddit'
-          }))
-        ]
-      };
-    };
+      // Direct Reddit search using authenticated API
+      const searchUrl = `https://oauth.reddit.com/search.json?q=${encodeURIComponent(brandName)}&limit=10&sort=relevance`;
+      
+      // Get access token
+      const authResponse = await fetch('https://www.reddit.com/api/v1/access_token', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${Buffer.from(`${process.env.REDDIT_CLIENT_ID}:${process.env.REDDIT_CLIENT_SECRET}`).toString('base64')}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': process.env.REDDIT_USER_AGENT || 'RepShield/1.0'
+        },
+        body: 'grant_type=client_credentials'
+      });
 
-    const result = await errorRecovery.executeWithRecovery(scanOperation, 'Reddit Brand Scanning');
-    
-    if (result.success) {
-      res.json({ success: true, data: result.data });
-    } else {
-      // If auto-recovery failed, ask user to check Reddit API credentials
-      if (result.diagnosis?.issue.includes('Authentication')) {
-        res.status(500).json({ 
-          success: false, 
-          error: "Reddit API authentication failed. Please verify your Reddit API credentials are correctly configured.",
-          needsUserAction: true,
-          diagnosis: result.diagnosis
-        });
-      } else {
-        res.status(500).json({ 
-          success: false, 
-          error: "Failed to scan Reddit data. Please try again.",
-          diagnosis: result.diagnosis
-        });
+      if (!authResponse.ok) {
+        throw new Error(`Reddit auth failed: ${authResponse.status}`);
       }
+
+      const authData = await authResponse.json();
+      
+      // Search Reddit with authenticated token
+      const searchResponse = await fetch(searchUrl, {
+        headers: {
+          'Authorization': `Bearer ${authData.access_token}`,
+          'User-Agent': process.env.REDDIT_USER_AGENT || 'RepShield/1.0'
+        }
+      });
+
+      if (!searchResponse.ok) {
+        throw new Error(`Reddit search failed: ${searchResponse.status}`);
+      }
+
+      const searchData = await searchResponse.json();
+      const posts = searchData.data?.children || [];
+      
+      const results = {
+        totalMentions: posts.length,
+        posts: posts.filter(p => p.data.is_self || p.data.selftext).length,
+        comments: posts.length - posts.filter(p => p.data.is_self || p.data.selftext).length,
+        riskLevel: posts.length > 5 ? 'medium' : 'low',
+        sentiment: 'neutral' as const,
+        previewMentions: posts.slice(0, 5).map((post: any) => {
+          const data = post.data;
+          const daysAgo = Math.floor((Date.now() / 1000 - data.created_utc) / 86400);
+          return {
+            subreddit: data.subreddit,
+            timeAgo: `${daysAgo} days ago`,
+            sentiment: 'neutral' as const,
+            previewText: (data.title || data.body || '').substring(0, 120) + '...',
+            url: `https://reddit.com/r/${data.subreddit}/comments/*****/******`,
+            score: data.score || 0,
+            platform: 'Reddit'
+          };
+        })
+      };
+
+      res.json({ success: true, data: results });
+    } catch (error: any) {
+      console.error("Reddit scan error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to scan Reddit data",
+        details: error.message 
+      });
     }
   });
 

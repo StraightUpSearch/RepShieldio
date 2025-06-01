@@ -171,14 +171,16 @@ class RedditAPI {
     let totalWords = 0;
 
     content.forEach(text => {
-      const words = text.toLowerCase().split(/\s+/);
-      totalWords += words.length;
-      
-      words.forEach(word => {
-        if (negativeWords.some(neg => word.includes(neg))) {
-          negativeCount++;
-        }
-      });
+      if (text && typeof text === 'string') {
+        const words = text.toLowerCase().split(/\s+/);
+        totalWords += words.length;
+        
+        words.forEach(word => {
+          if (negativeWords.some(neg => word.includes(neg))) {
+            negativeCount++;
+          }
+        });
+      }
     });
 
     if (totalWords === 0) return 0;
