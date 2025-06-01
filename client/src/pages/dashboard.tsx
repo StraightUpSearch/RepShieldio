@@ -1,13 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Clock, CheckCircle, AlertCircle, FileText, Calendar, DollarSign } from "lucide-react";
+import { Clock, CheckCircle, AlertCircle, FileText, Calendar, DollarSign, CreditCard } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import SEOHead from "@/components/seo-head";
+import Checkout from "@/components/checkout";
+import { useToast } from "@/hooks/use-toast";
 
 interface RemovalCase {
   id: number;
@@ -32,6 +36,9 @@ export default function Dashboard() {
   const [location] = useLocation();
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const caseId = urlParams.get('case');
+  const [checkoutCase, setCheckoutCase] = useState<RemovalCase | null>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: cases, isLoading } = useQuery<RemovalCase[]>({
     queryKey: ['/api/user/cases'],
@@ -41,6 +48,15 @@ export default function Dashboard() {
     queryKey: ['/api/user/cases', caseId],
     enabled: !!caseId,
   });
+
+  const handlePaymentSuccess = () => {
+    setCheckoutCase(null);
+    queryClient.invalidateQueries({ queryKey: ['/api/user/cases'] });
+    toast({
+      title: "Payment Successful",
+      description: "Your removal case has been approved and will begin processing immediately.",
+    });
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -141,9 +157,12 @@ export default function Dashboard() {
                         <h4 className="font-semibold mb-2">Ready to Approve</h4>
                         <p className="text-gray-600 mb-4">Your removal strategy is ready. Approve to begin the removal process.</p>
                         <div className="flex gap-3">
-                          <Button className="bg-green-600 hover:bg-green-700">
-                            <DollarSign className="w-4 h-4 mr-2" />
-                            Approve & Pay {activeCase.estimatedPrice}
+                          <Button 
+                            className="bg-green-600 hover:bg-green-700"
+                            onClick={() => setCheckoutCase(activeCase)}
+                          >
+                            <CreditCard className="w-4 h-4 mr-2" />
+                            Pay {activeCase.estimatedPrice} & Start Removal
                           </Button>
                           <Button variant="outline">View Details</Button>
                         </div>

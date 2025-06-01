@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
+import Stripe from "stripe";
 import { storage } from "./storage";
 import { insertAuditRequestSchema, insertQuoteRequestSchema, insertBrandScanTicketSchema } from "@shared/schema";
 import { getChatbotResponse, analyzeRedditUrl } from "./openai";
@@ -8,6 +9,12 @@ import { sendQuoteNotification, sendContactNotification } from "./email";
 import { redditAPI } from "./reddit";
 import { telegramBot } from "./telegram";
 import { webScrapingService } from "./webscraping";
+
+if (!process.env.STRIPE_SECRET_KEY) {
+  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
+}
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // Brand scanning with real Reddit data
 async function sendBrandScanNotification(data: any) {
@@ -785,6 +792,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting blog post:", error);
       res.status(500).json({ message: "Failed to delete blog post" });
+    }
+  });
+
+  // Stripe payment endpoints for case approval
+  app.post("/api/create-payment-intent", async (req, res) => {
+    try {
+      const { caseId, amount } = req.body;
+      
+      if (!caseId || !amount) {
+        return res.status(400).json({ message: "Case ID and amount are required" });
+      }
+
+      // Get case details
+      const case_ = await storage.getRemovalCase(caseId);
+      if (!case_) {
+        return res.status(404).json({ message: "Case not found" });
+      }
+
+      // Create Stripe PaymentIntent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: "usd",
+        metadata: {
+          caseId: caseId.toString(),
+          service: "reddit_removal"
+        },
+        description: `Reddit Content Removal - Case #${caseId}`,
+      });
+
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error: any) {
+      console.error("Error creating payment intent:", error);
+      res.status(500).json({ 
+        message: "Error creating payment intent: " + error.message 
+      });
+    }
+  });
+
+  // Handle successful payments
+  app.post("/api/payment-success", async (req, res) => {
+    try {
+      const { caseId, paymentIntentId } = req.body;
+      
+      // Verify payment with Stripe
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      
+      if (paymentIntent.status === 'succeeded') {
+        // Update case status to approved/in_progress
+        await storage.updateRemovalCaseStatus(caseId, 'in_progress', 25);
+        
+        // Send notifications
+        await telegramBot.sendNewLeadNotification({
+          type: 'Payment Received - Case Approved',
+          caseId,
+          amount: `$${paymentIntent.amount / 100}`,
+          paymentId: paymentIntentId,
+          status: 'Ready to begin removal process'
+        });
+
+        res.json({ success: true, message: "Payment confirmed and case approved" });
+      } else {
+        res.status(400).json({ message: "Payment not completed" });
+      }
+    } catch (error: any) {
+      console.error("Error processing payment success:", error);
+      res.status(500).json({ message: "Error processing payment" });
+    }
+  });
+
+  // Stripe webhook for payment updates
+  app.post("/api/stripe/webhook", async (req, res) => {
+    try {
+      const event = req.body;
+
+      switch (event.type) {
+        case 'payment_intent.succeeded':
+          const paymentIntent = event.data.object;
+          const caseId = parseInt(paymentIntent.metadata.caseId);
+          
+          if (caseId) {
+            await storage.updateRemovalCaseStatus(caseId, 'in_progress', 25);
+            
+            await telegramBot.sendNewLeadNotification({
+              type: 'Payment Confirmed via Webhook',
+              caseId,
+              amount: `$${paymentIntent.amount / 100}`,
+              paymentId: paymentIntent.id
+            });
+          }
+          break;
+        
+        case 'payment_intent.payment_failed':
+          console.log('Payment failed:', event.data.object);
+          break;
+      }
+
+      res.json({ received: true });
+    } catch (error) {
+      console.error("Stripe webhook error:", error);
+      res.status(400).json({ error: "Webhook error" });
     }
   });
 
