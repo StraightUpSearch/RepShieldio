@@ -43,7 +43,7 @@ export default function MyAccount() {
 
   // Redirect to login if not authenticated
   if (!isLoading && !isAuthenticated) {
-    window.location.href = '/api/login';
+    window.location.href = '/login';
     return null;
   }
 
