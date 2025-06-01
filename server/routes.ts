@@ -13,11 +13,8 @@ import { webScrapingService } from "./webscraping";
 import { errorRecovery } from "./error-recovery";
 import { notificationManager } from "./notification-manager";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+// Initialize Stripe only if the secret key is available
+const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
 // Brand scanning with real Reddit data
 async function sendBrandScanNotification(data: any) {

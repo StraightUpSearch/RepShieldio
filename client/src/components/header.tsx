@@ -64,6 +64,13 @@ export default function Header() {
             >
               Free Audit
             </Button>
+            <Button 
+              variant="outline"
+              onClick={() => window.location.href = '/api/login'}
+              className="ml-2"
+            >
+              Login
+            </Button>
           </nav>
           
           <div className="md:hidden">
