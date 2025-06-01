@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Search, AlertTriangle, CheckCircle, ExternalLink } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import Header from "@/components/header";
+import Footer from "@/components/footer";
 
 interface RedditPost {
   id: string;
@@ -103,7 +105,9 @@ export default function Scan() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+    <>
+      <Header />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
@@ -312,6 +316,8 @@ export default function Scan() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+      <Footer />
+    </>
   );
 }
