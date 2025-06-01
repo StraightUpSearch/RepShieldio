@@ -68,23 +68,28 @@ export default function Chatbot() {
       return await apiRequest("POST", "/api/chatbot", { message, conversationHistory: history });
     },
     onSuccess: (response: any) => {
-      const botMessage: Message = {
-        id: messages.length + 1,
-        text: response.response,
-        isBot: true,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botMessage]);
+      setMessages(prev => {
+        const botMessage: Message = {
+          id: Date.now(), // Use timestamp for unique ID
+          text: response.response,
+          isBot: true,
+          timestamp: new Date()
+        };
+        return [...prev, botMessage];
+      });
       setIsTyping(false);
     },
     onError: (error) => {
-      const errorMessage: Message = {
-        id: messages.length + 1,
-        text: "I'm experiencing technical difficulties. Please use our contact form for immediate assistance with Reddit content removal.",
-        isBot: true,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      console.error("Chatbot error:", error);
+      setMessages(prev => {
+        const errorMessage: Message = {
+          id: Date.now(), // Use timestamp for unique ID
+          text: "I'm experiencing technical difficulties. Please use our contact form for immediate assistance with Reddit content removal.",
+          isBot: true,
+          timestamp: new Date()
+        };
+        return [...prev, errorMessage];
+      });
       setIsTyping(false);
     }
   });
