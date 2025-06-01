@@ -280,7 +280,7 @@ export default function BrandScanner() {
                 </div>
               </div>
               <div className="mt-2">
-                <span className="text-xs text-blue-600 filter blur-sm select-none">
+                <span className="text-xs text-blue-600 hover:text-blue-800 transition-colors">
                   {mention.url}
                 </span>
               </div>

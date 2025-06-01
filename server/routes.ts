@@ -8,6 +8,12 @@ import { sendQuoteNotification, sendContactNotification } from "./email";
 import { redditAPI } from "./reddit";
 import { telegramBot } from "./telegram";
 
+// Brand scanning with real Reddit data
+async function sendBrandScanNotification(data: any) {
+  // Placeholder for email notification
+  console.log('Brand scan notification:', data);
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Audit request submission endpoint
   app.post("/api/audit-request", async (req, res) => {

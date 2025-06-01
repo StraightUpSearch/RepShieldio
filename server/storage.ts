@@ -49,77 +49,117 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // User operations for authentication
+  // User operations for authentication  
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    try {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user;
+    } catch (error) {
+      console.error("Error getting user:", error);
+      return undefined;
+    }
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
+    try {
+      const [user] = await db
+        .insert(users)
+        .values(userData)
+        .onConflictDoUpdate({
+          target: users.id,
+          set: {
+            ...userData,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+      return user;
+    } catch (error) {
+      console.error("Error upserting user:", error);
+      throw error;
+    }
   }
 
   // Ticket operations
   async createTicket(ticketData: InsertTicket): Promise<Ticket> {
-    const [ticket] = await db
-      .insert(tickets)
-      .values(ticketData)
-      .returning();
-    return ticket;
+    try {
+      const [ticket] = await db
+        .insert(tickets)
+        .values(ticketData)
+        .returning();
+      return ticket;
+    } catch (error) {
+      console.error("Error creating ticket:", error);
+      throw error;
+    }
   }
 
   async getTickets(): Promise<Ticket[]> {
-    return await db.select().from(tickets).orderBy(desc(tickets.createdAt));
+    try {
+      return await db.select().from(tickets).orderBy(desc(tickets.createdAt));
+    } catch (error) {
+      console.error("Error getting tickets:", error);
+      return [];
+    }
   }
 
   async getUserTickets(userId: string): Promise<Ticket[]> {
-    return await db
-      .select()
-      .from(tickets)
-      .where(eq(tickets.userId, userId))
-      .orderBy(desc(tickets.createdAt));
+    try {
+      return await db
+        .select()
+        .from(tickets)
+        .where(eq(tickets.userId, userId))
+        .orderBy(desc(tickets.createdAt));
+    } catch (error) {
+      console.error("Error getting user tickets:", error);
+      return [];
+    }
   }
 
   async getTicket(id: number): Promise<Ticket | undefined> {
-    const [ticket] = await db.select().from(tickets).where(eq(tickets.id, id));
-    return ticket;
+    try {
+      const [ticket] = await db.select().from(tickets).where(eq(tickets.id, id));
+      return ticket;
+    } catch (error) {
+      console.error("Error getting ticket:", error);
+      return undefined;
+    }
   }
 
   async updateTicketStatus(id: number, status: string, assignedTo?: string): Promise<Ticket | undefined> {
-    const updateData: any = { status, updatedAt: new Date() };
-    if (assignedTo !== undefined) {
-      updateData.assignedTo = assignedTo;
+    try {
+      const updateData: any = { status, updatedAt: new Date() };
+      if (assignedTo !== undefined) {
+        updateData.assignedTo = assignedTo;
+      }
+      
+      const [ticket] = await db
+        .update(tickets)
+        .set(updateData)
+        .where(eq(tickets.id, id))
+        .returning();
+      return ticket;
+    } catch (error) {
+      console.error("Error updating ticket status:", error);
+      return undefined;
     }
-    
-    const [ticket] = await db
-      .update(tickets)
-      .set(updateData)
-      .where(eq(tickets.id, id))
-      .returning();
-    return ticket;
   }
 
   async updateTicketNotes(id: number, notes: string): Promise<Ticket | undefined> {
-    const [ticket] = await db
-      .update(tickets)
-      .set({ notes, updatedAt: new Date() })
-      .where(eq(tickets.id, id))
-      .returning();
-    return ticket;
+    try {
+      const [ticket] = await db
+        .update(tickets)
+        .set({ notes, updatedAt: new Date() })
+        .where(eq(tickets.id, id))
+        .returning();
+      return ticket;
+    } catch (error) {
+      console.error("Error updating ticket notes:", error);
+      return undefined;
+    }
   }
 
-  // Legacy operations (keeping for backwards compatibility - using memory storage)
+  // Legacy operations (in-memory for now)
   private auditRequests: Map<number, AuditRequest> = new Map();
   private quoteRequests: Map<number, QuoteRequest> = new Map();
   private brandScanTickets: Map<number, BrandScanTicket> = new Map();
@@ -224,4 +264,166 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+// Temporary: Use memory storage for legacy operations until database is fully migrated
+export class MemStorage implements IStorage {
+  private auditRequests: Map<number, AuditRequest> = new Map();
+  private quoteRequests: Map<number, QuoteRequest> = new Map();
+  private brandScanTickets: Map<number, BrandScanTicket> = new Map();
+  private currentAuditId: number = 1;
+  private currentQuoteId: number = 1;
+  private currentBrandScanId: number = 1;
+
+  // User operations (temporary stubs)
+  async getUser(id: string): Promise<User | undefined> {
+    return undefined;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    return {
+      id: userData.id || "",
+      email: userData.email || "",
+      firstName: userData.firstName || null,
+      lastName: userData.lastName || null,
+      profileImageUrl: userData.profileImageUrl || null,
+      role: userData.role || "user",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  }
+
+  // Ticket operations (temporary stubs)
+  async createTicket(ticketData: InsertTicket): Promise<Ticket> {
+    return {
+      id: 1,
+      userId: ticketData.userId,
+      type: ticketData.type,
+      status: ticketData.status || "pending",
+      priority: ticketData.priority || "standard",
+      assignedTo: ticketData.assignedTo || null,
+      title: ticketData.title,
+      description: ticketData.description || null,
+      requestData: ticketData.requestData || null,
+      notes: ticketData.notes || null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+  }
+
+  async getTickets(): Promise<Ticket[]> {
+    return [];
+  }
+
+  async getUserTickets(userId: string): Promise<Ticket[]> {
+    return [];
+  }
+
+  async getTicket(id: number): Promise<Ticket | undefined> {
+    return undefined;
+  }
+
+  async updateTicketStatus(id: number, status: string, assignedTo?: string): Promise<Ticket | undefined> {
+    return undefined;
+  }
+
+  async updateTicketNotes(id: number, notes: string): Promise<Ticket | undefined> {
+    return undefined;
+  }
+
+  async createAuditRequest(insertRequest: InsertAuditRequest): Promise<AuditRequest> {
+    const id = this.currentAuditId++;
+    const request: AuditRequest = {
+      ...insertRequest,
+      id,
+      website: insertRequest.website || null,
+      message: insertRequest.message || null,
+      processed: false,
+      createdAt: new Date(),
+    };
+    this.auditRequests.set(id, request);
+    return request;
+  }
+
+  async getAuditRequests(): Promise<AuditRequest[]> {
+    return Array.from(this.auditRequests.values()).sort(
+      (a, b) => b.createdAt!.getTime() - a.createdAt!.getTime()
+    );
+  }
+
+  async getAuditRequest(id: number): Promise<AuditRequest | undefined> {
+    return this.auditRequests.get(id);
+  }
+
+  async updateAuditRequestStatus(id: number, processed: boolean): Promise<AuditRequest | undefined> {
+    const request = this.auditRequests.get(id);
+    if (request) {
+      const updatedRequest = { ...request, processed };
+      this.auditRequests.set(id, updatedRequest);
+      return updatedRequest;
+    }
+    return undefined;
+  }
+
+  async createQuoteRequest(insertRequest: InsertQuoteRequest): Promise<QuoteRequest> {
+    const id = this.currentQuoteId++;
+    const request: QuoteRequest = {
+      ...insertRequest,
+      id,
+      processed: false,
+      createdAt: new Date(),
+    };
+    this.quoteRequests.set(id, request);
+    return request;
+  }
+
+  async getQuoteRequests(): Promise<QuoteRequest[]> {
+    return Array.from(this.quoteRequests.values()).sort(
+      (a, b) => b.createdAt!.getTime() - a.createdAt!.getTime()
+    );
+  }
+
+  async getQuoteRequest(id: number): Promise<QuoteRequest | undefined> {
+    return this.quoteRequests.get(id);
+  }
+
+  async updateQuoteRequestStatus(id: number, processed: boolean): Promise<QuoteRequest | undefined> {
+    const request = this.quoteRequests.get(id);
+    if (request) {
+      const updatedRequest = { ...request, processed };
+      this.quoteRequests.set(id, updatedRequest);
+      return updatedRequest;
+    }
+    return undefined;
+  }
+
+  async createBrandScanTicket(insertRequest: InsertBrandScanTicket): Promise<BrandScanTicket> {
+    const id = this.currentBrandScanId++;
+    const request: BrandScanTicket = {
+      id,
+      ...insertRequest,
+      processed: false,
+      createdAt: new Date()
+    };
+    this.brandScanTickets.set(id, request);
+    return request;
+  }
+
+  async getBrandScanTickets(): Promise<BrandScanTicket[]> {
+    return Array.from(this.brandScanTickets.values());
+  }
+
+  async getBrandScanTicket(id: number): Promise<BrandScanTicket | undefined> {
+    return this.brandScanTickets.get(id);
+  }
+
+  async updateBrandScanTicketStatus(id: number, processed: boolean): Promise<BrandScanTicket | undefined> {
+    const request = this.brandScanTickets.get(id);
+    if (request) {
+      request.processed = processed;
+      this.brandScanTickets.set(id, request);
+      return request;
+    }
+    return undefined;
+  }
+}
+
+export const storage = new MemStorage();
