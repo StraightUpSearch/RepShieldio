@@ -15,16 +15,75 @@ async function sendBrandScanNotification(data: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Brand scanning with real Reddit data
+  // Simple authentication endpoints
+  app.get('/api/auth/user', async (req, res) => {
+    // For now, return mock authenticated user - will integrate with Replit auth later
+    const userId = req.headers['x-user-id'] as string;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const user = await storage.getUser(userId);
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+    
+    res.json(user);
+  });
+
+  // Get user tickets
+  app.get('/api/user/tickets', async (req, res) => {
+    const userId = req.headers['x-user-id'] as string;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    
+    const tickets = await storage.getUserTickets(userId);
+    res.json(tickets);
+  });
+
+  // Admin endpoints for ticket management
+  app.get('/api/admin/tickets', async (req, res) => {
+    // Basic admin check - in production you'd verify admin role
+    const tickets = await storage.getTickets();
+    res.json(tickets);
+  });
+
+  app.patch('/api/admin/tickets/:id', async (req, res) => {
+    const { id } = req.params;
+    const { status, assignedTo, notes } = req.body;
+    
+    let ticket;
+    if (status || assignedTo) {
+      ticket = await storage.updateTicketStatus(parseInt(id), status, assignedTo);
+    }
+    
+    if (notes) {
+      ticket = await storage.updateTicketNotes(parseInt(id), notes);
+    }
+    
+    res.json(ticket);
+  });
+  // Brand scanning with real Reddit data  
   app.post("/api/scan-brand", async (req, res) => {
     try {
-      const { brandName } = req.body;
+      const { brandName, userEmail } = req.body;
       if (!brandName) {
         return res.status(400).json({ message: "Brand name is required" });
       }
 
       console.log(`Scanning Reddit for brand: ${brandName}`);
       const scanResults = await redditAPI.searchBrand(brandName);
+      
+      // Create or get user account for tracking
+      let user;
+      if (userEmail) {
+        user = await storage.upsertUser({
+          id: userEmail.replace('@', '_').replace(/\./g, '_'),
+          email: userEmail,
+          role: 'user'
+        });
+      }
       
       // Format results for frontend with real URLs
       const previewMentions = [

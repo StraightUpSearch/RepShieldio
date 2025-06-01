@@ -44,6 +44,24 @@ export default function BrandScanner() {
     leadType: 'premium'
   });
 
+  const scanBrand = useMutation({
+    mutationFn: async (brandName: string) => {
+      return await apiRequest("POST", "/api/scan-brand", { brandName });
+    },
+    onSuccess: (response: any) => {
+      setScanResults(response);
+      setCurrentStep('results');
+    },
+    onError: (error) => {
+      toast({
+        title: "Scan Failed",
+        description: "Unable to scan Reddit data. Please try again.",
+        variant: "destructive",
+      });
+      setCurrentStep('input');
+    }
+  });
+
   const submitTicket = useMutation({
     mutationFn: async (data: TicketForm) => {
       return await apiRequest("POST", "/api/brand-scan-ticket", data);
