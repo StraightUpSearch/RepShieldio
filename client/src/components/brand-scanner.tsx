@@ -390,8 +390,8 @@ export default function BrandScanner() {
                 </div>
               </div>
               <div className="mt-2">
-                <span className="text-xs text-blue-600 hover:text-blue-800 transition-colors">
-                  {mention.url}
+                <span className="text-xs text-gray-500">
+                  https://reddit.com/r/{mention.subreddit}/comments/*****/******
                 </span>
               </div>
             </div>
