@@ -1,6 +1,46 @@
-import { pgTable, text, serial, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, boolean, varchar, jsonb, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
+
+// Session storage table for authentication
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// Users table for authentication and ticket management
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().notNull(),
+  email: varchar("email").unique().notNull(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  role: varchar("role").default("user").notNull(), // 'user' or 'admin'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Tickets table to track all customer requests
+export const tickets = pgTable("tickets", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  type: varchar("type").notNull(), // 'brand_scan', 'quote_request', 'audit_request'
+  status: varchar("status").default("pending").notNull(), // 'pending', 'in_progress', 'completed', 'cancelled'
+  priority: varchar("priority").default("standard").notNull(), // 'premium', 'standard'
+  assignedTo: varchar("assigned_to"), // Admin who takes the ticket
+  title: text("title").notNull(),
+  description: text("description"),
+  requestData: jsonb("request_data"), // Store original form data
+  notes: text("notes"), // Internal admin notes
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
 
 export const auditRequests = pgTable("audit_requests", {
   id: serial("id").primaryKey(),
@@ -57,3 +97,32 @@ export type QuoteRequest = typeof quoteRequests.$inferSelect;
 
 export type InsertBrandScanTicket = z.infer<typeof insertBrandScanTicketSchema>;
 export type BrandScanTicket = typeof brandScanTickets.$inferSelect;
+
+// Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  tickets: many(tickets),
+}));
+
+export const ticketsRelations = relations(tickets, ({ one }) => ({
+  user: one(users, {
+    fields: [tickets.userId],
+    references: [users.id],
+  }),
+}));
+
+// New schemas for authentication and tickets
+export const insertUserSchema = createInsertSchema(users).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTicketSchema = createInsertSchema(tickets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type UpsertUser = typeof users.$inferInsert;
+export type User = typeof users.$inferSelect;
+export type InsertTicket = z.infer<typeof insertTicketSchema>;
+export type Ticket = typeof tickets.$inferSelect;
