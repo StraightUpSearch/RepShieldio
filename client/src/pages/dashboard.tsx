@@ -1,17 +1,21 @@
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Clock, CheckCircle, AlertCircle, FileText, Calendar, DollarSign, CreditCard } from "lucide-react";
+import { Clock, CheckCircle, AlertCircle, FileText, Calendar, DollarSign, CreditCard, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import SEOHead from "@/components/seo-head";
 import Checkout from "@/components/checkout";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { apiRequest } from "@/lib/queryClient";
 
 interface RemovalCase {
   id: number;
@@ -46,11 +50,40 @@ export default function Dashboard() {
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const caseId = urlParams.get('case');
   const [checkoutCase, setCheckoutCase] = useState<RemovalCase | null>(null);
+  const [showUrlDialog, setShowUrlDialog] = useState(false);
+  const [redditUrl, setRedditUrl] = useState('');
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: cases, isLoading } = useQuery<RemovalCase[]>({
     queryKey: ['/api/user/cases'],
+  });
+
+  const analyzeUrlMutation = useMutation({
+    mutationFn: async ({ redditUrl, email }: { redditUrl: string; email: string }) => {
+      const response = await apiRequest('POST', '/api/analyze-and-create-account', {
+        redditUrl,
+        email
+      });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "URL Analyzed Successfully",
+        description: `Case #${data.caseId} created. Estimated cost: ${data.analysis.estimatedPrice}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/user/cases'] });
+      setShowUrlDialog(false);
+      setRedditUrl('');
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Analysis Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   const { data: activeCase } = useQuery<RemovalCase>({

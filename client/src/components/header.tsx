@@ -1,12 +1,20 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Search } from "lucide-react";
+import { Menu, X, Search, User, LogOut, Settings } from "lucide-react";
 import { SiReddit } from "react-icons/si";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, isAuthenticated, isLoading } = useAuth();
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -65,13 +73,57 @@ export default function Header() {
             >
               Free Audit
             </Button>
-            <Button 
-              variant="outline"
-              onClick={() => window.location.href = '/api/login'}
-              className="ml-2"
-            >
-              Login
-            </Button>
+            
+            {!isLoading && (
+              <>
+                {isAuthenticated ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="ml-2 flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        {user?.email === 'jamie@straightupsearch.com' ? (
+                          <span className="text-blue-600 font-semibold">Admin</span>
+                        ) : (
+                          <span>{user?.firstName || user?.email?.split('@')[0] || 'User'}</span>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuItem asChild>
+                        <Link href="/my-account" className="flex items-center gap-2 w-full">
+                          <User className="h-4 w-4" />
+                          My Account
+                        </Link>
+                      </DropdownMenuItem>
+                      {user?.email === 'jamie@straightupsearch.com' && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem asChild>
+                            <Link href="/admin-dashboard" className="flex items-center gap-2 w-full text-blue-600">
+                              <Settings className="h-4 w-4" />
+                              Admin Dashboard
+                            </Link>
+                          </DropdownMenuItem>
+                        </>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => window.location.href = '/api/logout'} className="flex items-center gap-2">
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Button 
+                    variant="outline"
+                    onClick={() => window.location.href = '/api/login'}
+                    className="ml-2"
+                  >
+                    Login
+                  </Button>
+                )}
+              </>
+            )}
           </nav>
           
           <div className="md:hidden">
