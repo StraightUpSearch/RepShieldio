@@ -63,39 +63,34 @@ export default function Chatbot() {
 
   const [isTyping, setIsTyping] = useState(false);
 
-  const sendChatMessage = useMutation({
-    mutationFn: async ({ message, history }: { message: string; history: string[] }) => {
-      return await apiRequest("POST", "/api/chatbot", { message, conversationHistory: history });
-    },
-    onSuccess: (response: any) => {
-      setMessages(prev => {
-        const botMessage: Message = {
-          id: Date.now(), // Use timestamp for unique ID
-          text: response.response,
-          isBot: true,
-          timestamp: new Date()
-        };
-        return [...prev, botMessage];
-      });
-      setIsTyping(false);
-    },
-    onError: (error) => {
-      console.error("Chatbot error:", error);
-      setMessages(prev => {
-        const errorMessage: Message = {
-          id: Date.now(), // Use timestamp for unique ID
-          text: "I'm experiencing technical difficulties. Please use our contact form for immediate assistance with Reddit content removal.",
-          isBot: true,
-          timestamp: new Date()
-        };
-        return [...prev, errorMessage];
-      });
-      setIsTyping(false);
+    const getSimpleResponse = (message: string): string => {
+    const msg = message.toLowerCase();
+    
+    if (msg.includes('price') || msg.includes('cost') || msg.includes('quote')) {
+      return "Reddit post removal costs $899 and comments cost $199. We have a 95%+ success rate with 24-48 hour completion. Would you like a custom quote?";
     }
-  });
+    
+    if (msg.includes('remove') && msg.includes('post')) {
+      return "I can help you remove Reddit posts for $899 each. We complete most removals within 24-48 hours with a 95%+ success rate. Share your Reddit URL for a quote.";
+    }
+    
+    if (msg.includes('remove') && msg.includes('comment')) {
+      return "Reddit comment removal costs $199 per comment with 24-hour completion time. We use only legal methods with a 95%+ success rate.";
+    }
+    
+    if (msg.includes('how') || msg.includes('process')) {
+      return "Our process: 1) Analyze your Reddit content, 2) Provide instant quote, 3) Remove content within 24-48 hours using legal methods. We've completed 1,650+ successful removals.";
+    }
+    
+    if (msg.includes('time') || msg.includes('fast') || msg.includes('quick')) {
+      return "We remove Reddit posts in 24-48 hours and comments in 24 hours. Our legal removal methods have a 95%+ success rate.";
+    }
+    
+    return "Hi! I help with Reddit content removal. Posts cost $899, comments $199. We have 95%+ success rate in 24-48 hours. What do you need removed?";
+  };
 
   const handleSendMessage = () => {
-    if (!input.trim() || sendChatMessage.isPending) return;
+    if (!input.trim()) return;
 
     const userMessage: Message = {
       id: messages.length + 1,
@@ -107,17 +102,20 @@ export default function Chatbot() {
     setMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
 
-    // Create conversation history for context
-    const conversationHistory = messages.map(msg => msg.text);
-
-    // Send to AI chatbot
-    sendChatMessage.mutate({ 
-      message: input, 
-      history: conversationHistory 
-    });
+    // Simple response without API calls
+    setTimeout(() => {
+      const botResponse = getSimpleResponse(input);
+      const botMessage: Message = {
+        id: Date.now(),
+        text: botResponse,
+        isBot: true,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, botMessage]);
+      setIsTyping(false);
+    }, 1000);
 
     setInput("");
-    setCurrentStep(prev => prev + 1);
   };
 
   const handleQuickAction = (action: string) => {
@@ -131,16 +129,18 @@ export default function Chatbot() {
     setMessages(prev => [...prev, userMessage]);
     setIsTyping(true);
 
-    // Create conversation history for context
-    const conversationHistory = messages.map(msg => msg.text);
-
-    // Send to AI chatbot
-    sendChatMessage.mutate({ 
-      message: action, 
-      history: conversationHistory 
-    });
-
-    setCurrentStep(prev => prev + 1);
+    // Simple response without API calls
+    setTimeout(() => {
+      const botResponse = getSimpleResponse(action);
+      const botMessage: Message = {
+        id: Date.now(),
+        text: botResponse,
+        isBot: true,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, botMessage]);
+      setIsTyping(false);
+    }, 1000);
   };
 
   const scrollToContact = () => {
