@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import Scan from "@/pages/scan";
 import Dashboard from "@/pages/dashboard";
+import AdminPanel from "@/pages/admin";
 
 function Router() {
   return (
@@ -13,6 +14,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/scan" component={Scan} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/admin" component={AdminPanel} />
       <Route>
         <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
           <div className="text-center">

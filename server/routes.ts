@@ -64,6 +64,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     res.json(ticket);
   });
+
+  // Monitoring subscription endpoint
+  app.post('/api/monitoring/subscribe', async (req, res) => {
+    try {
+      const { planId, paymentMethod, price } = req.body;
+      
+      // Create monitoring subscription
+      const subscription = {
+        id: Date.now(),
+        planId,
+        paymentMethod,
+        price,
+        status: 'active',
+        createdAt: new Date(),
+        nextBilling: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+      };
+
+      // Send notification to admin
+      await telegramBot.sendNewLeadNotification({
+        type: 'Monitoring Subscription',
+        planId,
+        paymentMethod,
+        price,
+        id: subscription.id
+      });
+
+      res.json(subscription);
+    } catch (error) {
+      console.error("Monitoring subscription error:", error);
+      res.status(500).json({ message: "Failed to create subscription" });
+    }
+  });
   // Brand scanning with real Reddit data  
   app.post("/api/scan-brand", async (req, res) => {
     try {
