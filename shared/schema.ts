@@ -21,6 +21,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  password: varchar("password"), // For email/password authentication
   role: varchar("role").default("user").notNull(), // 'user' or 'admin'
   accountBalance: varchar("account_balance").default("0.00"),
   creditsRemaining: integer("credits_remaining").default(0),
