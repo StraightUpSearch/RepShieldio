@@ -53,8 +53,8 @@ export default function MyAccount() {
     enabled: !!user,
   });
 
-  const orders = ordersResponse?.data || [];
-  const stats = statsResponse?.data || {
+  const orders: Order[] = ordersResponse?.success ? ordersResponse.data : [];
+  const stats: AccountStats = statsResponse?.success ? statsResponse.data : {
     totalOrders: 0,
     successfulRemovals: 0,
     accountBalance: 0,
@@ -151,7 +151,7 @@ export default function MyAccount() {
                   <DollarSign className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">${mockStats.accountBalance}</div>
+                  <div className="text-2xl font-bold">${stats.accountBalance}</div>
                   <p className="text-xs text-muted-foreground">Available funds</p>
                 </CardContent>
               </Card>
@@ -162,7 +162,7 @@ export default function MyAccount() {
                   <CreditCard className="h-4 w-4 text-blue-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{mockStats.creditsRemaining}</div>
+                  <div className="text-2xl font-bold">{stats.creditsRemaining}</div>
                   <p className="text-xs text-muted-foreground">Credits remaining</p>
                 </CardContent>
               </Card>
@@ -175,7 +175,7 @@ export default function MyAccount() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockOrders.slice(0, 3).map((order) => (
+                  {orders.slice(0, 3).map((order) => (
                     <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center space-x-4">
                         {getStatusIcon(order.status)}
@@ -215,7 +215,7 @@ export default function MyAccount() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockOrders.map((order) => (
+                  {orders.map((order) => (
                     <div key={order.id} className="border rounded-lg p-6 space-y-4">
                       <div className="flex justify-between items-start">
                         <div className="space-y-2">
@@ -274,7 +274,7 @@ export default function MyAccount() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="text-3xl font-bold text-green-600">
-                    ${mockStats.accountBalance}
+                    ${stats.accountBalance}
                   </div>
                   <p className="text-gray-600">Available for new orders</p>
                   <Button className="w-full">
@@ -290,7 +290,7 @@ export default function MyAccount() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="text-3xl font-bold text-blue-600">
-                    {mockStats.creditsRemaining}
+                    {stats.creditsRemaining}
                   </div>
                   <p className="text-gray-600">Credits remaining</p>
                   <Button variant="outline" className="w-full">
