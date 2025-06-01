@@ -6,6 +6,7 @@ import { insertAuditRequestSchema, insertQuoteRequestSchema, insertBrandScanTick
 import { getChatbotResponse, analyzeRedditUrl } from "./openai";
 import { sendQuoteNotification, sendContactNotification } from "./email";
 import { redditAPI } from "./reddit";
+import { telegramBot } from "./telegram";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Audit request submission endpoint
@@ -334,6 +335,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Internal server error"
         });
       }
+    }
+  });
+
+  // Telegram webhook endpoint
+  app.post("/api/telegram/webhook", async (req, res) => {
+    try {
+      await telegramBot.processUpdate(req.body);
+      res.status(200).send('OK');
+    } catch (error) {
+      console.error("Telegram webhook error:", error);
+      res.status(500).send('Error');
+    }
+  });
+
+  // Setup Telegram webhook (call this once after deployment)
+  app.post("/api/telegram/setup-webhook", async (req, res) => {
+    try {
+      const webhookUrl = `${req.protocol}://${req.get('host')}/api/telegram/webhook`;
+      const success = await telegramBot.setWebhook(webhookUrl);
+      
+      res.json({
+        success,
+        message: success ? 'Telegram webhook configured successfully' : 'Failed to configure webhook'
+      });
+    } catch (error) {
+      console.error("Error setting up Telegram webhook:", error);
+      res.status(500).json({
+        success: false,
+        message: "Failed to setup Telegram webhook"
+      });
     }
   });
 
