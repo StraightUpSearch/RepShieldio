@@ -38,8 +38,23 @@ interface AccountStats {
 }
 
 export default function MyAccount() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
+
+  // Redirect to login if not authenticated
+  if (!isLoading && !isAuthenticated) {
+    window.location.href = '/api/login';
+    return null;
+  }
+
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   // Fetch real user orders
   const { data: ordersResponse, isLoading: ordersLoading } = useQuery({

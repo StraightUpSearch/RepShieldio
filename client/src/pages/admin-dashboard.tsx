@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "@/hooks/useAuth";
 
 interface User {
   id: string;
@@ -71,6 +72,28 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, isLoading, isAuthenticated } = useAuth();
+
+  // Redirect to login if not authenticated
+  if (!isLoading && !isAuthenticated) {
+    window.location.href = '/api/login';
+    return null;
+  }
+
+  // Redirect if not admin
+  if (!isLoading && user && user.role !== 'admin') {
+    window.location.href = '/';
+    return null;
+  }
+
+  // Show loading while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   // Fetch admin statistics
   const { data: stats, isLoading: statsLoading } = useQuery({
