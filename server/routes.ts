@@ -10,6 +10,7 @@ import { redditAPI } from "./reddit";
 import { telegramBot } from "./telegram";
 import { webScrapingService } from "./webscraping";
 import { errorRecovery } from "./error-recovery";
+import { notificationManager } from "./notification-manager";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
@@ -558,15 +559,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const response = await getChatbotResponse(message, conversationHistory);
       
-      // Send Telegram notification for real-time monitoring
+      // Send Telegram notification and broadcast to connected clients
       try {
         const userInfo = {
           ip: req.ip || req.connection?.remoteAddress,
           userAgent: req.get('User-Agent')
         };
         await telegramBot.sendChatbotInteraction(message, response, userInfo);
+        notificationManager.broadcastChatbotInteraction(message, response, userInfo);
       } catch (notificationError) {
-        console.error("Failed to send Telegram notification:", notificationError);
+        console.error("Failed to send notifications:", notificationError);
         // Don't fail the request if notification fails
       }
       
@@ -984,6 +986,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(400).json({ error: "Webhook error" });
     }
   });
+
+  // Real-time notification stream
+  app.get("/api/notifications/stream", (req, res) => {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Cache-Control'
+    });
+
+    const clientId = Date.now().toString();
+    
+    // Add client to notification manager
+    notificationManager.addClient(clientId, res);
+    
+    // Send initial connection message
+    res.write(`data: ${JSON.stringify({ type: 'connected', message: 'Notification stream connected' })}\n\n`);
+  });
+
+  // Broadcast notification to all connected clients
+  const broadcastNotification = (data: any) => {
+    // This would typically use a proper event emitter or WebSocket
+    // For now, we'll store in a simple in-memory system
+  };
 
   // Setup Telegram webhook (call this once after deployment)
   app.post("/api/telegram/setup-webhook", async (req, res) => {
