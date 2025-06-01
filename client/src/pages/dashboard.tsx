@@ -23,6 +23,15 @@ interface RemovalCase {
   completedAt?: string;
   progress: number;
   updates: CaseUpdate[];
+  specialist?: {
+    name: string;
+    title: string;
+    avatar: string;
+    experience: string;
+    specialties: string[];
+    successRate: string;
+    bio: string;
+  };
 }
 
 interface CaseUpdate {

@@ -129,6 +129,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Brand scanning endpoint (alias for backward compatibility)
+  app.post("/api/brand-scan", async (req, res) => {
+    try {
+      const { brandName, includePlatforms = ['reddit'], recaptchaToken } = req.body;
+      if (!brandName) {
+        return res.status(400).json({ success: false, error: "Brand name is required" });
+      }
+
+      console.log(`Scanning Reddit for brand: ${brandName}`);
+      const redditResults = await redditAPI.searchBrand(brandName);
+      
+      const results = {
+        totalMentions: redditResults.totalFound,
+        posts: redditResults.posts.length,
+        comments: redditResults.comments.length,
+        riskLevel: redditResults.riskScore > 70 ? 'high' : redditResults.riskScore > 40 ? 'medium' : 'low',
+        sentiment: redditResults.sentiment,
+        previewMentions: [
+          ...redditResults.posts.slice(0, 3).map(post => ({
+            subreddit: post.subreddit,
+            timeAgo: `${Math.floor((Date.now() / 1000 - post.created_utc) / 86400)} days ago`,
+            sentiment: redditResults.sentiment,
+            previewText: post.title.substring(0, 120) + (post.title.length > 120 ? '...' : ''),
+            url: `https://reddit.com/r/${post.subreddit}/comments/*****/******`,
+            score: post.score,
+            platform: 'Reddit'
+          })),
+          ...redditResults.comments.slice(0, 2).map(comment => ({
+            subreddit: comment.subreddit,
+            timeAgo: `${Math.floor((Date.now() / 1000 - comment.created_utc) / 86400)} days ago`,
+            sentiment: redditResults.sentiment,
+            previewText: comment.body.substring(0, 120) + (comment.body.length > 120 ? '...' : ''),
+            url: `https://reddit.com/r/${comment.subreddit}/comments/*****/******`,
+            score: comment.score,
+            platform: 'Reddit'
+          }))
+        ]
+      };
+
+      res.json({ success: true, data: results });
+    } catch (error: any) {
+      console.error("Brand scan error:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to scan Reddit data",
+        details: error.message 
+      });
+    }
+  });
+
   // Comprehensive brand scanning with multi-platform web scraping
   app.post("/api/scan-brand", async (req, res) => {
     try {
