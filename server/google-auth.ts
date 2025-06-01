@@ -46,13 +46,17 @@ export async function setupAuth(app: Express) {
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
+      console.log("Google OAuth callback received, processing user:", profile.displayName);
+      
       // Set role based on email - jamie@straightupsearch.com gets admin privileges
       const email = profile.emails?.[0]?.value;
       const role = email === "jamie@straightupsearch.com" ? "admin" : "user";
       
+      console.log("Creating/updating user with email:", email, "role:", role);
+      
       const user = await storage.upsertUser({
         id: profile.id,
-        email: email || null,
+        email: email || "",
         firstName: profile.name?.givenName || null,
         lastName: profile.name?.familyName || null,
         profileImageUrl: profile.photos?.[0]?.value || null,
@@ -62,8 +66,10 @@ export async function setupAuth(app: Express) {
         creditsRemaining: role === "admin" ? 1000 : 0,
       });
       
-      return done(null, user || false);
+      console.log("User created/updated successfully:", user.email);
+      return done(null, user);
     } catch (error) {
+      console.error("Error in Google OAuth callback:", error);
       return done(error, null);
     }
   }));
@@ -87,10 +93,19 @@ export async function setupAuth(app: Express) {
   );
 
   app.get("/api/auth/google/callback",
-    passport.authenticate("google", { failureRedirect: "/auth" }),
+    passport.authenticate("google", { 
+      failureRedirect: "/auth?error=authentication_failed",
+      failureFlash: false 
+    }),
     (req, res) => {
-      // Successful authentication, redirect to dashboard
-      res.redirect("/dashboard");
+      try {
+        console.log("OAuth callback successful, redirecting user to dashboard");
+        // Successful authentication, redirect to dashboard
+        res.redirect("/dashboard");
+      } catch (error) {
+        console.error("Error in OAuth callback redirect:", error);
+        res.redirect("/auth?error=callback_failed");
+      }
     }
   );
 

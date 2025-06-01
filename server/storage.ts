@@ -343,22 +343,45 @@ export class MemStorage implements IStorage {
   private allUsers: User[] = [];
   private allTickets: Ticket[] = [];
 
-  // User operations (temporary stubs)
+  // User operations
   async getUser(id: string): Promise<User | undefined> {
-    return undefined;
+    return this.allUsers.find(user => user.id === id);
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return this.allUsers.find(user => user.email === email);
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return this.allUsers;
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
-    return {
+    const existingUserIndex = this.allUsers.findIndex(user => user.id === userData.id);
+    
+    const user: User = {
       id: userData.id || "",
       email: userData.email || "",
       firstName: userData.firstName || null,
       lastName: userData.lastName || null,
       profileImageUrl: userData.profileImageUrl || null,
+      password: userData.password || null,
       role: userData.role || "user",
-      createdAt: new Date(),
+      accountBalance: userData.accountBalance || "0.00",
+      creditsRemaining: userData.creditsRemaining || 0,
+      createdAt: existingUserIndex >= 0 ? this.allUsers[existingUserIndex].createdAt : new Date(),
       updatedAt: new Date(),
     };
+
+    if (existingUserIndex >= 0) {
+      // Update existing user
+      this.allUsers[existingUserIndex] = user;
+    } else {
+      // Add new user
+      this.allUsers.push(user);
+    }
+
+    return user;
   }
 
   // Ticket operations (temporary stubs)

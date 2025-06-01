@@ -75,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get user tickets (legacy endpoint)
   app.get('/api/user/tickets', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user.id;
       const tickets = await storage.getUserTickets(userId);
       res.json(tickets);
     } catch (error) {
@@ -87,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin endpoints
   app.get('/api/admin/stats', isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       if (user?.role !== 'admin') {
         return res.status(403).json({ message: "Access denied" });
       }
