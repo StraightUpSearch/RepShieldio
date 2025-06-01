@@ -10,6 +10,7 @@ import AdminPanel from "@/pages/admin";
 import MyAccount from "@/pages/my-account";
 import AdminDashboard from "@/pages/admin-dashboard";
 import DataAdmin from "@/pages/data-admin";
+import AuthPage from "@/pages/auth-page";
 
 function Router() {
   return (
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/scan" component={Scan} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/my-account" component={MyAccount} />
+      <Route path="/login" component={AuthPage} />
       <Route path="/admin" component={AdminPanel} />
       <Route path="/admin-dashboard" component={AdminDashboard} />
       <Route path="/data-admin" component={DataAdmin} />
