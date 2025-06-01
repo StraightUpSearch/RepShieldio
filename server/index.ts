@@ -1,8 +1,46 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import helmet from "helmet";
 
 const app = express();
+
+// Security configuration for production SSL
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://replit.com", "https://fonts.googleapis.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https:"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false, // Allow iframe embedding for demos
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
+}));
+
+// Trust proxy for SSL termination
+app.set('trust proxy', 1);
+
+// Additional security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Powered-By', 'RepShield Security Platform');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
