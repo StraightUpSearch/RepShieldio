@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { z } from "zod";
 import Stripe from "stripe";
 import { storage } from "./storage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertAuditRequestSchema, insertQuoteRequestSchema, insertBrandScanTicketSchema } from "@shared/schema";
 import { getChatbotResponse, analyzeRedditUrl } from "./openai";
 import { sendQuoteNotification, sendContactNotification } from "./email";
@@ -25,31 +26,66 @@ async function sendBrandScanNotification(data: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Simple authentication endpoints
-  app.get('/api/auth/user', async (req, res) => {
-    // For now, return mock authenticated user - will integrate with Replit auth later
-    const userId = req.headers['x-user-id'] as string;
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
+  // Setup authentication middleware
+  await setupAuth(app);
+
+  // Authentication endpoints
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
     }
-    
-    const user = await storage.getUser(userId);
-    if (!user) {
-      return res.status(401).json({ message: "User not found" });
-    }
-    
-    res.json(user);
   });
 
-  // Get user tickets
-  app.get('/api/user/tickets', async (req, res) => {
-    const userId = req.headers['x-user-id'] as string;
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized" });
+  // User account data endpoints
+  app.get('/api/user/orders', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const orders = await storage.getUserTickets(userId);
+      res.json({ success: true, data: orders });
+    } catch (error) {
+      console.error("Error fetching user orders:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch orders" });
     }
-    
-    const tickets = await storage.getUserTickets(userId);
-    res.json(tickets);
+  });
+
+  app.get('/api/user/stats', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const orders = await storage.getUserTickets(userId);
+      
+      const totalOrders = orders.length;
+      const successfulRemovals = orders.filter(order => order.status === 'completed').length;
+      
+      res.json({
+        success: true,
+        data: {
+          totalOrders,
+          successfulRemovals,
+          accountBalance: 0,
+          creditsRemaining: 0
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching user stats:", error);
+      res.status(500).json({ success: false, message: "Failed to fetch stats" });
+    }
+  });
+
+  // Get user tickets (legacy endpoint)
+  app.get('/api/user/tickets', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const tickets = await storage.getUserTickets(userId);
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching user tickets:", error);
+      res.status(500).json({ message: "Failed to fetch tickets" });
+    }
   });
 
   // Admin endpoints for ticket management

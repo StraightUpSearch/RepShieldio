@@ -41,45 +41,25 @@ export default function MyAccount() {
   const { user, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
 
-  // Mock data - replace with real API calls
-  const mockStats: AccountStats = {
-    totalOrders: 12,
-    successfulRemovals: 11,
-    accountBalance: 250.00,
-    creditsRemaining: 3
-  };
+  // Fetch real user orders
+  const { data: ordersResponse, isLoading: ordersLoading } = useQuery({
+    queryKey: ['/api/user/orders'],
+    enabled: !!user,
+  });
 
-  const mockOrders: Order[] = [
-    {
-      id: "ORD-2024-001",
-      type: "Reddit Post Removal",
-      redditUrl: "https://reddit.com/r/example/post123",
-      status: "completed",
-      amount: 899,
-      createdAt: "2024-05-28",
-      specialist: "Sarah Mitchell",
-      progress: 100
-    },
-    {
-      id: "ORD-2024-002", 
-      type: "Reddit Comment Removal",
-      redditUrl: "https://reddit.com/r/example/comment456",
-      status: "processing",
-      amount: 199,
-      createdAt: "2024-06-01",
-      specialist: "Sarah Mitchell",
-      progress: 75
-    },
-    {
-      id: "ORD-2024-003",
-      type: "Reddit Post Removal", 
-      redditUrl: "https://reddit.com/r/another/post789",
-      status: "pending",
-      amount: 899,
-      createdAt: "2024-06-01",
-      progress: 15
-    }
-  ];
+  // Fetch real user stats
+  const { data: statsResponse, isLoading: statsLoading } = useQuery({
+    queryKey: ['/api/user/stats'],
+    enabled: !!user,
+  });
+
+  const orders = ordersResponse?.data || [];
+  const stats = statsResponse?.data || {
+    totalOrders: 0,
+    successfulRemovals: 0,
+    accountBalance: 0,
+    creditsRemaining: 0
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -101,7 +81,7 @@ export default function MyAccount() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || ordersLoading || statsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -147,7 +127,7 @@ export default function MyAccount() {
                   <FileText className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{mockStats.totalOrders}</div>
+                  <div className="text-2xl font-bold">{stats.totalOrders}</div>
                   <p className="text-xs text-muted-foreground">All time orders</p>
                 </CardContent>
               </Card>
@@ -158,9 +138,9 @@ export default function MyAccount() {
                   <CheckCircle className="h-4 w-4 text-green-500" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{mockStats.successfulRemovals}</div>
+                  <div className="text-2xl font-bold">{stats.successfulRemovals}</div>
                   <p className="text-xs text-muted-foreground">
-                    {Math.round((mockStats.successfulRemovals / mockStats.totalOrders) * 100)}% success rate
+                    {stats.totalOrders > 0 ? Math.round((stats.successfulRemovals / stats.totalOrders) * 100) : 0}% success rate
                   </p>
                 </CardContent>
               </Card>
