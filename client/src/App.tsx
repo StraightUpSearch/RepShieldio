@@ -11,6 +11,7 @@ import MyAccount from "@/pages/my-account";
 import AdminDashboard from "@/pages/admin-dashboard";
 import DataAdmin from "@/pages/data-admin";
 import AuthPage from "@/pages/auth-page";
+import About from "@/pages/about";
 
 function Router() {
   return (

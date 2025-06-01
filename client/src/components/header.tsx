@@ -40,33 +40,6 @@ export default function Header() {
               <Search className="h-4 w-4" />
               Live Scanner
             </Link>
-            <Link href="/my-account" className="text-gray-700 hover:text-navy-deep transition-colors">
-              My Account
-            </Link>
-            <button 
-              onClick={() => scrollToSection('services')}
-              className="text-gray-700 hover:text-navy-deep transition-colors"
-            >
-              Services
-            </button>
-            <button 
-              onClick={() => scrollToSection('process')}
-              className="text-gray-700 hover:text-navy-deep transition-colors"
-            >
-              Process
-            </button>
-            <button 
-              onClick={() => scrollToSection('results')}
-              className="text-gray-700 hover:text-navy-deep transition-colors"
-            >
-              Results
-            </button>
-            <button 
-              onClick={() => scrollToSection('pricing')}
-              className="text-gray-700 hover:text-navy-deep transition-colors"
-            >
-              Pricing
-            </button>
             <Button 
               onClick={() => scrollToSection('contact')}
               className="bg-reddit-orange text-white hover:bg-red-600 transition-colors font-medium"
@@ -142,30 +115,10 @@ export default function Header() {
         {isMenuOpen && (
           <div className="md:hidden absolute top-16 left-0 right-0 bg-white border-b border-gray-100 shadow-lg">
             <nav className="flex flex-col space-y-4 p-4">
-              <button 
-                onClick={() => scrollToSection('services')}
-                className="text-gray-700 hover:text-navy-deep transition-colors text-left"
-              >
-                Services
-              </button>
-              <button 
-                onClick={() => scrollToSection('process')}
-                className="text-gray-700 hover:text-navy-deep transition-colors text-left"
-              >
-                Process
-              </button>
-              <button 
-                onClick={() => scrollToSection('results')}
-                className="text-gray-700 hover:text-navy-deep transition-colors text-left"
-              >
-                Results
-              </button>
-              <button 
-                onClick={() => scrollToSection('pricing')}
-                className="text-gray-700 hover:text-navy-deep transition-colors text-left"
-              >
-                Pricing
-              </button>
+              <Link href="/scan" className="text-gray-700 hover:text-navy-deep transition-colors flex items-center gap-2">
+                <Search className="h-4 w-4" />
+                Live Scanner
+              </Link>
               <Button 
                 onClick={() => scrollToSection('contact')}
                 className="bg-reddit-orange text-white hover:bg-red-600 transition-colors font-medium w-full"
