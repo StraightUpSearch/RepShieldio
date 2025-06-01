@@ -439,31 +439,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Brand scan ticket submission endpoint
+  // Brand scan ticket submission endpoint with lead capture
   app.post("/api/brand-scan-ticket", async (req, res) => {
     try {
-      const validatedData = insertBrandScanTicketSchema.parse(req.body);
+      const { scanResults, recaptchaToken, ...ticketData } = req.body;
+      const validatedData = insertBrandScanTicketSchema.parse(ticketData);
       
-      const ticket = await storage.createBrandScanTicket(validatedData);
-      
+      // Create user account from lead data
+      const userId = validatedData.email.replace('@', '_').replace(/\./g, '_');
+      const user = await storage.upsertUser({
+        id: userId,
+        email: validatedData.email,
+        firstName: validatedData.name.split(' ')[0],
+        lastName: validatedData.name.split(' ').slice(1).join(' ') || '',
+        profileImageUrl: null
+      });
+
+      // Create ticket with enhanced data
+      const ticket = await storage.createTicket({
+        type: 'brand_scan',
+        status: 'pending',
+        priority: validatedData.leadType || 'standard',
+        title: `Brand Scan: ${validatedData.brandName}`,
+        description: `New lead from brand scanner for ${validatedData.brandName}. User: ${validatedData.name} (${validatedData.email}), Company: ${validatedData.company}`,
+        userId: userId,
+        requestData: {
+          ...validatedData,
+          scanResults: scanResults,
+          submissionTime: new Date().toISOString(),
+          source: 'brand_scanner'
+        }
+      });
+
+      // Send Telegram notification to Jamie
+      try {
+        await telegramBot.sendNewLeadNotification({
+          type: 'Brand Scanner Lead',
+          name: validatedData.name,
+          email: validatedData.email,
+          company: validatedData.company,
+          brandName: validatedData.brandName,
+          leadType: validatedData.leadType,
+          ticketId: ticket.id,
+          scanSummary: scanResults ? {
+            totalMentions: scanResults.totalMentions || 0,
+            riskLevel: scanResults.riskLevel || 'unknown',
+            sentiment: scanResults.overallSentiment || 'neutral'
+          } : null
+        });
+      } catch (error) {
+        console.error("Failed to send Telegram notification:", error);
+      }
+
       // Send email notification
       try {
         await sendContactNotification({
           name: validatedData.name,
           email: validatedData.email,
           company: validatedData.company,
-          website: 'Brand Scan Ticket',
-          message: `Brand scan ticket created for: ${validatedData.brandName}. Specialist analysis requested.`
+          website: 'RepShield Brand Scanner',
+          message: `New lead from brand scanner: ${validatedData.brandName}. Account created and ready for specialist analysis.`
         });
       } catch (error) {
         console.error("Failed to send email notification:", error);
-        // Continue even if email fails
       }
       
       res.status(201).json({
         success: true,
-        message: "Brand scan ticket created successfully",
-        ticketId: ticket.id
+        message: "Account created and specialist assigned",
+        ticketId: ticket.id,
+        userId: userId
       });
     } catch (error) {
       if (error instanceof z.ZodError) {

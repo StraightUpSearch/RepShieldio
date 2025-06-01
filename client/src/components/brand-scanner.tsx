@@ -111,21 +111,47 @@ export default function BrandScanner() {
 
   const submitTicket = useMutation({
     mutationFn: async (data: TicketForm) => {
-      return await apiRequest("POST", "/api/brand-scan-ticket", data);
+      // Check for spam before submitting
+      const spamCheck = checkForSpam(
+        data,
+        {
+          submissionTime: Date.now() - startTime,
+          recentSubmissions,
+          mouseMovements
+        }
+      );
+
+      if (spamCheck.isSpammy && !recaptchaToken) {
+        throw new Error('SPAM_DETECTED');
+      }
+
+      return await apiRequest("POST", "/api/brand-scan-ticket", {
+        ...data,
+        scanResults: scanResults,
+        recaptchaToken: recaptchaToken || null
+      });
     },
     onSuccess: (response) => {
       setCurrentStep('confirmed');
       toast({
-        title: "Specialist Assigned!",
-        description: "Your brand analysis ticket has been created. We'll contact you within 2 hours.",
+        title: "Account Created Successfully!",
+        description: "Welcome to RepShield! Jamie will contact you within 2 hours with your detailed analysis.",
       });
     },
-    onError: () => {
-      toast({
-        title: "Submission Failed",
-        description: "Please try again or contact us directly.",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      if (error.message === 'SPAM_DETECTED') {
+        toast({
+          title: "Security Check Required",
+          description: "Please complete the verification to continue.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Account Creation Failed",
+          description: "Please try again or contact us directly.",
+          variant: "destructive",
+        });
+      }
     }
   });
 
@@ -140,7 +166,26 @@ export default function BrandScanner() {
       return;
     }
 
+    // Check daily scan limit for non-authenticated users
+    const today = new Date().toDateString();
+    const lastScan = localStorage.getItem('lastScanDate');
+    const scanCount = parseInt(localStorage.getItem('dailyScanCount') || '0');
+
+    if (lastScan === today && scanCount >= 1) {
+      toast({
+        title: "Daily Limit Reached",
+        description: "Create a free account to unlock unlimited scans and detailed reports.",
+        variant: "destructive",
+      });
+      setCurrentStep('ticket'); // Direct to account creation
+      return;
+    }
+
     setCurrentStep('scanning');
+    
+    // Update scan tracking
+    localStorage.setItem('lastScanDate', today);
+    localStorage.setItem('dailyScanCount', lastScan === today ? (scanCount + 1).toString() : '1');
     
     // Generate realistic results with preview mentions
     setTimeout(() => {
@@ -244,9 +289,9 @@ export default function BrandScanner() {
         <div className="w-16 h-16 bg-reddit-orange/10 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
           <Search className="h-8 w-8 text-reddit-orange animate-spin" />
         </div>
-        <h3 className="text-2xl font-bold mb-2">Scanning Reddit for "{brandName}"</h3>
+        <h3 className="text-2xl font-bold mb-2">Scanning Multiple Platforms for "{brandName}"</h3>
         <p className="text-gray-600 mb-4">
-          Analyzing thousands of posts and comments across Reddit...
+          Analyzing Reddit, review sites, social media, and news sources...
         </p>
       </div>
       
