@@ -159,6 +159,33 @@ class TelegramBot {
       console.error('Failed to send lead notification to Jamie:', error);
     }
   }
+
+  async sendChatbotInteraction(userMessage: string, botResponse: string, userInfo?: any): Promise<void> {
+    if (!this.botToken) return;
+
+    const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+    if (!adminChatId) return;
+
+    let message = `💬 <b>LIVE CHATBOT CONVERSATION</b>\n\n`;
+    message += `👤 <b>User Asked:</b> "${userMessage}"\n\n`;
+    message += `🤖 <b>Bot Response:</b> "${botResponse.substring(0, 200)}${botResponse.length > 200 ? '...' : ''}"\n\n`;
+    
+    if (userInfo?.ip) {
+      message += `🌐 <b>IP:</b> ${userInfo.ip}\n`;
+    }
+    if (userInfo?.userAgent) {
+      message += `💻 <b>Browser:</b> ${userInfo.userAgent.substring(0, 50)}...\n`;
+    }
+    
+    message += `⏰ <b>Time:</b> ${new Date().toLocaleString()}\n\n`;
+    message += `💡 <b>Reply here to send a personal message to this visitor!</b>`;
+
+    try {
+      await this.sendMessage(parseInt(adminChatId), message);
+    } catch (error) {
+      console.error('Failed to send chatbot notification:', error);
+    }
+  }
 }
 
 export const telegramBot = new TelegramBot();

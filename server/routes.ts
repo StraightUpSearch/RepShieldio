@@ -558,6 +558,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const response = await getChatbotResponse(message, conversationHistory);
       
+      // Send Telegram notification for real-time monitoring
+      try {
+        const userInfo = {
+          ip: req.ip || req.connection?.remoteAddress,
+          userAgent: req.get('User-Agent')
+        };
+        await telegramBot.sendChatbotInteraction(message, response, userInfo);
+      } catch (notificationError) {
+        console.error("Failed to send Telegram notification:", notificationError);
+        // Don't fail the request if notification fails
+      }
+      
       res.json({
         success: true,
         response
