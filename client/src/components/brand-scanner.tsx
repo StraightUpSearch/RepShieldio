@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,8 @@ import { Search, AlertTriangle, CheckCircle, Clock, User, ArrowRight, Shield, Ey
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { SmartRecaptcha, useSpamDetection } from "./smart-recaptcha";
+import { SEOMetaTags, StructuredData } from "./structured-data";
 
 interface ScanStep {
   step: 'input' | 'scanning' | 'results' | 'ticket' | 'confirmed';
@@ -44,21 +46,65 @@ export default function BrandScanner() {
     brandName: "",
     leadType: 'premium'
   });
+  const [startTime, setStartTime] = useState<number>(Date.now());
+  const [mouseMovements, setMouseMovements] = useState(0);
+  const [recaptchaToken, setRecaptchaToken] = useState<string>('');
+  const [recentSubmissions, setRecentSubmissions] = useState(0);
+  
+  const { isSpammy, reason, checkForSpam } = useSpamDetection();
+
+  useEffect(() => {
+    // Track mouse movements for spam detection
+    const handleMouseMove = () => setMouseMovements(prev => prev + 1);
+    document.addEventListener('mousemove', handleMouseMove);
+    
+    // Track form start time
+    setStartTime(Date.now());
+    
+    return () => document.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   const scanBrand = useMutation({
     mutationFn: async (brandName: string) => {
-      return await apiRequest("POST", "/api/scan-brand", { brandName });
+      // Check for spam before scanning
+      const spamCheck = checkForSpam(
+        { brandName, email: '', company: '' },
+        {
+          submissionTime: Date.now() - startTime,
+          recentSubmissions,
+          mouseMovements
+        }
+      );
+
+      if (spamCheck.isSpammy && !recaptchaToken) {
+        throw new Error('SPAM_DETECTED');
+      }
+
+      return await apiRequest("POST", "/api/scan-brand", { 
+        brandName,
+        includePlatforms: ['reddit', 'reviews', 'social', 'news'],
+        recaptchaToken: recaptchaToken || null
+      });
     },
     onSuccess: (response: any) => {
       setScanResults(response);
       setCurrentStep('results');
+      setRecentSubmissions(prev => prev + 1);
     },
-    onError: (error) => {
-      toast({
-        title: "Scan Failed",
-        description: "Unable to scan Reddit data. Please try again.",
-        variant: "destructive",
-      });
+    onError: (error: any) => {
+      if (error.message === 'SPAM_DETECTED') {
+        toast({
+          title: "Security Check Required",
+          description: "Please complete the verification to continue.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Scan Failed",
+          description: "Unable to complete comprehensive scan. Please try again.",
+          variant: "destructive",
+        });
+      }
       setCurrentStep('input');
     }
   });
