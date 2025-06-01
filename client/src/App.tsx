@@ -20,6 +20,7 @@ function Router() {
       <Route path="/scan" component={Scan} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/my-account" component={MyAccount} />
+      <Route path="/about" component={About} />
       <Route path="/login" component={AuthPage} />
       <Route path="/admin" component={AdminPanel} />
       <Route path="/admin-dashboard" component={AdminDashboard} />
