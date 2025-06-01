@@ -509,6 +509,29 @@ export class MemStorage implements IStorage {
   private removalCases: Map<number, any> = new Map();
   private currentCaseId: number = 1;
 
+  constructor() {
+    // Add a test case ready for payment
+    this.removalCases.set(1, {
+      id: 1,
+      userId: 'test-user',
+      redditUrl: 'https://reddit.com/r/technology/comments/*****/******',
+      status: 'quoted',
+      estimatedPrice: '$899',
+      description: 'Remove defamatory post about company practices from r/technology. High visibility post with 250+ comments requiring strategic approach.',
+      createdAt: new Date().toISOString(),
+      progress: 0,
+      updates: [
+        {
+          id: 1,
+          message: 'Analysis complete. Removal strategy prepared and ready for approval.',
+          timestamp: new Date().toISOString(),
+          type: 'info'
+        }
+      ]
+    });
+    this.currentCaseId = 2;
+  }
+
   async createRemovalCase(data: any): Promise<any> {
     const caseData = {
       id: this.currentCaseId++,
