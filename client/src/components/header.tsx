@@ -28,12 +28,12 @@ export default function Header() {
     <header className="fixed w-full top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 gradient-navy rounded-lg flex items-center justify-center">
               <SiReddit className="text-white text-xl" />
             </div>
             <span className="text-2xl font-bold text-navy-deep">RepShield</span>
-          </div>
+          </Link>
           
           <nav className="hidden md:flex items-center space-x-8">
             <Link href="/scan" className="text-gray-700 hover:text-navy-deep transition-colors flex items-center gap-2">
