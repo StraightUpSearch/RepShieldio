@@ -11,8 +11,11 @@ import { apiRequest } from '@/lib/queryClient';
 
 // Initialize Stripe only if the public key is available
 const stripePromise = import.meta.env.VITE_STRIPE_PUBLIC_KEY 
-  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY)
-  : null;
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY).catch(() => {
+      console.warn('Stripe failed to load - payment functionality disabled');
+      return null;
+    })
+  : Promise.resolve(null);
 
 interface CheckoutFormProps {
   caseId: number;
