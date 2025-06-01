@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, Search } from "lucide-react";
 import { SiReddit } from "react-icons/si";
 import { Link } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

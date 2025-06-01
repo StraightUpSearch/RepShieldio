@@ -175,6 +175,47 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getAllUsers(): Promise<User[]> {
+    try {
+      return await db.select().from(users);
+    } catch (error) {
+      console.error("Error getting all users:", error);
+      return [];
+    }
+  }
+
+  async getTicketsWithUsers(): Promise<any[]> {
+    try {
+      const result = await db
+        .select({
+          id: tickets.id,
+          userId: tickets.userId,
+          type: tickets.type,
+          status: tickets.status,
+          title: tickets.title,
+          description: tickets.description,
+          redditUrl: tickets.redditUrl,
+          amount: tickets.amount,
+          progress: tickets.progress,
+          assignedTo: tickets.assignedTo,
+          createdAt: tickets.createdAt,
+          user: {
+            email: users.email,
+            firstName: users.firstName,
+            lastName: users.lastName,
+          }
+        })
+        .from(tickets)
+        .leftJoin(users, eq(tickets.userId, users.id))
+        .orderBy(desc(tickets.createdAt));
+      
+      return result;
+    } catch (error) {
+      console.error("Error getting tickets with users:", error);
+      return [];
+    }
+  }
+
   // Legacy operations (in-memory for now)
   private auditRequests: Map<number, AuditRequest> = new Map();
   private quoteRequests: Map<number, QuoteRequest> = new Map();
@@ -288,6 +329,8 @@ export class MemStorage implements IStorage {
   private currentAuditId: number = 1;
   private currentQuoteId: number = 1;
   private currentBrandScanId: number = 1;
+  private allUsers: User[] = [];
+  private allTickets: Ticket[] = [];
 
   // User operations (temporary stubs)
   async getUser(id: string): Promise<User | undefined> {
@@ -588,4 +631,4 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
