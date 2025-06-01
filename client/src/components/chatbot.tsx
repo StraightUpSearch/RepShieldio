@@ -116,8 +116,26 @@ export default function Chatbot() {
   };
 
   const handleQuickAction = (action: string) => {
-    setInput(action);
-    handleSendMessage();
+    const userMessage: Message = {
+      id: messages.length + 1,
+      text: action,
+      isBot: false,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setIsTyping(true);
+
+    // Create conversation history for context
+    const conversationHistory = messages.map(msg => msg.text);
+
+    // Send to AI chatbot
+    sendChatMessage.mutate({ 
+      message: action, 
+      history: conversationHistory 
+    });
+
+    setCurrentStep(prev => prev + 1);
   };
 
   const scrollToContact = () => {
