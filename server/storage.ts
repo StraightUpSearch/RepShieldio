@@ -223,7 +223,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Legacy operations (in-memory for now)
+  // Legacy operations - in-memory for compatibility
   private auditRequests: Map<number, AuditRequest> = new Map();
   private quoteRequests: Map<number, QuoteRequest> = new Map();
   private brandScanTickets: Map<number, BrandScanTicket> = new Map();
