@@ -1242,6 +1242,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Emergency ticket endpoint for fallback support
+  app.post("/api/emergency-ticket", handleAsyncErrors(async (req, res) => {
+    const { name, email, phone, description, errorDetails } = req.body;
+    
+    // Create emergency support ticket
+    const ticket = await storage.createTicket({
+      userId: "emergency",
+      type: "emergency_support",
+      title: `Emergency Support: ${description?.substring(0, 50) || 'System Error'}`,
+      description: `
+Emergency Support Request
+Name: ${name}
+Email: ${email}
+Phone: ${phone || 'Not provided'}
+Description: ${description}
+
+Error Details:
+${JSON.stringify(errorDetails, null, 2)}
+      `,
+      priority: "high",
+      status: "pending",
+      urls: errorDetails?.url ? [errorDetails.url] : undefined
+    });
+
+    // Send immediate notification to admin
+    await telegramBot.sendNewLeadNotification({
+      type: 'Emergency Support Ticket',
+      name,
+      email,
+      phone: phone || 'Not provided',
+      description,
+      ticketId: ticket.id,
+      errorUrl: errorDetails?.url
+    });
+
+    res.json({ 
+      success: true, 
+      ticketId: ticket.id,
+      message: "Emergency ticket created. You'll hear from us within 30 minutes during business hours." 
+    });
+  }));
+
+  // Health check endpoint
+  app.get("/api/health", (req, res) => {
+    res.json({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      services: {
+        database: "connected",
+        scrapingBee: process.env.SCRAPINGBEE_API_KEY ? "configured" : "missing",
+        authentication: "active"
+      }
+    });
+  });
+
+  // Add global error handler
+  app.use(globalErrorHandler);
+
   const httpServer = createServer(app);
   return httpServer;
 }
