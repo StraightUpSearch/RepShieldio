@@ -1,10 +1,31 @@
 import { useQuery } from "@tanstack/react-query";
-import { getQueryFn } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
+
+interface User {
+  id: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  role: string;
+  accountBalance: string;
+  creditsRemaining: number;
+  createdAt: string;
+}
 
 export function useAuth() {
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading, error } = useQuery<User | null>({
     queryKey: ["/api/auth/user"],
-    queryFn: getQueryFn({ on401: "returnNull" }),
+    queryFn: async () => {
+      try {
+        const response = await apiRequest("GET", "/api/auth/user");
+        return await response.json();
+      } catch (error: any) {
+        if (error.message?.includes('401')) {
+          return null;
+        }
+        throw error;
+      }
+    },
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -13,5 +34,7 @@ export function useAuth() {
     user,
     isLoading,
     isAuthenticated: !!user,
+    isAdmin: user?.role === 'admin',
+    error
   };
 }
