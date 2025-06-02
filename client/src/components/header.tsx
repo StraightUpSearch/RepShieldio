@@ -89,7 +89,7 @@ export default function Header() {
                 ) : (
                   <Button 
                     variant="outline"
-                    onClick={() => window.location.href = '/api/login'}
+                    onClick={() => window.open('/api/login', '_self')}
                     className="ml-2"
                   >
                     Login

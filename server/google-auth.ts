@@ -89,12 +89,21 @@ export async function setupAuth(app: Express) {
 
   // Auth routes
   app.get("/api/login", (req, res) => {
+    console.log("Login route accessed, redirecting to Google OAuth");
     res.redirect("/api/auth/google");
   });
 
-  app.get("/api/auth/google", 
-    passport.authenticate("google", { scope: ["profile", "email"] })
-  );
+  app.get("/api/auth/google", (req, res, next) => {
+    console.log("Google OAuth route accessed");
+    console.log("OAuth Config - Client ID exists:", !!process.env.GOOGLE_CLIENT_ID);
+    console.log("OAuth Config - Client Secret exists:", !!process.env.GOOGLE_CLIENT_SECRET);
+    console.log("OAuth Config - Callback URL:", `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/api/auth/google/callback`);
+    
+    passport.authenticate("google", { 
+      scope: ["profile", "email"],
+      failureMessage: true
+    })(req, res, next);
+  });
 
   app.get("/api/auth/google/callback",
     passport.authenticate("google", { 
