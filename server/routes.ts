@@ -3,11 +3,12 @@ import { createServer, type Server } from "http";
 import { z } from "zod";
 import Stripe from "stripe";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./google-auth";
+import { setupSimpleAuth, isAuthenticated } from "./simple-auth";
 import { insertAuditRequestSchema, insertQuoteRequestSchema, insertBrandScanTicketSchema } from "@shared/schema";
 import { getChatbotResponse, analyzeRedditUrl } from "./openai";
 import { sendQuoteNotification, sendContactNotification } from "./email";
 import { redditAPI } from "./reddit";
+import { scrapingBeeAPI } from "./scrapingbee";
 import { telegramBot } from "./telegram";
 import { webScrapingService } from "./webscraping";
 import { errorRecovery } from "./error-recovery";
@@ -24,7 +25,7 @@ async function sendBrandScanNotification(data: any) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication middleware
-  await setupAuth(app);
+  setupSimpleAuth(app);
 
   // Authentication endpoints
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
@@ -340,7 +341,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Brand scanning endpoint with direct Reddit API integration
+  // Brand scanning endpoint with ScrapingBee integration
   app.post("/api/brand-scan", async (req, res) => {
     const { brandName, includePlatforms = ['reddit'], recaptchaToken } = req.body;
     if (!brandName) {
@@ -348,70 +349,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     try {
-      console.log(`Scanning Reddit for brand: ${brandName}`);
+      console.log(`Scanning Reddit for brand: ${brandName} using ScrapingBee`);
       
-      // Direct Reddit search using authenticated API
-      const searchUrl = `https://oauth.reddit.com/search.json?q=${encodeURIComponent(brandName)}&limit=10&sort=relevance`;
-      
-      // Get access token
-      const authResponse = await fetch('https://www.reddit.com/api/v1/access_token', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Basic ${Buffer.from(`${process.env.REDDIT_CLIENT_ID}:${process.env.REDDIT_CLIENT_SECRET}`).toString('base64')}`,
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': process.env.REDDIT_USER_AGENT || 'RepShield/1.0'
-        },
-        body: 'grant_type=client_credentials'
-      });
-
-      if (!authResponse.ok) {
-        throw new Error(`Reddit auth failed: ${authResponse.status}`);
-      }
-
-      const authData = await authResponse.json();
-      
-      // Search Reddit with authenticated token
-      const searchResponse = await fetch(searchUrl, {
-        headers: {
-          'Authorization': `Bearer ${authData.access_token}`,
-          'User-Agent': process.env.REDDIT_USER_AGENT || 'RepShield/1.0'
-        }
-      });
-
-      if (!searchResponse.ok) {
-        throw new Error(`Reddit search failed: ${searchResponse.status}`);
-      }
-
-      const searchData = await searchResponse.json();
-      const posts = searchData.data?.children || [];
+      // Use ScrapingBee to get authentic Reddit data
+      const searchResults = await scrapingBeeAPI.searchBrand(brandName);
       
       const results = {
-        totalMentions: posts.length,
-        posts: posts.filter(p => p.data.is_self || p.data.selftext).length,
-        comments: posts.length - posts.filter(p => p.data.is_self || p.data.selftext).length,
-        riskLevel: posts.length > 5 ? 'medium' : 'low',
-        sentiment: 'neutral' as const,
-        previewMentions: posts.slice(0, 5).map((post: any) => {
-          const data = post.data;
-          const daysAgo = Math.floor((Date.now() / 1000 - data.created_utc) / 86400);
-          return {
-            subreddit: data.subreddit,
-            timeAgo: `${daysAgo} days ago`,
-            sentiment: 'neutral' as const,
-            previewText: (data.title || data.body || '').substring(0, 120) + '...',
-            url: `https://reddit.com/r/${data.subreddit}/comments/*****/******`,
-            score: data.score || 0,
-            platform: 'Reddit'
-          };
-        })
+        totalMentions: searchResults.totalFound,
+        posts: searchResults.posts.length,
+        comments: searchResults.comments.length,
+        riskLevel: searchResults.riskScore > 70 ? 'high' : searchResults.riskScore > 30 ? 'medium' : 'low',
+        sentiment: searchResults.sentiment,
+        previewMentions: [
+          ...searchResults.posts.slice(0, 3).map(post => {
+            const daysAgo = Math.floor((Date.now() / 1000 - post.created_utc) / 86400);
+            return {
+              subreddit: post.subreddit,
+              timeAgo: `${daysAgo} days ago`,
+              sentiment: searchResults.sentiment,
+              previewText: (post.title + ' ' + post.selftext).substring(0, 120) + '...',
+              url: `https://reddit.com${post.permalink}`,
+              score: post.score,
+              platform: 'Reddit'
+            };
+          }),
+          ...searchResults.comments.slice(0, 2).map(comment => {
+            const daysAgo = Math.floor((Date.now() / 1000 - comment.created_utc) / 86400);
+            return {
+              subreddit: comment.subreddit,
+              timeAgo: `${daysAgo} days ago`,
+              sentiment: searchResults.sentiment,
+              previewText: comment.body.substring(0, 120) + '...',
+              url: `https://reddit.com${comment.permalink}`,
+              score: comment.score,
+              platform: 'Reddit'
+            };
+          })
+        ].slice(0, 5)
       };
+
+      // Broadcast notification for admin monitoring
+      notificationManager.broadcastBrandScan(brandName, results);
 
       res.json({ success: true, data: results });
     } catch (error: any) {
-      console.error("Reddit scan error:", error);
+      console.error("ScrapingBee scan error:", error);
       res.status(500).json({ 
         success: false, 
-        error: "Failed to scan Reddit data",
+        error: "Failed to scan Reddit data - ScrapingBee API key required",
         details: error.message 
       });
     }
