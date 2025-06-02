@@ -49,6 +49,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Ticket creation endpoint (for anonymous scan page)
+  app.post('/api/tickets', async (req, res) => {
+    try {
+      const { subject, description, priority, category, userEmail, userName } = req.body;
+      
+      const ticket = await storage.createTicket({
+        userId: 'anonymous',
+        type: category || 'General',
+        title: subject,
+        description,
+        priority: priority || 'standard',
+        status: 'pending',
+        assignedTo: null,
+        amount: null,
+        redditUrl: null,
+        requestData: { userEmail, userName },
+        notes: null
+      });
+
+      res.json({ success: true, data: ticket });
+    } catch (error) {
+      console.error("Error creating ticket:", error);
+      res.status(500).json({ success: false, message: "Failed to create ticket" });
+    }
+  });
+
   app.get('/api/user/stats', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;

@@ -70,7 +70,7 @@ export async function setupAuth(app: Express) {
       return done(null, user);
     } catch (error) {
       console.error("Error in Google OAuth callback:", error);
-      return done(error, null);
+      return done(error, false);
     }
   }));
 
@@ -88,6 +88,10 @@ export async function setupAuth(app: Express) {
   });
 
   // Auth routes
+  app.get("/api/login", (req, res) => {
+    res.redirect("/api/auth/google");
+  });
+
   app.get("/api/auth/google", 
     passport.authenticate("google", { scope: ["profile", "email"] })
   );
