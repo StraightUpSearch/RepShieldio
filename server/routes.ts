@@ -857,11 +857,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User dashboard endpoints
-  app.get("/api/user/cases", async (req, res) => {
+  app.get("/api/user/orders", isAuthenticated, async (req: any, res) => {
     try {
-      // In a real app, get userId from authenticated session
-      const userId = req.headers['x-user-id'] as string || 'demo_user';
-      const cases = await storage.getUserRemovalCases(userId);
+      const user = req.user;
+      const tickets = await storage.getUserTickets(user.id);
+      res.json({ success: true, data: tickets });
+    } catch (error) {
+      console.error("Error fetching user orders:", error);
+      res.status(500).json({ message: "Failed to fetch orders" });
+    }
+  });
+
+  app.get("/api/user/stats", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      const tickets = await storage.getUserTickets(user.id);
+      
+      const stats = {
+        totalOrders: tickets.length,
+        successfulRemovals: tickets.filter(t => t.status === 'completed').length,
+        accountBalance: parseFloat(user.accountBalance || '0'),
+        creditsRemaining: user.creditsRemaining || 0
+      };
+      
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      console.error("Error fetching user stats:", error);
+      res.status(500).json({ message: "Failed to fetch stats" });
+    }
+  });
+
+  app.get("/api/user/cases", isAuthenticated, async (req: any, res) => {
+    try {
+      const user = req.user;
+      const cases = await storage.getUserRemovalCases(user.id);
       res.json(cases);
     } catch (error) {
       console.error("Error fetching user cases:", error);

@@ -110,9 +110,16 @@ export class DatabaseStorage implements IStorage {
   // Ticket operations
   async createTicket(ticketData: InsertTicket): Promise<Ticket> {
     try {
+      const completeTicketData = {
+        ...ticketData,
+        redditUrl: ticketData.redditUrl || null,
+        amount: ticketData.amount || null,
+        progress: ticketData.progress || 0
+      };
+      
       const [ticket] = await db
         .insert(tickets)
-        .values(ticketData)
+        .values(completeTicketData)
         .returning();
       return ticket;
     } catch (error) {
@@ -199,30 +206,19 @@ export class DatabaseStorage implements IStorage {
     try {
       const result = await db
         .select({
-          id: tickets.id,
-          userId: tickets.userId,
-          type: tickets.type,
-          status: tickets.status,
-          title: tickets.title,
-          description: tickets.description,
-          redditUrl: tickets.redditUrl,
-          amount: tickets.amount,
-          progress: tickets.progress,
-          assignedTo: tickets.assignedTo,
-          createdAt: tickets.createdAt,
-          user: {
-            email: users.email,
-            firstName: users.firstName,
-            lastName: users.lastName,
-          }
+          ticket: tickets,
+          user: users
         })
         .from(tickets)
         .leftJoin(users, eq(tickets.userId, users.id))
         .orderBy(desc(tickets.createdAt));
       
-      return result;
+      return result.map(row => ({
+        ...row.ticket,
+        user: row.user
+      }));
     } catch (error) {
-      console.error("Error getting tickets with users:", error);
+      console.error("Error fetching tickets with users:", error);
       return [];
     }
   }
@@ -329,6 +325,72 @@ export class DatabaseStorage implements IStorage {
       return request;
     }
     return undefined;
+  }
+
+  // Blog CMS operations - using tickets table as content
+  async getBlogPosts(): Promise<any[]> {
+    return [];
+  }
+
+  async getBlogCategories(): Promise<any[]> {
+    return [];
+  }
+
+  async getBlogPostBySlug(slug: string): Promise<any | undefined> {
+    return undefined;
+  }
+
+  async createBlogPost(data: any): Promise<any> {
+    return data;
+  }
+
+  async updateBlogPost(id: number, data: any): Promise<any> {
+    return data;
+  }
+
+  async deleteBlogPost(id: number): Promise<void> {
+    return;
+  }
+
+  // Removal case operations - using tickets table
+  async createRemovalCase(data: any): Promise<any> {
+    const ticket = await this.createTicket({
+      userId: data.userId,
+      type: 'reddit_post_removal',
+      title: data.title || 'Reddit Content Removal',
+      description: data.description,
+      redditUrl: data.redditUrl,
+      amount: data.amount,
+      requestData: data
+    });
+    return ticket;
+  }
+
+  async getUserRemovalCases(userId: string): Promise<any[]> {
+    return await this.getUserTickets(userId);
+  }
+
+  async getRemovalCase(id: number): Promise<any | undefined> {
+    return await this.getTicket(id);
+  }
+
+  async updateRemovalCaseStatus(id: number, status: string, progress?: number): Promise<any> {
+    try {
+      const updateData: any = { status, updatedAt: new Date() };
+      if (progress !== undefined) {
+        updateData.progress = progress;
+      }
+      
+      const [ticket] = await db
+        .update(tickets)
+        .set(updateData)
+        .where(eq(tickets.id, id))
+        .returning();
+      return ticket;
+    } catch (error) {
+      console.error("Error updating removal case status:", error);
+      return undefined;
+    }
   }
 }
 
