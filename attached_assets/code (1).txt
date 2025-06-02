@@ -1,0 +1,125 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://repshield.io/#organization",
+      "name": "RepShield",
+      "alternateName": "RepShield Professional Services", // From <meta name="author">
+      "url": "https://repshield.io/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://repshield.io/favicon.svg" // From og:image and link rel="icon"
+      },
+      "description": "RepShield offers professional Reddit reputation management, ethically removing false and defamatory content that damages business reputations. We serve SMBs, SaaS companies, and eCommerce brands.",
+      "sameAs": [], // Add URLs to your social media profiles here if available (e.g., LinkedIn, Twitter)
+      "contactPoint": [
+        {
+          "@type": "ContactPoint",
+          "contactType": "Customer Support", // Or "Sales", "Technical Support" as appropriate
+          "description": "Contact RepShield for inquiries regarding Reddit reputation management and defamatory content removal services.",
+          // "email": "your-email@repshield.io", // If you have a public contact email
+          // "telephone": "+1-your-phone-number", // If you have a public contact number
+          // "contactOption": "TollFree", // If applicable
+          "areaServed": "Global", // Assuming services are offered globally online
+          "availableLanguage": ["en"]
+        }
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://repshield.io/#website",
+      "url": "https://repshield.io/",
+      "name": "RepShield - Professional Reddit Reputation Management", // From <title>
+      "description": "Professional Reddit reputation management for SMBs, SaaS companies, and eCommerce brands. We ethically remove false, defamatory content that damages your business reputation.", // From <meta name="description">
+      "publisher": {
+        "@id": "https://repshield.io/#organization"
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "RepShield Professional Services" // from <meta name="author">
+      },
+      "inLanguage": "en",
+      "potentialAction": { // If you have a site search
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://repshield.io/?s={search_term_string}" // Adjust if your site search URL is different
+        },
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "Service",
+      "@id": "https://repshield.io/#service",
+      "name": "Reddit Reputation Management",
+      "serviceType": "Online Reputation Management",
+      "additionalType": "Content Removal Service",
+      "category": "Business Services",
+      "description": "Specialized service for managing and improving online reputations on Reddit. This includes the ethical identification and removal of false, misleading, or defamatory content targeting businesses.",
+      "provider": {
+        "@id": "https://repshield.io/#organization"
+      },
+      "areaServed": { // The service is online, so it's global
+        "@type": "AdministrativeArea",
+        "name": "Global" // Indicating service is available worldwide
+      },
+      "audience": [
+        {
+          "@type": "Audience",
+          "audienceType": "Small and Medium-sized Businesses (SMBs)"
+        },
+        {
+          "@type": "Audience",
+          "audienceType": "SaaS Companies"
+        },
+        {
+          "@type": "Audience",
+          "audienceType": "eCommerce Brands"
+        }
+      ],
+      "serviceOutput": {
+        "@type": "Thing",
+        "name": "Improved Online Reputation on Reddit",
+        "description": "Mitigation of brand damage through removal of negative content and strategic reputation management on the Reddit platform."
+      },
+      "availableChannel": {
+        "@type": "ServiceChannel",
+        "serviceUrl": "https://repshield.io/", // Main website, or specific service/contact page
+        "description": "Services are provided online through consultation and direct engagement."
+      },
+      "termsOfService": "https://repshield.io/terms-of-service", // If you have a ToS page
+      "offers": { // If you can define a general offer, e.g., for a consultation
+        "@type": "Offer",
+        "name": "Initial Consultation for Reddit Reputation Management",
+        "priceSpecification": { // This indicates a consultation which may be free or have a fee
+          "@type": "PriceSpecification",
+          "price": "0", // Example: for a free initial consultation
+          "priceCurrency": "USD", // Change currency as appropriate
+          "valueAddedTaxIncluded": "true",
+          "description": "Free initial consultation to assess your Reddit reputation needs."
+        }
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://repshield.io/#breadcrumb",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://repshield.io/"
+        }
+        // Add more breadcrumbs if this schema is used on deeper pages.
+        // Example for a service page (if it existed separately):
+        // ,{
+        //   "@type": "ListItem",
+        //   "position": 2,
+        //   "name": "Our Services",
+        //   "item": "https://repshield.io/services"
+        // }
+      ]
+    }
+  ]
+}
