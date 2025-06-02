@@ -1298,6 +1298,61 @@ ${JSON.stringify(errorDetails, null, 2)}
     });
   });
 
+  // SEO endpoints
+  app.get('/sitemap.xml', (req, res) => {
+    const baseUrl = 'https://repshield.io';
+    const pages = [
+      { url: '/', priority: '1.0', changefreq: 'weekly' },
+      { url: '/scan', priority: '0.9', changefreq: 'weekly' },
+      { url: '/dashboard', priority: '0.8', changefreq: 'daily' },
+      { url: '/about', priority: '0.7', changefreq: 'monthly' },
+      { url: '/auth', priority: '0.6', changefreq: 'monthly' }
+    ];
+
+    const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${pages.map(page => `  <url>
+    <loc>${baseUrl}${page.url}</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>${page.changefreq}</changefreq>
+    <priority>${page.priority}</priority>
+  </url>`).join('\n')}
+</urlset>`;
+
+    res.set('Content-Type', 'application/xml');
+    res.send(sitemap);
+  });
+
+  app.get('/robots.txt', (req, res) => {
+    const robots = `User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /admin-dashboard
+Disallow: /data-admin
+Disallow: /api/
+
+Sitemap: https://repshield.io/sitemap.xml
+
+# Block AI crawlers that don't respect robots.txt
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /`;
+
+    res.set('Content-Type', 'text/plain');
+    res.send(robots);
+  });
+
   // Add global error handler
   app.use(globalErrorHandler);
 

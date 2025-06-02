@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SchemaOrg } from "@/components/schema-org";
 import SEOHead from "@/components/seo-head";
+import AdvancedSEO from "@/components/advanced-seo";
 import Home from "@/pages/home";
 import Scan from "@/pages/scan";
 import Dashboard from "@/pages/dashboard";
@@ -46,6 +47,7 @@ function App() {
       <TooltipProvider>
         <SchemaOrg />
         <SEOHead />
+        <AdvancedSEO />
         <Toaster />
         <Router />
       </TooltipProvider>
