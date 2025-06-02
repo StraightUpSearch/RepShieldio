@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { AdminRoute } from "@/components/admin-route";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,34 +67,20 @@ interface AdminStats {
 }
 
 export default function AdminDashboard() {
+  return (
+    <AdminRoute>
+      <AdminDashboardContent />
+    </AdminRoute>
+  );
+}
+
+function AdminDashboardContent() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderFilter, setOrderFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user, isLoading, isAuthenticated } = useAuth();
-
-  // Redirect to login if not authenticated
-  if (!isLoading && !isAuthenticated) {
-    window.location.href = '/api/login';
-    return null;
-  }
-
-  // Redirect if not admin
-  if (!isLoading && user && user.role !== 'admin') {
-    window.location.href = '/';
-    return null;
-  }
-
-  // Show loading while checking authentication
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
 
   // Fetch admin statistics
   const { data: stats, isLoading: statsLoading } = useQuery({
