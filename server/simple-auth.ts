@@ -6,6 +6,8 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import connectPg from "connect-pg-simple";
+import { validateInput, registerSchema, loginSchema } from "./validation";
+import { handleAsyncErrors, AppError } from "./error-handler";
 
 const scryptAsync = promisify(scrypt);
 
@@ -75,51 +77,54 @@ export function setupSimpleAuth(app: Express) {
   });
 
   // Register endpoint
-  app.post("/api/register", async (req, res) => {
-    try {
-      const { email, password, firstName, lastName } = req.body;
-      
-      // Check if user already exists
-      const existingUser = await storage.getUserByEmail(email);
-      if (existingUser) {
-        return res.status(400).json({ message: "User already exists" });
-      }
-
-      // Hash password
-      const hashedPassword = await hashPassword(password);
-      
-      // Set role based on email
-      const role = email === "jamie@straightupsearch.com" ? "admin" : "user";
-      
-      // Create user
-      const user = await storage.upsertUser({
-        id: `user_${Date.now()}`,
-        email,
-        firstName: firstName || null,
-        lastName: lastName || null,
-        profileImageUrl: null,
-        role,
-        password: hashedPassword,
-        accountBalance: "0.00",
-        creditsRemaining: role === "admin" ? 1000 : 0,
-      });
-
-      // Auto-login after registration
-      req.login(user, (err) => {
-        if (err) return res.status(500).json({ message: "Registration failed" });
-        res.status(201).json({ user, message: "Registration successful" });
-      });
-    } catch (error) {
-      console.error("Registration error:", error);
-      res.status(500).json({ message: "Registration failed" });
+  app.post("/api/register", handleAsyncErrors(async (req, res) => {
+    // Validate input
+    const validatedData = validateInput(registerSchema, req.body);
+    
+    // Check if user already exists
+    const existingUser = await storage.getUserByEmail(validatedData.email);
+    if (existingUser) {
+      throw new AppError("An account with this email already exists", 400);
     }
-  });
+
+    // Hash password
+    const hashedPassword = await hashPassword(validatedData.password);
+    
+    // Set role based on email
+    const role = validatedData.email === "jamie@straightupsearch.com" ? "admin" : "user";
+    
+    // Create user
+    const user = await storage.upsertUser({
+      id: `user_${Date.now()}`,
+      email: validatedData.email,
+      firstName: validatedData.firstName || null,
+      lastName: validatedData.lastName || null,
+      profileImageUrl: null,
+      role,
+      password: hashedPassword,
+      accountBalance: "0.00",
+      creditsRemaining: role === "admin" ? 1000 : 0,
+    });
+
+    // Auto-login after registration
+    req.login(user, (err) => {
+      if (err) throw new AppError("Registration failed", 500);
+      res.status(201).json({ user, message: "Registration successful" });
+    });
+  }));
 
   // Login endpoint
   app.post("/api/login", (req, res, next) => {
+    // Validate input first
+    try {
+      validateInput(loginSchema, req.body);
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) return res.status(500).json({ message: "Login failed" });
-      if (!user) return res.status(401).json({ message: "Invalid credentials" });
+      if (!user) return res.status(401).json({ message: "Invalid email or password" });
       
       req.login(user, (err) => {
         if (err) return res.status(500).json({ message: "Login failed" });

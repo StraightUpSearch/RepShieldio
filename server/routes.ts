@@ -5,6 +5,9 @@ import Stripe from "stripe";
 import { storage } from "./storage";
 import { setupSimpleAuth, isAuthenticated } from "./simple-auth";
 import { insertAuditRequestSchema, insertQuoteRequestSchema, insertBrandScanTicketSchema } from "@shared/schema";
+import { globalErrorHandler, handleAsyncErrors, AppError } from "./error-handler";
+import { validateInput, brandScanSchema, contactSchema } from "./validation";
+import { strictLimiter, moderateLimiter, generalLimiter } from "./rate-limiter";
 import { getChatbotResponse, analyzeRedditUrl } from "./openai";
 import { sendQuoteNotification, sendContactNotification } from "./email";
 import { redditAPI } from "./reddit";
@@ -342,65 +345,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Brand scanning endpoint with ScrapingBee integration
-  app.post("/api/brand-scan", async (req, res) => {
-    const { brandName, includePlatforms = ['reddit'], recaptchaToken } = req.body;
-    if (!brandName) {
-      return res.status(400).json({ success: false, error: "Brand name is required" });
-    }
+  app.post("/api/brand-scan", moderateLimiter, handleAsyncErrors(async (req, res) => {
+    // Validate input
+    const validatedData = validateInput(brandScanSchema, req.body);
+    
+    console.log(`Scanning Reddit for brand: ${validatedData.brandName} using ScrapingBee`);
+    
+    // Use ScrapingBee to get authentic Reddit data
+    const searchResults = await scrapingBeeAPI.searchBrand(validatedData.brandName);
+    
+    const results = {
+      totalMentions: searchResults.totalFound,
+      posts: searchResults.posts.length,
+      comments: searchResults.comments.length,
+      riskLevel: searchResults.riskScore > 70 ? 'high' : searchResults.riskScore > 30 ? 'medium' : 'low',
+      sentiment: searchResults.sentiment,
+      previewMentions: [
+        ...searchResults.posts.slice(0, 3).map(post => {
+          const daysAgo = Math.floor((Date.now() / 1000 - post.created_utc) / 86400);
+          return {
+            subreddit: post.subreddit,
+            timeAgo: `${daysAgo} days ago`,
+            sentiment: searchResults.sentiment,
+            previewText: (post.title + ' ' + post.selftext).substring(0, 120) + '...',
+            url: `https://reddit.com${post.permalink}`,
+            score: post.score,
+            platform: 'Reddit'
+          };
+        }),
+        ...searchResults.comments.slice(0, 2).map(comment => {
+          const daysAgo = Math.floor((Date.now() / 1000 - comment.created_utc) / 86400);
+          return {
+            subreddit: comment.subreddit,
+            timeAgo: `${daysAgo} days ago`,
+            sentiment: searchResults.sentiment,
+            previewText: comment.body.substring(0, 120) + '...',
+            url: `https://reddit.com${comment.permalink}`,
+            score: comment.score,
+            platform: 'Reddit'
+          };
+        })
+      ].slice(0, 5)
+    };
 
-    try {
-      console.log(`Scanning Reddit for brand: ${brandName} using ScrapingBee`);
-      
-      // Use ScrapingBee to get authentic Reddit data
-      const searchResults = await scrapingBeeAPI.searchBrand(brandName);
-      
-      const results = {
-        totalMentions: searchResults.totalFound,
-        posts: searchResults.posts.length,
-        comments: searchResults.comments.length,
-        riskLevel: searchResults.riskScore > 70 ? 'high' : searchResults.riskScore > 30 ? 'medium' : 'low',
-        sentiment: searchResults.sentiment,
-        previewMentions: [
-          ...searchResults.posts.slice(0, 3).map(post => {
-            const daysAgo = Math.floor((Date.now() / 1000 - post.created_utc) / 86400);
-            return {
-              subreddit: post.subreddit,
-              timeAgo: `${daysAgo} days ago`,
-              sentiment: searchResults.sentiment,
-              previewText: (post.title + ' ' + post.selftext).substring(0, 120) + '...',
-              url: `https://reddit.com${post.permalink}`,
-              score: post.score,
-              platform: 'Reddit'
-            };
-          }),
-          ...searchResults.comments.slice(0, 2).map(comment => {
-            const daysAgo = Math.floor((Date.now() / 1000 - comment.created_utc) / 86400);
-            return {
-              subreddit: comment.subreddit,
-              timeAgo: `${daysAgo} days ago`,
-              sentiment: searchResults.sentiment,
-              previewText: comment.body.substring(0, 120) + '...',
-              url: `https://reddit.com${comment.permalink}`,
-              score: comment.score,
-              platform: 'Reddit'
-            };
-          })
-        ].slice(0, 5)
-      };
+    // Broadcast notification for admin monitoring
+    notificationManager.broadcastBrandScan(validatedData.brandName, results);
 
-      // Broadcast notification for admin monitoring
-      notificationManager.broadcastBrandScan(brandName, results);
-
-      res.json({ success: true, data: results });
-    } catch (error: any) {
-      console.error("ScrapingBee scan error:", error);
-      res.status(500).json({ 
-        success: false, 
-        error: "Failed to scan Reddit data - ScrapingBee API key required",
-        details: error.message 
-      });
-    }
-  });
+    res.json({ success: true, data: results });
+  }));
 
   // Comprehensive brand scanning with multi-platform web scraping
   app.post("/api/scan-brand", async (req, res) => {
