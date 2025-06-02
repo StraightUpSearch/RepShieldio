@@ -42,7 +42,7 @@ export async function setupAuth(app: Express) {
   passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID!,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    callbackURL: `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/api/auth/google/callback`
+    callbackURL: `https://${process.env.REPLIT_DOMAINS}/api/auth/google/callback`
   },
   async (accessToken, refreshToken, profile, done) => {
     try {
@@ -97,7 +97,7 @@ export async function setupAuth(app: Express) {
     console.log("Google OAuth route accessed");
     console.log("OAuth Config - Client ID exists:", !!process.env.GOOGLE_CLIENT_ID);
     console.log("OAuth Config - Client Secret exists:", !!process.env.GOOGLE_CLIENT_SECRET);
-    console.log("OAuth Config - Callback URL:", `https://${process.env.REPLIT_DOMAINS?.split(',')[0] || 'localhost:5000'}/api/auth/google/callback`);
+    console.log("OAuth Config - Callback URL:", `https://${process.env.REPLIT_DOMAINS}/api/auth/google/callback`);
     
     passport.authenticate("google", { 
       scope: ["profile", "email"],
