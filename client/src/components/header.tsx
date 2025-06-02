@@ -4,6 +4,7 @@ import { Menu, X, Search, User, LogOut, Settings } from "lucide-react";
 import { SiReddit } from "react-icons/si";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
+import { apiRequest } from "@/lib/queryClient";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,10 +55,10 @@ export default function Header() {
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" className="ml-2 flex items-center gap-2">
                         <User className="h-4 w-4" />
-                        {user?.email === 'jamie@straightupsearch.com' ? (
+                        {(user as any)?.email === 'jamie@straightupsearch.com' ? (
                           <span className="text-blue-600 font-semibold">Admin</span>
                         ) : (
-                          <span>{user?.firstName || user?.email?.split('@')[0] || 'User'}</span>
+                          <span>{(user as any)?.firstName || (user as any)?.email?.split('@')[0] || 'User'}</span>
                         )}
                       </Button>
                     </DropdownMenuTrigger>
@@ -68,7 +69,7 @@ export default function Header() {
                           My Account
                         </Link>
                       </DropdownMenuItem>
-                      {user?.email === 'jamie@straightupsearch.com' && (
+                      {(user as any)?.email === 'jamie@straightupsearch.com' && (
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem asChild>
@@ -80,7 +81,15 @@ export default function Header() {
                         </>
                       )}
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => window.location.href = '/api/logout'} className="flex items-center gap-2">
+                      <DropdownMenuItem onClick={async () => {
+                        try {
+                          await apiRequest("POST", "/api/logout");
+                          window.location.href = "/";
+                        } catch (error) {
+                          console.error("Logout error:", error);
+                          window.location.href = "/";
+                        }
+                      }} className="flex items-center gap-2">
                         <LogOut className="h-4 w-4" />
                         Logout
                       </DropdownMenuItem>

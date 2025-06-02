@@ -83,9 +83,7 @@ export default function AuthPage() {
     registerMutation.mutate(registerForm);
   };
 
-  const handleGoogleLogin = () => {
-    window.location.href = "/api/auth/google";
-  };
+
 
   if (isLoading) {
     return (
@@ -121,26 +119,6 @@ export default function AuthPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Button 
-                    onClick={handleGoogleLogin}
-                    variant="outline" 
-                    className="w-full"
-                    type="button"
-                  >
-                    <FaGoogle className="mr-2 h-4 w-4" />
-                    Continue with Google
-                  </Button>
-
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-background px-2 text-muted-foreground">
-                        Or continue with email
-                      </span>
-                    </div>
-                  </div>
 
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
@@ -185,26 +163,6 @@ export default function AuthPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Button 
-                    onClick={handleGoogleLogin}
-                    variant="outline" 
-                    className="w-full"
-                    type="button"
-                  >
-                    <FaGoogle className="mr-2 h-4 w-4" />
-                    Continue with Google
-                  </Button>
-
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-background px-2 text-muted-foreground">
-                        Or register with email
-                      </span>
-                    </div>
-                  </div>
 
                   <form onSubmit={handleRegister} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
