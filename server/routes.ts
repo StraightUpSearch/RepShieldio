@@ -16,6 +16,7 @@ import { telegramBot } from "./telegram";
 import { webScrapingService } from "./webscraping";
 import { errorRecovery } from "./error-recovery";
 import { notificationManager } from "./notification-manager";
+import { liveScannerService } from "./live-scanner";
 
 // Initialize Stripe only if the secret key is available
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
@@ -344,54 +345,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Brand scanning endpoint with ScrapingBee integration
-  app.post("/api/brand-scan", moderateLimiter, handleAsyncErrors(async (req, res) => {
-    // Validate input
-    const validatedData = validateInput(brandScanSchema, req.body);
+  // LIVE SCANNER - Quick brand scan endpoint
+  app.post("/api/live-scan", moderateLimiter, handleAsyncErrors(async (req, res) => {
+    const { brandName, userEmail, platforms = ['reddit'] } = req.body;
     
-    console.log(`Scanning Reddit for brand: ${validatedData.brandName} using ScrapingBee`);
+    if (!brandName || typeof brandName !== 'string') {
+      return res.status(400).json({ 
+        success: false,
+        error: "Brand name is required" 
+      });
+    }
     
-    // Use ScrapingBee to get authentic Reddit data
-    const searchResults = await scrapingBeeAPI.searchBrand(validatedData.brandName);
+    console.log(`🔍 Live Scanner: Quick scan for ${brandName}`);
     
-    const results = {
-      totalMentions: searchResults.totalFound,
-      posts: searchResults.posts.length,
-      comments: searchResults.comments.length,
-      riskLevel: searchResults.riskScore > 70 ? 'high' : searchResults.riskScore > 30 ? 'medium' : 'low',
-      sentiment: searchResults.sentiment,
-      previewMentions: [
-        ...searchResults.posts.slice(0, 3).map(post => {
-          const daysAgo = Math.floor((Date.now() / 1000 - post.created_utc) / 86400);
-          return {
-            subreddit: post.subreddit,
-            timeAgo: `${daysAgo} days ago`,
-            sentiment: searchResults.sentiment,
-            previewText: (post.title + ' ' + post.selftext).substring(0, 120) + '...',
-            url: `https://reddit.com${post.permalink}`,
-            score: post.score,
-            platform: 'Reddit'
-          };
-        }),
-        ...searchResults.comments.slice(0, 2).map(comment => {
-          const daysAgo = Math.floor((Date.now() / 1000 - comment.created_utc) / 86400);
-          return {
-            subreddit: comment.subreddit,
-            timeAgo: `${daysAgo} days ago`,
-            sentiment: searchResults.sentiment,
-            previewText: comment.body.substring(0, 120) + '...',
-            url: `https://reddit.com${comment.permalink}`,
-            score: comment.score,
-            platform: 'Reddit'
-          };
-        })
-      ].slice(0, 5)
+    const scanRequest = {
+      brandName: brandName.trim(),
+      userEmail,
+      priority: 'quick' as const,
+      platforms
     };
+    
+    const results = await liveScannerService.quickScan(scanRequest);
+    
+    res.json({ 
+      success: true, 
+      data: {
+        scanId: results.scanId,
+        totalMentions: results.totalMentions,
+        riskLevel: results.riskLevel,
+        riskScore: results.riskScore,
+        platforms: results.platforms,
+        nextSteps: results.nextSteps,
+        ticketId: results.ticketId,
+        processingTime: results.processingTime,
+        // Legacy format for existing frontend
+        posts: results.platforms.reddit.posts,
+        comments: results.platforms.reddit.comments,
+        sentiment: results.platforms.reddit.sentiment,
+        previewMentions: results.platforms.reddit.topMentions.map(mention => ({
+          subreddit: mention.subreddit,
+          timeAgo: `${Math.floor((Date.now() / 1000 - mention.created) / 86400)} days ago`,
+          sentiment: results.platforms.reddit.sentiment,
+          previewText: mention.content,
+          url: mention.url,
+          score: mention.score,
+          platform: 'Reddit'
+        }))
+      }
+    });
+  }));
 
-    // Broadcast notification for admin monitoring
-    notificationManager.broadcastBrandScan(validatedData.brandName, results);
-
-    res.json({ success: true, data: results });
+  // COMPREHENSIVE SCANNER - Full professional analysis
+  app.post("/api/comprehensive-scan", moderateLimiter, handleAsyncErrors(async (req, res) => {
+    const { brandName, userEmail, platforms = ['reddit', 'web'] } = req.body;
+    
+    if (!brandName || typeof brandName !== 'string') {
+      return res.status(400).json({ 
+        success: false,
+        error: "Brand name is required" 
+      });
+    }
+    
+    console.log(`🔍 Comprehensive Scanner: Deep analysis for ${brandName}`);
+    
+    const scanRequest = {
+      brandName: brandName.trim(),
+      userEmail: userEmail || 'anonymous@comprehensive.com',
+      priority: 'comprehensive' as const,
+      platforms
+    };
+    
+    const results = await liveScannerService.comprehensiveScan(scanRequest);
+    
+    res.json({ 
+      success: true, 
+      data: results
+    });
   }));
 
   // Comprehensive brand scanning with multi-platform web scraping
@@ -653,12 +682,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const quoteRequest = await storage.createQuoteRequest(validatedData);
       
+      // Create a ticket for user tracking
+      const ticket = await storage.createTicket({
+        userId: 'anonymous',
+        type: 'quote_request',
+        title: `Quote Request - ${new URL(validatedData.redditUrl).hostname}`,
+        description: `Reddit URL: ${validatedData.redditUrl}\nClient Email: ${validatedData.email}`,
+        redditUrl: validatedData.redditUrl,
+        status: 'pending',
+        priority: 'standard',
+        amount: analysis?.estimatedPrice?.toString() || null,
+        requestData: {
+          email: validatedData.email,
+          redditUrl: validatedData.redditUrl,
+          analysis: analysis,
+          quoteRequestId: quoteRequest.id
+        }
+      });
+      
       // Send email notification
       try {
         await sendQuoteNotification({
           redditUrl: validatedData.redditUrl,
           email: validatedData.email,
-          analysis
+          analysis,
+          ticketId: ticket.id
         });
       } catch (error) {
         console.error("Failed to send email notification:", error);
@@ -669,6 +717,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         message: "Quote request submitted successfully",
         id: quoteRequest.id,
+        ticketId: ticket.id,
         analysis
       });
     } catch (error) {
@@ -701,6 +750,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({
         success: false,
         message: "Internal server error"
+      });
+    }
+  });
+
+  // Public ticket status check by email
+  app.post("/api/check-ticket-status", generalLimiter, async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          message: "Email is required"
+        });
+      }
+
+      // Get all tickets associated with this email
+      const allTickets = await storage.getTickets();
+      const userTickets = allTickets.filter(ticket => 
+        ticket.requestData && 
+        typeof ticket.requestData === 'object' && 
+        'email' in ticket.requestData && 
+        ticket.requestData.email === email
+      );
+
+      res.json({
+        success: true,
+        data: userTickets.map(ticket => ({
+          id: ticket.id,
+          type: ticket.type,
+          title: ticket.title,
+          status: ticket.status,
+          priority: ticket.priority,
+          progress: ticket.progress || 0,
+          amount: ticket.amount,
+          redditUrl: ticket.redditUrl,
+          createdAt: ticket.createdAt,
+          updatedAt: ticket.updatedAt
+        }))
+      });
+    } catch (error) {
+      console.error("Error checking ticket status:", error);
+      res.status(500).json({
+        success: false,
+        message: "Unable to check ticket status"
       });
     }
   });

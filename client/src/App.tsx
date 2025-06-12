@@ -15,6 +15,7 @@ import AdminDashboard from "@/pages/admin-dashboard";
 import DataAdmin from "@/pages/data-admin";
 import AuthPage from "@/pages/auth-page";
 import About from "@/pages/about";
+import TicketStatusPage from "@/pages/ticket-status";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/my-account" component={MyAccount} />
       <Route path="/about" component={About} />
+      <Route path="/ticket-status" component={TicketStatusPage} />
       <Route path="/login" component={AuthPage} />
       <Route path="/auth" component={AuthPage} />
       <Route path="/admin" component={AdminPanel} />

@@ -161,21 +161,43 @@ export default function Scan() {
 
   const scanMutation = useMutation({
     mutationFn: async (brand: string) => {
-      // Simulate loading time for realism
-      await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 2000));
-      return generateFakeData(brand);
+      console.log(`🔍 Starting live scan for: ${brand}`);
+      const response = await apiRequest("POST", "/api/live-scan", {
+        brandName: brand,
+        platforms: ['reddit']
+      });
+      return response.data;
     },
     onSuccess: (data) => {
-      setResults(data);
-      toast({
-        title: "Scan Complete",
-        description: `Found ${data.totalFound} mentions requiring attention`,
+      setResults({
+        totalFound: data.totalMentions,
+        riskScore: data.riskScore,
+        posts: data.previewMentions.filter((m: any) => m.platform === 'Reddit'),
+        comments: data.platforms.reddit.comments || 0
       });
+      toast({
+        title: "✅ Live Scan Complete",
+        description: `Found ${data.totalMentions} mentions • Risk Level: ${data.riskLevel.toUpperCase()}`,
+      });
+      
+      // Show next steps to user
+      if (data.nextSteps.length > 0) {
+        setTimeout(() => {
+          toast({
+            title: "📋 Next Steps Available",
+            description: data.nextSteps[0],
+          });
+        }, 2000);
+      }
     },
     onError: (error: any) => {
+      console.error('Live scan failed:', error);
+      // Fallback to demo data if live scan fails
+      const demoData = generateFakeData(brandName);
+      setResults(demoData);
       toast({
-        title: "Scan Failed",
-        description: "Unable to scan Reddit at this time",
+        title: "⚠️ Using Demo Data",
+        description: "Live scan unavailable - showing sample results",
         variant: "destructive",
       });
     },

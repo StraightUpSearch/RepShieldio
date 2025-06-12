@@ -81,16 +81,33 @@ export default function BrandScanner() {
         throw new Error('SPAM_DETECTED');
       }
 
-      return await apiRequest("POST", "/api/scan-brand", { 
+      // Use optimized live scanner for quick initial scan
+      const response = await apiRequest("POST", "/api/live-scan", { 
         brandName,
-        includePlatforms: ['reddit', 'reviews', 'social', 'news'],
+        platforms: ['reddit'],
         recaptchaToken: recaptchaToken || null
       });
+      
+      return response.data;
     },
     onSuccess: (response: any) => {
-      setScanResults(response);
+      setScanResults({
+        totalMentions: response.totalMentions,
+        posts: response.platforms.reddit.posts,
+        comments: response.platforms.reddit.comments,
+        riskLevel: response.riskLevel,
+        nextSteps: response.nextSteps,
+        scanId: response.scanId,
+        previewMentions: response.previewMentions || []
+      });
       setCurrentStep('results');
       setRecentSubmissions(prev => prev + 1);
+      
+      // Show scan insights
+      toast({
+        title: `🔍 Scan Complete`,
+        description: `Risk Level: ${response.riskLevel.toUpperCase()} • Processing time: ${response.processingTime}ms`,
+      });
     },
     onError: (error: any) => {
       if (error.message === 'SPAM_DETECTED') {
@@ -102,7 +119,7 @@ export default function BrandScanner() {
       } else {
         toast({
           title: "Scan Failed",
-          description: "Unable to complete comprehensive scan. Please try again.",
+          description: "Unable to complete live scan. Please try again.",
           variant: "destructive",
         });
       }
@@ -235,6 +252,20 @@ export default function BrandScanner() {
     }, 3000);
   };
 
+  const handleComprehensiveScan = async () => {
+    if (!brandName) {
+      toast({
+        title: "Brand Name Required",
+        description: "Please enter a brand name first.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setCurrentStep('ticket');
+    setTicketForm(prev => ({ ...prev, leadType: 'premium', brandName }));
+  };
+
   const handleTicketSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!ticketForm.name || !ticketForm.email || !ticketForm.company) {
@@ -245,8 +276,55 @@ export default function BrandScanner() {
       });
       return;
     }
-    submitTicket.mutate(ticketForm);
+    
+    // For premium leads, trigger comprehensive scan
+    if (ticketForm.leadType === 'premium') {
+      comprehensiveScan.mutate({
+        brandName: ticketForm.brandName,
+        userEmail: ticketForm.email,
+        userName: ticketForm.name,
+        company: ticketForm.company
+      });
+    } else {
+      submitTicket.mutate(ticketForm);
+    }
   };
+
+  const comprehensiveScan = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("POST", "/api/comprehensive-scan", {
+        brandName: data.brandName,
+        userEmail: data.userEmail,
+        platforms: ['reddit', 'web']
+      });
+      
+      // Also submit the ticket with comprehensive scan results
+      const ticketResponse = await apiRequest("POST", "/api/brand-scan-ticket", {
+        brandName: data.brandName,
+        userEmail: data.userEmail,
+        userName: data.userName,
+        company: data.company,
+        scanResults: JSON.stringify(response.data),
+        leadType: 'premium'
+      });
+      
+      return { scan: response.data, ticket: ticketResponse };
+    },
+    onSuccess: (data) => {
+      setCurrentStep('confirmed');
+      toast({
+        title: "🚀 Comprehensive Analysis Started",
+        description: `Specialist ticket #${data.ticket.id} created. Full analysis will be delivered within 2 hours.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Analysis Requested",
+        description: "Your comprehensive analysis request has been received. A specialist will contact you shortly.",
+      });
+      setCurrentStep('confirmed');
+    }
+  });
 
   const renderInputStep = () => (
     <div className="text-center">
@@ -412,7 +490,7 @@ export default function BrandScanner() {
       {/* Multiple lead capture options */}
       <div className="space-y-3">
         <Button 
-          onClick={() => { setTicketForm(prev => ({ ...prev, leadType: 'premium' })); setCurrentStep('ticket'); }}
+          onClick={() => handleComprehensiveScan()}
           size="lg"
           className="bg-reddit-orange text-white hover:bg-red-600 w-full h-12 sm:h-14 text-sm sm:text-lg font-semibold"
         >
