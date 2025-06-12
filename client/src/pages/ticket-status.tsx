@@ -1,6 +1,6 @@
 import React from 'react';
 import { TicketStatus } from '@/components/ticket-status';
-import { SEOHead } from '@/components/seo-head';
+import SEOHead from '@/components/seo-head';
 
 export default function TicketStatusPage() {
   return (
