@@ -1,14 +1,21 @@
 import OpenAI from "openai";
 
-if (!process.env.OPENAI_API_KEY) {
-  throw new Error("OPENAI_API_KEY environment variable must be set");
+// Make OpenAI optional for development
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({ 
+  apiKey: process.env.OPENAI_API_KEY 
+}) : null;
+
+if (!openai && process.env.NODE_ENV === 'production') {
+  throw new Error("OPENAI_API_KEY environment variable must be set in production");
 }
 
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY 
-});
-
 export async function getChatbotResponse(userMessage: string, conversationHistory: string[] = []): Promise<string> {
+  // Use fallback responses if OpenAI is not configured
+  if (!openai) {
+    console.log("🤖 Using fallback chatbot (OpenAI not configured)");
+    return getFallbackResponse(userMessage);
+  }
+
   try {
     const systemPrompt = `You are a helpful assistant for RepShield, a professional Reddit reputation management service. 
 
@@ -114,6 +121,32 @@ function getFallbackResponse(userMessage: string): string {
 }
 
 export async function analyzeRedditUrl(url: string): Promise<{ contentType: string; estimatedPrice: string; description: string }> {
+  // Use basic analysis if OpenAI is not configured
+  if (!openai) {
+    console.log("🔍 Using basic URL analysis (OpenAI not configured)");
+    
+    // Basic URL pattern matching
+    if (url.includes('/comments/')) {
+      return {
+        contentType: "Reddit post",
+        estimatedPrice: "$899",
+        description: "We can remove this Reddit post with our 95%+ success rate in 24-48 hours."
+      };
+    } else if (url.includes('/r/') && url.includes('/#')) {
+      return {
+        contentType: "Reddit comment",
+        estimatedPrice: "$199",
+        description: "We can remove this Reddit comment with our 95%+ success rate in 24 hours."
+      };
+    } else {
+      return {
+        contentType: "Reddit content",
+        estimatedPrice: "$899",
+        description: "We can analyze and remove this Reddit content. Contact us for a detailed quote."
+      };
+    }
+  }
+
   try {
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
