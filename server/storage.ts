@@ -446,10 +446,12 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  // Ticket operations (temporary stubs)
+  // Ticket operations 
+  private currentTicketId: number = 1;
+
   async createTicket(ticketData: InsertTicket): Promise<Ticket> {
-    return {
-      id: 1,
+    const ticket: Ticket = {
+      id: this.currentTicketId++,
       userId: ticketData.userId,
       type: ticketData.type,
       status: ticketData.status || "pending",
@@ -462,26 +464,59 @@ export class MemStorage implements IStorage {
       createdAt: new Date(),
       updatedAt: new Date(),
     };
+    
+    this.allTickets.push(ticket);
+    console.log(`📝 Created ticket #${ticket.id}: ${ticket.title}`);
+    return ticket;
   }
 
   async getTickets(): Promise<Ticket[]> {
-    return [];
+    return [...this.allTickets];
   }
 
   async getUserTickets(userId: string): Promise<Ticket[]> {
-    return [];
+    return this.allTickets.filter(ticket => ticket.userId === userId);
   }
 
   async getTicket(id: number): Promise<Ticket | undefined> {
-    return undefined;
+    return this.allTickets.find(ticket => ticket.id === id);
   }
 
   async updateTicketStatus(id: number, status: string, assignedTo?: string): Promise<Ticket | undefined> {
+    const ticketIndex = this.allTickets.findIndex(ticket => ticket.id === id);
+    if (ticketIndex !== -1) {
+      this.allTickets[ticketIndex] = {
+        ...this.allTickets[ticketIndex],
+        status,
+        assignedTo: assignedTo || this.allTickets[ticketIndex].assignedTo,
+        updatedAt: new Date()
+      };
+      return this.allTickets[ticketIndex];
+    }
     return undefined;
   }
 
   async updateTicketNotes(id: number, notes: string): Promise<Ticket | undefined> {
+    const ticketIndex = this.allTickets.findIndex(ticket => ticket.id === id);
+    if (ticketIndex !== -1) {
+      this.allTickets[ticketIndex] = {
+        ...this.allTickets[ticketIndex],
+        notes,
+        updatedAt: new Date()
+      };
+      return this.allTickets[ticketIndex];
+    }
     return undefined;
+  }
+
+  async getTicketsWithUsers(): Promise<any[]> {
+    return this.allTickets.map(ticket => {
+      const user = this.allUsers.find(u => u.id === ticket.userId);
+      return {
+        ...ticket,
+        user: user || null
+      };
+    });
   }
 
   async createAuditRequest(insertRequest: InsertAuditRequest): Promise<AuditRequest> {

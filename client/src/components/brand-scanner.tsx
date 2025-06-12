@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Search, AlertTriangle, CheckCircle, Clock, User, ArrowRight, Shield, Eye, Phone, Mail, HelpCircle, Globe } from "lucide-react";
+import { Search, AlertTriangle, CheckCircle, Clock, User, ArrowRight, Shield, Eye, Phone, Mail, HelpCircle, Globe, ExternalLink } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +39,7 @@ export default function BrandScanner() {
   const [currentStep, setCurrentStep] = useState<ScanStep['step']>('input');
   const [brandName, setBrandName] = useState("");
   const [scanResults, setScanResults] = useState<any>(null);
+  const [createdTicket, setCreatedTicket] = useState<any>(null); // Store actual ticket response
   const [ticketForm, setTicketForm] = useState<TicketForm>({
     name: "",
     email: "",
@@ -150,6 +151,7 @@ export default function BrandScanner() {
       });
     },
     onSuccess: (response) => {
+      setCreatedTicket(response.data); // Store the actual ticket response
       setCurrentStep('confirmed');
       toast({
         title: "Account Created Successfully!",
@@ -659,7 +661,9 @@ export default function BrandScanner() {
         <div className="space-y-3 text-left">
           <div className="flex items-center space-x-3">
             <CheckCircle className="h-5 w-5 text-green-600" />
-            <span className="text-green-800">Ticket #RM-{Date.now().toString().slice(-6)} created</span>
+            <span className="text-green-800">
+              Ticket #{createdTicket?.id ? `RM-${createdTicket.id}` : 'RM-PENDING'} created
+            </span>
           </div>
           <div className="flex items-center space-x-3">
             <CheckCircle className="h-5 w-5 text-green-600" />
@@ -676,6 +680,57 @@ export default function BrandScanner() {
         <p className="text-reddit-orange font-semibold">
           📧 Check your email ({ticketForm.email}) for your specialist's direct contact details
         </p>
+      </div>
+
+      {/* Enhanced User Flow - Account Creation & Next Steps */}
+      <div className="space-y-4">
+        <div className="border-t pt-4">
+          <h4 className="font-semibold text-gray-900 mb-3">🚀 What's Next?</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <a 
+              href="/my-account" 
+              className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+            >
+              <div>
+                <p className="font-medium text-blue-900">My Account</p>
+                <p className="text-sm text-blue-700">Track your ticket progress</p>
+              </div>
+              <ExternalLink className="h-4 w-4 text-blue-600" />
+            </a>
+            
+            <a 
+              href="/ticket-status" 
+              className="flex items-center justify-between p-4 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+            >
+              <div>
+                <p className="font-medium text-green-900">Ticket Status</p>
+                <p className="text-sm text-green-700">Check progress anytime</p>
+              </div>
+              <ExternalLink className="h-4 w-4 text-green-600" />
+            </a>
+          </div>
+        </div>
+
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
+            <div className="text-sm text-yellow-800">
+              <p className="font-medium mb-1">💡 Pro Tip:</p>
+              <p>Create a free RepShield account to unlock unlimited brand monitoring, real-time alerts, and priority support.</p>
+            </div>
+          </div>
+        </div>
+
+        <Button 
+          onClick={() => window.location.href = '/auth-page'} 
+          variant="outline" 
+          size="lg" 
+          className="w-full border-2 border-reddit-orange text-reddit-orange hover:bg-reddit-orange hover:text-white"
+        >
+          <User className="w-4 h-4 mr-2" />
+          Create Free RepShield Account
+          <ArrowRight className="w-4 h-4 ml-2" />
+        </Button>
       </div>
     </div>
   );

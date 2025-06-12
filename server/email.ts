@@ -1,10 +1,18 @@
 import sgMail from '@sendgrid/mail';
 
-if (!process.env.SENDGRID_API_KEY) {
-  throw new Error("SENDGRID_API_KEY environment variable must be set");
+// Only require SENDGRID_API_KEY in production
+const isProduction = process.env.NODE_ENV === 'production';
+const apiKey = process.env.SENDGRID_API_KEY;
+
+if (isProduction && !apiKey) {
+  throw new Error("SENDGRID_API_KEY environment variable must be set in production");
 }
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+if (apiKey) {
+  sgMail.setApiKey(apiKey);
+} else {
+  console.log('📧 Running in development mode without SendGrid - emails will be logged only');
+}
 
 const ADMIN_EMAIL = 'jamie@straightupsearch.com';
 
@@ -39,8 +47,14 @@ export async function sendQuoteNotification(data: {
   };
 
   try {
-    await sgMail.send(msg);
-    console.log('Quote notification sent successfully');
+    if (apiKey) {
+      await sgMail.send(msg);
+      console.log('Quote notification sent successfully');
+    } else {
+      console.log('📧 DEV MODE - Would send email:', msg.subject);
+      console.log('📧 To:', msg.to);
+      console.log('📧 Content:', data);
+    }
   } catch (error) {
     console.error('Error sending quote notification:', error);
     throw error;
@@ -80,8 +94,14 @@ export async function sendContactNotification(data: {
   };
 
   try {
-    await sgMail.send(msg);
-    console.log('Contact notification sent successfully');
+    if (apiKey) {
+      await sgMail.send(msg);
+      console.log('Contact notification sent successfully');
+    } else {
+      console.log('📧 DEV MODE - Would send contact email:', msg.subject);
+      console.log('📧 From:', data.name, data.email);
+      console.log('📧 Message:', data.message);
+    }
   } catch (error) {
     console.error('Error sending contact notification:', error);
     throw error;

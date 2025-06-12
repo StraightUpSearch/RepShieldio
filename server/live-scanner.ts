@@ -170,31 +170,37 @@ class LiveScannerService {
     // Reddit factors (weight: 70%)
     if (reddit) {
       // Base negative sentiment
-      score += reddit.riskScore * 0.4;
+      score += (reddit.riskScore || 0) * 0.4;
       
       // Volume factor (more mentions = higher visibility risk)
-      const volumeMultiplier = Math.min(reddit.totalFound / 20, 2);
+      const totalFound = reddit.totalFound || 0;
+      const volumeMultiplier = Math.min(totalFound / 20, 2);
       score += volumeMultiplier * 15;
       
       // Recency factor (recent mentions are riskier)
-      const recentPosts = reddit.posts.filter((p: any) => 
-        (Date.now() / 1000 - p.created_utc) < 86400 * 7
-      );
-      if (recentPosts.length > 0) {
-        score += (recentPosts.length / reddit.posts.length) * 20;
+      if (reddit.posts && reddit.posts.length > 0) {
+        const recentPosts = reddit.posts.filter((p: any) => {
+          return p.created_utc && (Date.now() / 1000 - p.created_utc) < 86400 * 7;
+        });
+        if (recentPosts.length > 0) {
+          score += (recentPosts.length / reddit.posts.length) * 20;
+        }
       }
       
       // High-visibility subreddits factor
-      const highVisibilitySubreddits = ['entrepreneur', 'business', 'reviews', 'scams'];
-      const highVisCount = reddit.posts.filter((p: any) => 
-        highVisibilitySubreddits.includes(p.subreddit.toLowerCase())
-      ).length;
-      score += (highVisCount / reddit.posts.length) * 25;
+      if (reddit.posts && reddit.posts.length > 0) {
+        const highVisibilitySubreddits = ['entrepreneur', 'business', 'reviews', 'scams'];
+        const highVisCount = reddit.posts.filter((p: any) => {
+          return p.subreddit && typeof p.subreddit === 'string' && 
+                 highVisibilitySubreddits.includes(p.subreddit.toLowerCase());
+        }).length;
+        score += (highVisCount / reddit.posts.length) * 25;
+      }
     }
     
     // Web platform factors (weight: 30%)
-    if (web) {
-      score += (web.negativeMentions / web.totalMentions) * 30;
+    if (web && web.totalMentions > 0) {
+      score += ((web.negativeMentions || 0) / web.totalMentions) * 30;
     }
     
     return Math.min(Math.round(score), 100);
@@ -207,22 +213,26 @@ class LiveScannerService {
   }
   
   private extractTopMentions(reddit: any, limit: number) {
+    if (!reddit || !reddit.posts || !reddit.comments) {
+      return [];
+    }
+
     const allMentions = [
       ...reddit.posts.map((p: any) => ({
         type: 'post',
-        subreddit: p.subreddit,
-        content: p.title + ' ' + p.selftext.substring(0, 150),
-        score: p.score,
-        url: `https://reddit.com${p.permalink}`,
-        created: p.created_utc
+        subreddit: p.subreddit || 'unknown',
+        content: (p.title || '') + ' ' + (p.selftext || '').substring(0, 150),
+        score: p.score || 0,
+        url: `https://reddit.com${p.permalink || ''}`,
+        created: p.created_utc || Date.now() / 1000
       })),
       ...reddit.comments.map((c: any) => ({
         type: 'comment',
-        subreddit: c.subreddit,
-        content: c.body.substring(0, 150),
-        score: c.score,
-        url: `https://reddit.com${c.permalink}`,
-        created: c.created_utc
+        subreddit: c.subreddit || 'unknown',
+        content: (c.body || '').substring(0, 150),
+        score: c.score || 0,
+        url: `https://reddit.com${c.permalink || ''}`,
+        created: c.created_utc || Date.now() / 1000
       }))
     ];
     
