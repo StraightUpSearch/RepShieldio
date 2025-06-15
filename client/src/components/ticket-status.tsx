@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Search, Clock, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 interface Ticket {
   id: number;
@@ -22,6 +22,7 @@ interface Ticket {
 }
 
 export const TicketStatus: React.FC = () => {
+  const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(false);
@@ -53,16 +54,30 @@ export const TicketStatus: React.FC = () => {
         setHasSearched(true);
         
         if (data.data.length === 0) {
-          toast.info('No tickets found for this email address');
+          toast({
+            title: "No tickets found",
+            description: "No tickets found for this email address",
+          });
         } else {
-          toast.success(`Found ${data.data.length} ticket(s) for your email`);
+          toast({
+            title: "Tickets found",
+            description: `Found ${data.data.length} ticket(s) for your email`,
+          });
         }
       } else {
-        toast.error(data.message || 'Failed to check ticket status');
+        toast({
+          title: "Error",
+          description: data.message || 'Failed to check ticket status',
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error checking ticket status:', error);
-      toast.error('Unable to check ticket status. Please try again.');
+      toast({
+        title: "Error",
+        description: 'Unable to check ticket status. Please try again.',
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }

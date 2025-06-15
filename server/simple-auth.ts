@@ -37,7 +37,7 @@ export function setupSimpleAuth(app: Express) {
   
   app.set("trust proxy", 1);
   app.use(session({
-    secret: process.env.SESSION_SECRET!,
+    secret: process.env.SESSION_SECRET || 'dev-session-secret-key-for-testing-32chars-long-minimum',
     store: sessionStore,
     resave: false,
     saveUninitialized: false,

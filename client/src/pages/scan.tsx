@@ -245,10 +245,28 @@ export default function Scan() {
             <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">
               Live Reddit Brand Scanner
             </h1>
-            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
+            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto mb-6">
               Real-time scanning of Reddit for mentions of your brand, products, or company name.
               Get instant insights into your online reputation.
             </p>
+            
+            {/* Beta Notice */}
+            <div className="max-w-2xl mx-auto">
+              <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <Badge className="bg-blue-600 text-white">BETA</Badge>
+                    <span className="text-blue-800 dark:text-blue-200 font-medium">Tool in Beta Testing</span>
+                  </div>
+                  <p className="text-blue-700 dark:text-blue-300 text-sm">
+                    If you encounter any issues or roadblocks, please{' '}
+                    <a href="/ticket-status" className="underline hover:text-blue-600">raise a ticket</a>,{' '}
+                    reach out via <span className="font-medium">Telegram</span>, or use our{' '}
+                    <span className="font-medium">chatbot</span> for immediate assistance.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           <Card className="mb-8">

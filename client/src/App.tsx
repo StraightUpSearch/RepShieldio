@@ -18,6 +18,10 @@ import DataAdmin from "@/pages/data-admin";
 import AuthPage from "@/pages/auth-page";
 import About from "@/pages/about";
 import TicketStatusPage from "@/pages/ticket-status";
+import PrivacyPolicy from "@/pages/privacy-policy";
+import TermsOfService from "@/pages/terms-of-service";
+import LegalCompliance from "@/pages/legal-compliance";
+import Contact from "@/pages/contact";
 
 function Router() {
   return (
@@ -35,6 +39,10 @@ function Router() {
       <Route path="/admin" component={AdminPanel} />
       <Route path="/admin-dashboard" component={AdminDashboard} />
       <Route path="/data-admin" component={DataAdmin} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/terms-of-service" component={TermsOfService} />
+      <Route path="/legal-compliance" component={LegalCompliance} />
+      <Route path="/contact" component={Contact} />
       <Route>
         <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
           <div className="text-center">

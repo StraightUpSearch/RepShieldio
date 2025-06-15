@@ -26,7 +26,7 @@ export default function Footer() {
               defamatory content that damages your brand reputation.
             </p>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="https://www.linkedin.com/company/repshield-io/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
                 <SiLinkedin className="w-6 h-6" />
               </a>
               <a href="#" className="text-gray-400 hover:text-white transition-colors">
@@ -53,7 +53,7 @@ export default function Footer() {
             <ul className="space-y-2 text-gray-400">
               <li><Link href="/my-account" className="hover:text-white transition-colors">My Account</Link></li>
               <li><Link href="/scan" className="hover:text-white transition-colors">Live Scanner</Link></li>
-              <li><button onClick={() => scrollToSection('contact')} className="hover:text-white transition-colors text-left">Contact</button></li>
+              <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
               <li><Link href="/about" className="hover:text-white transition-colors">About Us</Link></li>
             </ul>
           </div>
@@ -61,12 +61,12 @@ export default function Footer() {
         
         <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400 text-sm">
-            © 2024 RedditShield. All rights reserved. Professional reputation management services.
+            © 2025 RepShield. All rights reserved. Professional reputation management services.
           </p>
           <div className="flex space-x-6 text-sm text-gray-400 mt-4 md:mt-0">
-            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-white transition-colors">Legal Compliance</a>
+            <Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link>
+            <Link href="/legal-compliance" className="hover:text-white transition-colors">Legal Compliance</Link>
           </div>
         </div>
       </div>
