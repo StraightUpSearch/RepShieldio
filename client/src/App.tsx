@@ -7,6 +7,8 @@ import { SchemaOrg } from "@/components/schema-org";
 import SEOHead from "@/components/seo-head";
 import AdvancedSEO from "@/components/advanced-seo";
 import Home from "@/pages/home";
+import HomeRedesigned from "@/pages/home-redesigned";
+import HomeServiceFirst from "@/pages/home-service-first";
 import Scan from "@/pages/scan";
 import Dashboard from "@/pages/dashboard";
 import AdminPanel from "@/pages/admin";
@@ -19,9 +21,11 @@ import TicketStatusPage from "@/pages/ticket-status";
 
 function Router() {
   return (
-    <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/scan" component={Scan} />
+          <Switch>
+        <Route path="/" component={HomeServiceFirst} />
+        <Route path="/old" component={Home} />
+        <Route path="/redesign" component={HomeRedesigned} />
+        <Route path="/scan" component={Scan} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/my-account" component={MyAccount} />
       <Route path="/about" component={About} />
