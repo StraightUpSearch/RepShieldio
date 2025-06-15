@@ -3,14 +3,51 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowRight } from "lucide-react";
 import { SiReddit } from "react-icons/si";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 export default function FinalServiceCTA() {
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [redditUrl, setRedditUrl] = useState("");
+
+  const submitQuoteRequest = useMutation({
+    mutationFn: async (data: { redditUrl: string }) => {
+      return await apiRequest("POST", "/api/quote-request", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Request Submitted!",
+        description: "We'll send you a quote within 24 hours.",
+        variant: "default",
+      });
+      setRedditUrl("");
+      setLocation("/ticket-status");
+    },
+    onError: () => {
+      toast({
+        title: "Submission Failed",
+        description: "Please try again or contact us directly.",
+        variant: "destructive",
+      });
+    }
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle case review submission
-    console.log("Case review requested for:", redditUrl);
+    
+    if (!redditUrl.trim() || !redditUrl.includes('reddit.com')) {
+      toast({
+        title: "Valid Reddit URL Required",
+        description: "Please enter a valid Reddit URL for removal.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    submitQuoteRequest.mutate({ redditUrl });
   };
 
   return (
@@ -51,9 +88,10 @@ export default function FinalServiceCTA() {
             <Button 
               type="submit" 
               size="lg"
+              disabled={submitQuoteRequest.isPending}
               className="h-14 px-8 bg-orange-500 hover:bg-orange-600 text-white font-semibold text-lg whitespace-nowrap rounded-xl"
             >
-              Start Case Review
+              {submitQuoteRequest.isPending ? "Processing..." : "Start Case Review"}
               <ArrowRight className="ml-2 w-5 h-5" />
             </Button>
           </form>

@@ -46,10 +46,10 @@ export default function Header() {
               Check Status
             </Link>
             <Button 
-              onClick={() => scrollToSection('contact')}
+              asChild
               className="bg-reddit-orange text-white hover:bg-red-600 transition-colors font-medium"
             >
-              Free Audit
+              <Link href="/contact">Free Audit</Link>
             </Button>
             
             {!isLoading && (
@@ -102,10 +102,10 @@ export default function Header() {
                 ) : (
                   <Button 
                     variant="outline"
-                    onClick={() => window.open('/api/login', '_self')}
+                    asChild
                     className="ml-2"
                   >
-                    Login
+                    <Link href="/login">Login</Link>
                   </Button>
                 )}
               </>
@@ -137,10 +137,10 @@ export default function Header() {
                 Check Status
               </Link>
               <Button 
-                onClick={() => scrollToSection('contact')}
+                asChild
                 className="bg-reddit-orange text-white hover:bg-red-600 transition-colors font-medium w-full"
               >
-                Free Audit
+                <Link href="/contact">Free Audit</Link>
               </Button>
             </nav>
           </div>
