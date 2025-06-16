@@ -6,6 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import connectPg from "connect-pg-simple";
+import connectSqlite3 from "connect-sqlite3";
 import { validateInput, registerSchema, loginSchema } from "./validation";
 import { handleAsyncErrors, AppError } from "./error-handler";
 
@@ -30,8 +31,9 @@ export async function setupSimpleAuth(app: Express) {
     if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
       throw new Error('SESSION_SECRET must be set and at least 32 characters long in production');
     }
+    // DATABASE_URL is now optional - SQLite will be used as fallback
     if (!process.env.DATABASE_URL) {
-      throw new Error('DATABASE_URL must be set in production');
+      console.warn('⚠️  DATABASE_URL not set in production - using SQLite as fallback. For production deployments, consider setting DATABASE_URL for better performance and persistence.');
     }
   }
 
@@ -41,7 +43,7 @@ export async function setupSimpleAuth(app: Express) {
   let sessionStore;
   
   if (process.env.DATABASE_URL) {
-    // Use PostgreSQL session store for production
+    // Use PostgreSQL session store for production with DATABASE_URL
     const pgStore = connectPg(session);
     sessionStore = new pgStore({
       conString: process.env.DATABASE_URL,
@@ -49,17 +51,17 @@ export async function setupSimpleAuth(app: Express) {
       ttl: sessionTtl,
       tableName: "sessions",
     });
-    console.log("Using PostgreSQL session store");
+    console.log("✅ Using PostgreSQL session store with DATABASE_URL");
   } else {
-    // Use SQLite session store for development
-    const { default: connectSqlite3 } = await import('connect-sqlite3');
+    // Use SQLite session store as fallback (development or production without DATABASE_URL)
     const SQLiteStore = connectSqlite3(session);
     sessionStore = new SQLiteStore({
       db: 'sessions.db',
       dir: '.',
       ttl: sessionTtl
     });
-    console.log("Using SQLite session store for development");
+    const envMsg = process.env.NODE_ENV === 'production' ? 'production (fallback)' : 'development';
+    console.log(`✅ Using SQLite session store for ${envMsg}`);
   }
   
   console.log("Setting up session store with:", {
