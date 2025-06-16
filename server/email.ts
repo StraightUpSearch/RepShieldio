@@ -101,3 +101,68 @@ export async function sendContactNotification(data: {
     throw error;
   }
 }
+
+export async function sendPasswordResetEmail(data: {
+  email: string;
+  resetToken: string;
+  userName?: string;
+}) {
+  const resetUrl = `https://repshield.io/reset-password?token=${data.resetToken}`;
+  
+  const msg = {
+    to: data.email,
+    from: ADMIN_EMAIL,
+    subject: 'RepShield - Password Reset Request',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #2563eb; margin-bottom: 20px;">Password Reset Request</h2>
+        
+        <p>Hello${data.userName ? ` ${data.userName}` : ''},</p>
+        
+        <p>We received a request to reset your RepShield account password. Click the button below to reset your password:</p>
+        
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" 
+             style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+            Reset Password
+          </a>
+        </div>
+        
+        <p>Or copy and paste this link into your browser:</p>
+        <p style="background: #f5f5f5; padding: 15px; border-radius: 5px; word-break: break-all;">
+          ${resetUrl}
+        </p>
+        
+        <p><strong>This link will expire in 1 hour</strong> for security reasons.</p>
+        
+        <p>If you didn't request this password reset, please ignore this email or contact our support team if you have concerns.</p>
+        
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+        
+        <p style="color: #666; font-size: 14px;">
+          Best regards,<br>
+          The RepShield Team<br>
+          <a href="https://repshield.io" style="color: #2563eb;">repshield.io</a>
+        </p>
+        
+        <p style="font-size: 12px; color: #999; margin-top: 20px;">
+          This is an automated message. Please do not reply to this email.
+        </p>
+      </div>
+    `,
+  };
+
+  try {
+    if (apiKey) {
+      await sgMail.send(msg);
+      console.log('Password reset email sent successfully to:', data.email);
+    } else {
+      console.log('📧 DEV MODE - Would send password reset email:', msg.subject);
+      console.log('📧 To:', data.email);
+      console.log('📧 Reset URL:', resetUrl);
+    }
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    throw error;
+  }
+}

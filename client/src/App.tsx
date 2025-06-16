@@ -22,6 +22,7 @@ import PrivacyPolicy from "@/pages/privacy-policy";
 import TermsOfService from "@/pages/terms-of-service";
 import LegalCompliance from "@/pages/legal-compliance";
 import Contact from "@/pages/contact";
+import ResetPassword from "@/pages/reset-password";
 
 function Router() {
   return (
@@ -43,6 +44,7 @@ function Router() {
       <Route path="/terms-of-service" component={TermsOfService} />
       <Route path="/legal-compliance" component={LegalCompliance} />
       <Route path="/contact" component={Contact} />
+      <Route path="/reset-password" component={ResetPassword} />
       <Route>
         <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
           <div className="text-center">

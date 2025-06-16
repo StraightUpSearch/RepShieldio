@@ -4,6 +4,7 @@ import {
   auditRequests, 
   quoteRequests,
   brandScanTickets,
+  passwordResetTokens,
   type User,
   type UpsertUser,
   type Ticket,
@@ -16,7 +17,7 @@ import {
   type InsertBrandScanTicket
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, gt } from "drizzle-orm";
 
 // Helper functions for SQLite timestamp conversion
 const isPostgres = !!process.env.DATABASE_URL;
@@ -97,6 +98,11 @@ export interface IStorage {
   getUserRemovalCases(userId: string): Promise<any[]>;
   getRemovalCase(id: number): Promise<any | undefined>;
   updateRemovalCaseStatus(id: number, status: string, progress?: number): Promise<any>;
+
+  // Password reset token operations
+  createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void>;
+  getPasswordResetToken(userId: string, token: string): Promise<string | undefined>;
+  deletePasswordResetToken(userId: string, token: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -515,6 +521,47 @@ export class DatabaseStorage implements IStorage {
       return undefined;
     }
   }
+
+  // Password reset token operations
+  async createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void> {
+    try {
+      await db
+        .insert(passwordResetTokens)
+        .values({
+          userId,
+          token,
+          expiresAt: toDbTimestamp(expiresAt)
+        })
+        .onConflictDoNothing();
+    } catch (error) {
+      console.error("Error creating password reset token:", error);
+      throw error;
+    }
+  }
+
+  async getPasswordResetToken(userId: string, token: string): Promise<string | undefined> {
+    try {
+      const [resetToken] = await db
+        .select()
+        .from(passwordResetTokens)
+        .where(and(eq(passwordResetTokens.userId, userId), eq(passwordResetTokens.token, token)));
+      return resetToken?.token;
+    } catch (error) {
+      console.error("Error getting password reset token:", error);
+      return undefined;
+    }
+  }
+
+  async deletePasswordResetToken(userId: string, token: string): Promise<void> {
+    try {
+      await db
+        .delete(passwordResetTokens)
+        .where(and(eq(passwordResetTokens.userId, userId), eq(passwordResetTokens.token, token)));
+    } catch (error) {
+      console.error("Error deleting password reset token:", error);
+      throw error;
+    }
+  }
 }
 
 // Temporary: Use memory storage for legacy operations until database is fully migrated
@@ -522,6 +569,7 @@ export class MemStorage implements IStorage {
   private auditRequests: Map<number, AuditRequest> = new Map();
   private quoteRequests: Map<number, QuoteRequest> = new Map();
   private brandScanTickets: Map<number, BrandScanTicket> = new Map();
+  private passwordResetTokens: Map<string, { userId: string; token: string; expiresAt: Date }> = new Map();
   private currentAuditId: number = 1;
   private currentQuoteId: number = 1;
   private currentBrandScanId: number = 1;
@@ -867,21 +915,41 @@ export class MemStorage implements IStorage {
   }
 
   async updateRemovalCaseStatus(id: number, status: string, progress?: number): Promise<any> {
-    const case_ = this.removalCases.get(id);
-    if (case_) {
-      case_.status = status;
-      if (progress !== undefined) {
-        case_.progress = progress;
-      }
-      case_.updates.unshift({
-        id: case_.updates.length + 1,
-        message: `Status updated to ${status}`,
-        timestamp: new Date().toISOString(),
-        type: 'info'
-      });
-      this.removalCases.set(id, case_);
+    const existingCase = this.removalCases.get(id);
+    if (!existingCase) {
+      throw new Error("Removal case not found");
     }
-    return case_;
+
+    const updatedCase = {
+      ...existingCase,
+      status,
+      progress: progress ?? existingCase.progress,
+      updatedAt: new Date()
+    };
+
+    this.removalCases.set(id, updatedCase);
+    return updatedCase;
+  }
+
+  // Password reset token operations
+  async createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void> {
+    this.passwordResetTokens.set(`${userId}-${token}`, { userId, token, expiresAt });
+  }
+
+  async getPasswordResetToken(userId: string, token: string): Promise<string | undefined> {
+    const key = `${userId}-${token}`;
+    const resetToken = this.passwordResetTokens.get(key);
+    
+    if (!resetToken || resetToken.expiresAt < new Date()) {
+      return undefined;
+    }
+    
+    return resetToken.token;
+  }
+
+  async deletePasswordResetToken(userId: string, token: string): Promise<void> {
+    const key = `${userId}-${token}`;
+    this.passwordResetTokens.delete(key);
   }
 }
 

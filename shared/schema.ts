@@ -111,6 +111,25 @@ export const transactions = isPostgres
       createdAt: sqliteInt("created_at"),
     });
 
+// Password reset tokens table for secure password recovery
+export const passwordResetTokens = isPostgres 
+  ? pgTable("password_reset_tokens", {
+      id: serial("id").primaryKey(),
+      userId: varchar("user_id").notNull().references(() => users.id),
+      token: varchar("token").notNull().unique(),
+      expiresAt: timestamp("expires_at").notNull(),
+      used: boolean("used").default(false),
+      createdAt: timestamp("created_at").defaultNow(),
+    })
+  : sqliteTable("password_reset_tokens", {
+      id: sqliteInt("id").primaryKey({ autoIncrement: true }),
+      userId: sqliteText("user_id").notNull().references(() => users.id),
+      token: sqliteText("token").notNull().unique(),
+      expiresAt: sqliteInt("expires_at").notNull(), // Store as unix timestamp
+      used: sqliteInt("used").default(0), // 0/1 for boolean in SQLite
+      createdAt: sqliteInt("created_at"),
+    });
+
 // Legacy tables - keeping for backwards compatibility
 export const auditRequests = isPostgres 
   ? pgTable("audit_requests", {

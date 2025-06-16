@@ -23,13 +23,17 @@ import {
 
 interface Order {
   id: string;
-  type: string;
+  ticketId: string;
   redditUrl: string;
+  clientEmail: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
-  amount: number;
-  createdAt: string;
+  specialistReply: string;
+  timestamp: string;
+  type?: string;
+  amount?: number;
+  progress?: number;
   specialist?: string;
-  progress: number;
+  createdAt?: string;
 }
 
 interface AccountStats {
@@ -58,11 +62,8 @@ export default function MyAccount() {
     );
   }
 
-  // Fetch real user orders
-  const { data: ordersResponse, isLoading: ordersLoading } = useQuery({
-    queryKey: ['/api/user/orders'],
-    enabled: !!user,
-  });
+  // Get tickets from user data (if available)
+  const tickets = user?.tickets || [];
 
   // Fetch real user stats
   const { data: statsResponse, isLoading: statsLoading } = useQuery({
@@ -70,10 +71,9 @@ export default function MyAccount() {
     enabled: !!user,
   });
 
-  const orders: Order[] = ordersResponse?.data || [];
   const stats: AccountStats = statsResponse?.data || {
-    totalOrders: 0,
-    successfulRemovals: 0,
+    totalOrders: tickets.length,
+    successfulRemovals: tickets.filter(t => t.status === 'completed').length,
     accountBalance: 0,
     creditsRemaining: 0
   };
@@ -98,7 +98,7 @@ export default function MyAccount() {
     }
   };
 
-  if (isLoading || ordersLoading || statsLoading) {
+  if (isLoading || statsLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -125,7 +125,7 @@ export default function MyAccount() {
             </TabsTrigger>
             <TabsTrigger value="orders" className="flex items-center gap-2">
               <FileText className="w-4 h-4" />
-              My Orders
+              My Tickets
             </TabsTrigger>
             <TabsTrigger value="wallet" className="flex items-center gap-2">
               <CreditCard className="w-4 h-4" />
@@ -190,37 +190,44 @@ export default function MyAccount() {
             {/* Recent Orders */}
             <Card>
               <CardHeader>
-                <CardTitle>Recent Orders</CardTitle>
+                <CardTitle>Recent Tickets</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {orders.slice(0, 3).map((order) => (
-                    <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        {getStatusIcon(order.status)}
-                        <div>
-                          <p className="font-medium">{order.type}</p>
-                          <p className="text-sm text-gray-500">{order.id} • {order.createdAt}</p>
+                  {tickets.length === 0 ? (
+                    <div className="text-center py-4">
+                      <p className="text-gray-500">No tickets yet. Submit a quote request to get started.</p>
+                    </div>
+                  ) : (
+                    tickets.slice(0, 3).map((ticket) => (
+                      <div key={ticket.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center space-x-4">
+                          {getStatusIcon(ticket.status)}
+                          <div>
+                            <p className="font-medium">Ticket {ticket.ticketId}</p>
+                            <p className="text-sm text-gray-500">{ticket.timestamp}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-4">
+                          <Badge className={getStatusColor(ticket.status)}>
+                            {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
+                          </Badge>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-4">
-                        <Badge className={getStatusColor(order.status)}>
-                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                        </Badge>
-                        <span className="font-semibold">${order.amount}</span>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
-                <div className="mt-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setActiveTab("orders")}
-                    className="w-full"
-                  >
-                    View All Orders
-                  </Button>
-                </div>
+                {tickets.length > 0 && (
+                  <div className="mt-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setActiveTab("orders")}
+                      className="w-full"
+                    >
+                      View All Tickets
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -229,56 +236,52 @@ export default function MyAccount() {
           <TabsContent value="orders" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Order History</CardTitle>
+                <CardTitle>My Tickets</CardTitle>
                 <p className="text-sm text-gray-600">Track all your Reddit removal requests</p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {orders.map((order) => (
-                    <div key={order.id} className="border rounded-lg p-6 space-y-4">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(order.status)}
-                            <h3 className="font-semibold">{order.type}</h3>
-                            <Badge className={getStatusColor(order.status)}>
-                              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-gray-600">Order ID: {order.id}</p>
-                          <p className="text-sm text-gray-600">Created: {order.createdAt}</p>
-                          {order.specialist && (
-                            <p className="text-sm text-gray-600">Specialist: {order.specialist}</p>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold">${order.amount}</p>
-                          <Button variant="outline" size="sm" className="mt-2">
-                            <Eye className="w-4 h-4 mr-2" />
-                            View Details
-                          </Button>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium">Reddit URL:</p>
-                        <p className="text-sm text-blue-600 break-all">{order.redditUrl}</p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Progress</span>
-                          <span>{order.progress}%</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                            style={{ width: `${order.progress}%` }}
-                          />
-                        </div>
-                      </div>
+                  {tickets.length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No tickets found. Submit a quote request to get started.</p>
                     </div>
-                  ))}
+                  ) : (
+                    tickets.map((ticket) => (
+                      <div key={ticket.id} className="border rounded-lg p-6 space-y-4">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              {getStatusIcon(ticket.status)}
+                              <h3 className="font-semibold">Ticket {ticket.ticketId}</h3>
+                              <Badge className={getStatusColor(ticket.status)}>
+                                {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-600">Client Email: {ticket.clientEmail}</p>
+                            <p className="text-sm text-gray-600">Created: {ticket.timestamp}</p>
+                          </div>
+                          <div className="text-right">
+                            <Button variant="outline" size="sm" className="mt-2">
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Details
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium">Reddit URL:</p>
+                          <p className="text-sm text-blue-600 break-all">{ticket.redditUrl}</p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium">Specialist Reply:</p>
+                          <div className="bg-gray-50 p-3 rounded-lg">
+                            <p className="text-sm">{ticket.specialistReply}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>

@@ -9,7 +9,7 @@ import { globalErrorHandler, handleAsyncErrors, AppError } from "./error-handler
 import { validateInput, brandScanSchema, contactSchema } from "./validation";
 import { strictLimiter, moderateLimiter, generalLimiter } from "./rate-limiter";
 // DEPRECATED: OpenAI integration removed for simplified workflow
-import { sendQuoteNotification, sendContactNotification } from "./email";
+import { sendQuoteNotification, sendContactNotification, sendPasswordResetEmail } from "./email";
 import { redditAPI } from "./reddit";
 import { scrapingBeeAPI } from "./scrapingbee";
 import { telegramBot } from "./telegram";
@@ -17,6 +17,7 @@ import { webScrapingService } from "./webscraping";
 import { errorRecovery } from "./error-recovery";
 import { notificationManager } from "./notification-manager";
 import { liveScannerService } from "./live-scanner";
+import { randomBytes } from "crypto";
 
 // DEPRECATED: Stripe initialization removed for simplified workflow
 
@@ -33,15 +34,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication endpoints - Allow checking auth status without requiring login
   app.get('/api/auth/user', async (req: any, res) => {
     try {
+      console.log("Auth user check:", {
+        isAuthenticated: req.isAuthenticated(),
+        hasUser: !!req.user,
+        sessionID: req.sessionID,
+        session: Object.keys(req.session)
+      });
+
       if (!req.user) {
         return res.status(401).json({ 
           authenticated: false, 
-          message: "Not authenticated" 
+          message: "Unauthorized" 
         });
       }
+
+      // Get user tickets with proper timezone formatting
+      const userTickets = await storage.getUserTickets(req.user.id);
+      
+      // Format tickets for frontend display
+      const formattedTickets = userTickets.map(ticket => ({
+        id: ticket.id,
+        ticketId: `REP-${ticket.id.toString().padStart(4, '0')}`,
+        redditUrl: ticket.redditUrl,
+        clientEmail: req.user.email,
+        status: ticket.status,
+        specialistReply: ticket.notes || 'Pending specialist review',
+        timestamp: ticket.createdAt.toLocaleString('en-GB', {
+          timeZone: 'Europe/London',
+          year: 'numeric',
+          month: 'numeric',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        })
+      }));
+
       res.json({ 
         authenticated: true, 
-        user: req.user 
+        user: {
+          ...req.user,
+          tickets: formattedTickets
+        }
       });
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -1353,6 +1388,106 @@ Disallow: /`;
     res.set('Content-Type', 'text/plain');
     res.send(robots);
   });
+
+  // Logout endpoint
+  app.post("/api/logout", (req, res) => {
+    req.logout((err) => {
+      if (err) {
+        console.error("Logout error:", err);
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      console.log("User logged out successfully");
+      res.json({ message: "Logout successful" });
+    });
+  });
+
+  // Password reset endpoints
+  app.post("/api/auth/forgot-password", moderateLimiter, handleAsyncErrors(async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      
+      // Check if user exists
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal if email exists or not for security
+        return res.json({ message: "If an account with this email exists, you will receive a password reset link." });
+      }
+      
+      // Generate secure reset token
+      const resetToken = randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+      
+      // Store reset token
+      await storage.createPasswordResetToken(user.id, resetToken, expiresAt);
+      
+      // Send reset email
+      await sendPasswordResetEmail({
+        email: user.email,
+        resetToken,
+        userName: user.firstName || undefined
+      });
+      
+      console.log(`Password reset email sent to: ${email}`);
+      res.json({ message: "If an account with this email exists, you will receive a password reset link." });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ message: "Failed to process password reset request" });
+    }
+  }));
+
+  app.post("/api/auth/reset-password", moderateLimiter, handleAsyncErrors(async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+      
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token and new password are required" });
+      }
+      
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+      }
+      
+      // Find user by token (we need to scan all users since we don't have userId)
+      const allUsers = await storage.getAllUsers();
+      let targetUser = null;
+      
+      for (const user of allUsers) {
+        const storedToken = await storage.getPasswordResetToken(user.id, token);
+        if (storedToken) {
+          targetUser = user;
+          break;
+        }
+      }
+      
+      if (!targetUser) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+      
+      // Hash new password (import required functions from simple-auth)
+      const { hashPassword } = await import('./simple-auth');
+      const hashedPassword = await hashPassword(newPassword);
+      
+      // Update user password
+      await storage.upsertUser({
+        ...targetUser,
+        password: hashedPassword,
+        updatedAt: new Date()
+      });
+      
+      // Delete the used reset token
+      await storage.deletePasswordResetToken(targetUser.id, token);
+      
+      console.log(`Password reset successful for user: ${targetUser.email}`);
+      res.json({ message: "Password reset successful. You can now log in with your new password." });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Failed to reset password" });
+    }
+  }));
 
   // Add global error handler
   app.use(globalErrorHandler);

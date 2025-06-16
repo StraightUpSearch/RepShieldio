@@ -6,13 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Shield, Users, BarChart3 } from "lucide-react";
+import { Loader2, Shield, Users, BarChart3, CheckCircle, AlertCircle } from "lucide-react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { FaGoogle } from "react-icons/fa";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export default function AuthPage() {
   const { user, isLoading } = useAuth();
@@ -26,6 +27,12 @@ export default function AuthPage() {
     firstName: "", 
     lastName: "" 
   });
+
+  // Forgot password state
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState("");
+  const [isForgotPasswordSuccess, setIsForgotPasswordSuccess] = useState(false);
 
   // Redirect if already logged in - use useEffect to avoid setState during render
   useEffect(() => {
@@ -80,51 +87,61 @@ export default function AuthPage() {
   });
 
   const registerMutation = useMutation({
-    mutationFn: async (data: { email: string; password: string; firstName: string; lastName: string }) => {
-      const response = await apiRequest("POST", "/api/register", data);
+    mutationFn: async (data: any) => {
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Registration failed");
+      }
+
       return response.json();
     },
-    onSuccess: async (data) => {
-      console.log("Registration successful, response:", data);
-      
-      // Invalidate and refetch user query to get the new user data
-      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      
+    onSuccess: (data) => {
       toast({
-        title: "Registration successful",
-        description: "Welcome to RepShield!",
+        title: "Success!",
+        description: "Account created successfully",
       });
-      
-      // Small delay to ensure query has time to update
-      setTimeout(() => {
-        setLocation("/my-account");
-      }, 100);
+      setLocation("/");
     },
-    onError: (error: any) => {
-      console.error("Registration error:", error);
-      let errorMessage = "Registration failed";
-      
-      if (error.message) {
-        if (error.message.includes("already exists")) {
-          errorMessage = "An account with this email already exists. Please try logging in instead.";
-        } else if (error.message.includes("Password must be at least 8 characters")) {
-          errorMessage = "Password must be at least 8 characters long.";
-        } else if (error.message.includes("valid email")) {
-          errorMessage = "Please enter a valid email address.";
-        } else if (error.message.includes("required")) {
-          errorMessage = "Please fill in all required fields.";
-        } else if (error.message.includes("500")) {
-          errorMessage = "Server error. Please try again later.";
-        } else {
-          errorMessage = error.message;
-        }
-      }
-      
+    onError: (error: Error) => {
+      const errorMessage = error.message || "Registration failed";
       toast({
-        title: "Registration failed",
+        title: "Registration Failed",
         description: errorMessage,
         variant: "destructive",
       });
+    },
+  });
+
+  // Forgot password mutation
+  const forgotPasswordMutation = useMutation({
+    mutationFn: async (email: string) => {
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to send reset email");
+      }
+
+      return data;
+    },
+    onSuccess: (data) => {
+      setForgotPasswordMessage(data.message);
+      setIsForgotPasswordSuccess(true);
+    },
+    onError: (error: Error) => {
+      setForgotPasswordMessage(error.message || "Failed to send reset email");
+      setIsForgotPasswordSuccess(false);
     },
   });
 
@@ -136,6 +153,20 @@ export default function AuthPage() {
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     registerMutation.mutate(registerForm);
+  };
+
+  const handleForgotPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    setForgotPasswordMessage("");
+    setIsForgotPasswordSuccess(false);
+    forgotPasswordMutation.mutate(forgotPasswordEmail);
+  };
+
+  const resetForgotPasswordModal = () => {
+    setForgotPasswordEmail("");
+    setForgotPasswordMessage("");
+    setIsForgotPasswordSuccess(false);
+    setIsForgotPasswordOpen(false);
   };
 
   if (isLoading) {
@@ -203,6 +234,82 @@ export default function AuthPage() {
                       Sign In
                     </Button>
                   </form>
+
+                  <div className="text-center mt-4">
+                    <Dialog open={isForgotPasswordOpen} onOpenChange={setIsForgotPasswordOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="link" className="text-sm text-blue-600 hover:text-blue-800">
+                          Forgot your password?
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Reset Password</DialogTitle>
+                          <DialogDescription>
+                            Enter your email address and we'll send you a link to reset your password.
+                          </DialogDescription>
+                        </DialogHeader>
+
+                        {forgotPasswordMessage && (
+                          <Alert className={`${isForgotPasswordSuccess ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                            <div className="flex items-center">
+                              {isForgotPasswordSuccess ? (
+                                <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
+                              ) : (
+                                <AlertCircle className="h-4 w-4 text-red-600 mr-2" />
+                              )}
+                              <AlertDescription className={isForgotPasswordSuccess ? 'text-green-700' : 'text-red-700'}>
+                                {forgotPasswordMessage}
+                              </AlertDescription>
+                            </div>
+                          </Alert>
+                        )}
+
+                        {!isForgotPasswordSuccess && (
+                          <form onSubmit={handleForgotPassword} className="space-y-4">
+                            <div>
+                              <Label htmlFor="forgot-email">Email</Label>
+                              <Input
+                                id="forgot-email"
+                                type="email"
+                                value={forgotPasswordEmail}
+                                onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                                placeholder="Enter your email address"
+                                required
+                                disabled={forgotPasswordMutation.isPending}
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <Button 
+                                type="submit" 
+                                className="flex-1"
+                                disabled={forgotPasswordMutation.isPending}
+                              >
+                                {forgotPasswordMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Send Reset Link
+                              </Button>
+                              <Button 
+                                type="button" 
+                                variant="outline" 
+                                onClick={resetForgotPasswordModal}
+                                disabled={forgotPasswordMutation.isPending}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          </form>
+                        )}
+
+                        {isForgotPasswordSuccess && (
+                          <div className="text-center">
+                            <Button onClick={resetForgotPasswordModal} className="mt-4">
+                              Close
+                            </Button>
+                          </div>
+                        )}
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
