@@ -67,10 +67,11 @@ export default function Hero() {
       return;
     }
 
-    if (!email.trim()) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim() || !emailRegex.test(email)) {
       toast({
-        title: "Email Required",
-        description: "Please enter your email to receive the quote.",
+        title: "Valid Email Required",
+        description: "Please enter a valid email to receive the quote.",
         variant: "destructive",
       });
       return;
@@ -387,12 +388,13 @@ export default function Hero() {
                     onChange={(e) => setRedditUrl(e.target.value)}
                     className="flex-1 h-14 text-lg bg-white text-gray-900 border-0 focus:ring-2 focus:ring-reddit-orange"
                   />
-                  <Button 
+                  <Button
                     type="submit"
                     size="lg"
+                    disabled={submitQuote.isPending}
                     className="bg-gradient-to-r from-orange-500 via-red-500 to-orange-600 text-white hover:from-orange-600 hover:via-red-600 hover:to-orange-700 transition-all duration-300 font-semibold text-lg px-8 h-14 shadow-lg hover:shadow-xl transform hover:scale-105"
                   >
-                    Get My Free Quote
+                    {submitQuote.isPending ? "Processing..." : "Get My Free Quote"}
                   </Button>
                 </div>
               ) : (
@@ -407,6 +409,7 @@ export default function Hero() {
                       placeholder="Enter your email to receive the quote"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      required
                       className="flex-1 h-14 text-lg bg-white text-gray-900 border-0 focus:ring-2 focus:ring-reddit-orange"
                     />
                     <Button 

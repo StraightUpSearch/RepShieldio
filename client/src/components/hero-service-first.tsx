@@ -11,10 +11,12 @@ import { useToast } from "@/hooks/use-toast";
 export default function HeroServiceFirst() {
   const { toast } = useToast();
   const [redditUrl, setRedditUrl] = useState("");
+  const [email, setEmail] = useState("");
+  const [showEmailCapture, setShowEmailCapture] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const submitQuoteRequest = useMutation({
-    mutationFn: async (data: { redditUrl: string }) => {
+    mutationFn: async (data: { redditUrl: string; email: string }) => {
       return await apiRequest("POST", "/api/quote-request", data);
     },
     onSuccess: () => {
@@ -31,7 +33,7 @@ export default function HeroServiceFirst() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!redditUrl.trim() || !redditUrl.includes('reddit.com')) {
       toast({
         title: "Valid Reddit URL Required",
@@ -41,7 +43,22 @@ export default function HeroServiceFirst() {
       return;
     }
 
-    submitQuoteRequest.mutate({ redditUrl });
+    if (!showEmailCapture) {
+      setShowEmailCapture(true);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email.trim() || !emailRegex.test(email)) {
+      toast({
+        title: "Valid Email Required",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    submitQuoteRequest.mutate({ redditUrl, email });
   };
 
   if (isSubmitted) {
@@ -99,32 +116,68 @@ export default function HeroServiceFirst() {
           
           {/* URL Input Form */}
           <div className="max-w-2xl mx-auto mb-6">
-            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1 relative">
-                <SiReddit className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-orange-500" />
-                <Input
-                  type="url"
-                  placeholder="Paste Reddit URL here..."
-                  value={redditUrl}
-                  onChange={(e) => setRedditUrl(e.target.value)}
-                  className="pl-12 h-14 text-lg bg-white border-2 border-gray-200 focus:border-orange-500 rounded-xl"
-                  required
-                />
-              </div>
-              <Button 
-                type="submit" 
-                size="lg"
-                disabled={submitQuoteRequest.isPending}
-                className="h-14 px-8 bg-orange-500 hover:bg-orange-600 text-white font-semibold text-lg whitespace-nowrap rounded-xl"
-              >
-                {submitQuoteRequest.isPending ? "Processing..." : "Get My Free Quote"}
-              </Button>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {!showEmailCapture ? (
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="flex-1 relative">
+                    <SiReddit className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-orange-500" />
+                    <Input
+                      type="url"
+                      placeholder="Paste Reddit URL here..."
+                      value={redditUrl}
+                      onChange={(e) => setRedditUrl(e.target.value)}
+                      className="pl-12 h-14 text-lg bg-white border-2 border-gray-200 focus:border-orange-500 rounded-xl"
+                      required
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    disabled={submitQuoteRequest.isPending}
+                    className="h-14 px-8 bg-orange-500 hover:bg-orange-600 text-white font-semibold text-lg whitespace-nowrap rounded-xl"
+                  >
+                    {submitQuoteRequest.isPending ? "Processing..." : "Get My Free Quote"}
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-left">
+                    <p className="text-sm text-gray-500 mb-2">Analyzing URL:</p>
+                    <p className="bg-gray-200 p-3 rounded-lg text-sm break-all">{redditUrl}</p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Input
+                      type="email"
+                      placeholder="Enter your email to receive the quote"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="flex-1 h-14 text-lg bg-white border-2 border-gray-200 focus:border-orange-500 rounded-xl"
+                    />
+                    <Button
+                      type="submit"
+                      size="lg"
+                      disabled={submitQuoteRequest.isPending}
+                      className="h-14 px-8 bg-orange-500 hover:bg-orange-600 text-white font-semibold text-lg whitespace-nowrap rounded-xl"
+                    >
+                      {submitQuoteRequest.isPending ? "Processing..." : "Get Quote"}
+                    </Button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowEmailCapture(false)}
+                    className="text-gray-500 hover:text-gray-700 text-sm"
+                  >
+                    ← Change URL
+                  </button>
+                </div>
+              )}
             </form>
             
             {/* Service Steps Subcopy */}
             <p className="text-sm text-gray-500 mt-4 leading-relaxed">
-              <span className="font-medium">Step 1:</span> Paste URL. 
-              <span className="font-medium"> Step 2:</span> We'll send you a removal quote. 
+              <span className="font-medium">Step 1:</span> Paste URL.
+              <span className="font-medium"> Step 2:</span> Enter your email for a quote.
               <span className="font-medium"> Step 3:</span> We remove it.
             </p>
           </div>

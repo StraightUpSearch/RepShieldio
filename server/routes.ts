@@ -706,6 +706,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/quote-request", async (req, res) => {
     try {
       const validatedData = insertQuoteRequestSchema.parse(req.body);
+      console.log('Quote request validated data:', validatedData);
       
       // Get AI analysis of the Reddit URL
       let analysis = null;
@@ -736,18 +737,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
       
-      // Send email notification
-      try {
-        await sendQuoteNotification({
-          redditUrl: validatedData.redditUrl,
-          email: validatedData.email,
-          analysis,
-          ticketId: ticket.id
-        });
-      } catch (error) {
+      // Send email notification (don't block response)
+      sendQuoteNotification({
+        redditUrl: validatedData.redditUrl,
+        email: validatedData.email,
+        analysis,
+        ticketId: ticket.id
+      }).catch((error) => {
         console.error("Failed to send email notification:", error);
-        // Continue even if email fails
-      }
+      });
       
       res.status(201).json({
         success: true,
@@ -758,18 +756,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({
+        console.warn("Quote request validation failed:", error.issues);
+        return res.status(400).json({
           success: false,
           message: "Invalid request data",
           errors: error.errors
         });
-      } else {
-        console.error("Error creating quote request:", error);
-        res.status(500).json({
-          success: false,
-          message: "Internal server error"
-        });
       }
+
+      console.error("Error creating quote request:", error);
+      res.status(500).json({
+        success: false,
+        message: "An unexpected error occurred while submitting your request"
+      });
     }
   });
 
