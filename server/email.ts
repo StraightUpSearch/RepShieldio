@@ -11,7 +11,9 @@ if (apiKey) {
   console.log(`📧 SendGrid not configured for ${envMsg} - emails will be logged only`);
 }
 
-const ADMIN_EMAIL = 'jamie@straightupsearch.com';
+// Use environment variable for sender email or fallback to verified default
+const ADMIN_EMAIL = process.env.SENDER_EMAIL || 'jamie@straightupsearch.com';
+const FROM_EMAIL = process.env.FROM_EMAIL || ADMIN_EMAIL;
 
 export async function sendQuoteNotification(data: {
   redditUrl: string;
@@ -20,7 +22,7 @@ export async function sendQuoteNotification(data: {
 }) {
   const msg = {
     to: ADMIN_EMAIL,
-    from: ADMIN_EMAIL, // SendGrid requires verified sender
+    from: FROM_EMAIL, // SendGrid requires verified sender
     subject: 'New Reddit Removal Quote Request',
     html: `
       <h2>New Quote Request Received</h2>
@@ -64,7 +66,7 @@ export async function sendContactNotification(data: {
 }) {
   const msg = {
     to: ADMIN_EMAIL,
-    from: ADMIN_EMAIL,
+    from: FROM_EMAIL,
     subject: `New Contact Form Submission from ${data.name}`,
     html: `
       <h2>New Contact Form Submission</h2>
@@ -111,7 +113,7 @@ export async function sendPasswordResetEmail(data: {
   
   const msg = {
     to: data.email,
-    from: ADMIN_EMAIL,
+    from: FROM_EMAIL, // Use verified sender
     subject: 'RepShield - Password Reset Request',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -156,6 +158,7 @@ export async function sendPasswordResetEmail(data: {
     if (apiKey) {
       await sgMail.send(msg);
       console.log('Password reset email sent successfully to:', data.email);
+      console.log('Email sent from:', FROM_EMAIL, 'to:', data.email);
     } else {
       console.log('📧 DEV MODE - Would send password reset email:', msg.subject);
       console.log('📧 To:', data.email);
