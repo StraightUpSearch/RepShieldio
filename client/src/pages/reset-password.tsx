@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,9 +10,11 @@ import Footer from "@/components/footer";
 import { Eye, EyeOff, CheckCircle, AlertCircle } from "lucide-react";
 
 export default function ResetPassword() {
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const token = searchParams.get('token');
+  const [, setLocation] = useLocation();
+  
+  // Get token from URL query parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
   
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -68,7 +70,7 @@ export default function ResetPassword() {
         setMessage('Password reset successful! Redirecting to login...');
         setIsSuccess(true);
         setTimeout(() => {
-          navigate('/login');
+          setLocation('/login');
         }, 3000);
       } else {
         setMessage(data.message || 'Failed to reset password');
@@ -164,7 +166,7 @@ export default function ResetPassword() {
               <div className="text-center mt-6">
                 <Button 
                   variant="link" 
-                  onClick={() => navigate('/login')}
+                  onClick={() => setLocation('/login')}
                   className="text-sm text-blue-600 hover:text-blue-800"
                 >
                   Back to Login
