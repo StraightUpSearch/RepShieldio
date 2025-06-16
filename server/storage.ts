@@ -150,13 +150,25 @@ export class DatabaseStorage implements IStorage {
   // Ticket operations
   async createTicket(ticketData: InsertTicket): Promise<Ticket> {
     try {
+      // Ensure all values are SQLite-compatible types (string, number, bigint, Buffer, null)
+      const sanitizeForSqlite = (value: any): string | number | bigint | Buffer | null => {
+        if (value === null || value === undefined) return null;
+        if (typeof value === 'string' || typeof value === 'number' || typeof value === 'bigint' || Buffer.isBuffer(value)) {
+          return value;
+        }
+        // Convert objects/arrays to JSON string for SQLite
+        return JSON.stringify(value);
+      };
+
       const completeTicketData = {
         ...ticketData,
         redditUrl: ticketData.redditUrl || null,
         amount: ticketData.amount || null,
         progress: ticketData.progress || 0,
         requestData: ticketData.requestData ? (
-          isPostgres ? ticketData.requestData : JSON.stringify(ticketData.requestData)
+          isPostgres 
+            ? ticketData.requestData 
+            : sanitizeForSqlite(ticketData.requestData)
         ) : null,
         createdAt: toDbTimestamp(),
         updatedAt: toDbTimestamp(),
@@ -169,6 +181,7 @@ export class DatabaseStorage implements IStorage {
       return convertTicketFromDb(ticket);
     } catch (error) {
       console.error("Error creating ticket:", error);
+      console.error("Ticket data that failed:", JSON.stringify(ticketData, null, 2));
       throw error;
     }
   }
@@ -284,8 +297,8 @@ export class DatabaseStorage implements IStorage {
         ...insertRequest,
         website: insertRequest.website || null,
         message: insertRequest.message || null,
-        processed: false,
-        createdAt: new Date(),
+        processed: isPostgres ? false : 0, // SQLite uses 0/1 for boolean
+        createdAt: isPostgres ? new Date() : toDbTimestamp(new Date()),
       };
       
       const [request] = await db
@@ -295,6 +308,7 @@ export class DatabaseStorage implements IStorage {
       return request;
     } catch (error) {
       console.error("Error creating audit request:", error);
+      console.error("Request data that failed:", JSON.stringify(insertRequest, null, 2));
       throw error;
     }
   }

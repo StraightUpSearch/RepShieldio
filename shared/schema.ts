@@ -95,7 +95,7 @@ export const transactions = isPostgres
       type: varchar("type").notNull(),
       amount: varchar("amount").notNull(),
       description: text("description"),
-      stripePaymentId: varchar("stripe_payment_id"),
+      // DEPRECATED: stripePaymentId removed for simplified workflow
       status: varchar("status").default("completed").notNull(),
       createdAt: timestamp("created_at").defaultNow(),
     })
@@ -106,7 +106,7 @@ export const transactions = isPostgres
       type: sqliteText("type").notNull(),
       amount: sqliteText("amount").notNull(),
       description: sqliteText("description"),
-      stripePaymentId: sqliteText("stripe_payment_id"),
+      // DEPRECATED: stripePaymentId removed for simplified workflow
       status: sqliteText("status").default("completed").notNull(),
       createdAt: sqliteInt("created_at"),
     });

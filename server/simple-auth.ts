@@ -206,10 +206,24 @@ export async function setupSimpleAuth(app: Express) {
 
   // Get current user
   app.get("/api/auth/user", (req, res) => {
+    console.log("Auth user check:", { 
+      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
+      hasUser: !!req.user,
+      sessionID: req.sessionID,
+      session: req.session ? Object.keys(req.session) : 'no session'
+    });
+    
     if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ 
+        authenticated: false,
+        message: "Unauthorized - no active session" 
+      });
     }
-    res.json(req.user);
+    
+    res.json({ 
+      authenticated: true,
+      user: req.user 
+    });
   });
 }
 

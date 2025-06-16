@@ -1,14 +1,14 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
-import Stripe from "stripe";
+// DEPRECATED: Stripe integration removed for simplified workflow
 import { storage } from "./storage";
 import { setupSimpleAuth, isAuthenticated } from "./simple-auth";
 import { insertAuditRequestSchema, insertQuoteRequestSchema, insertBrandScanTicketSchema } from "@shared/schema";
 import { globalErrorHandler, handleAsyncErrors, AppError } from "./error-handler";
 import { validateInput, brandScanSchema, contactSchema } from "./validation";
 import { strictLimiter, moderateLimiter, generalLimiter } from "./rate-limiter";
-import { getChatbotResponse, analyzeRedditUrl } from "./openai";
+// DEPRECATED: OpenAI integration removed for simplified workflow
 import { sendQuoteNotification, sendContactNotification } from "./email";
 import { redditAPI } from "./reddit";
 import { scrapingBeeAPI } from "./scrapingbee";
@@ -18,8 +18,7 @@ import { errorRecovery } from "./error-recovery";
 import { notificationManager } from "./notification-manager";
 import { liveScannerService } from "./live-scanner";
 
-// Initialize Stripe only if the secret key is available
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+// DEPRECATED: Stripe initialization removed for simplified workflow
 
 // Brand scanning with real Reddit data
 async function sendBrandScanNotification(data: any) {
@@ -710,8 +709,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Quote request submission endpoint
-  app.post("/api/quote-request", async (req, res) => {
+  // Simplified quote request submission endpoint - creates ticket directly
+  app.post("/api/quote-request", generalLimiter, async (req, res) => {
     try {
       console.log("Quote request received:", JSON.stringify(req.body, null, 2));
       
@@ -724,86 +723,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const validatedData = insertQuoteRequestSchema.parse(req.body);
+      const { redditUrl, email } = req.body;
       
-      // Get AI analysis of the Reddit URL
-      let analysis = null;
+      // Basic URL validation
       try {
-        analysis = await analyzeRedditUrl(validatedData.redditUrl);
+        new URL(redditUrl);
+        if (!redditUrl.includes('reddit.com')) {
+          throw new Error('Must be a Reddit URL');
+        }
       } catch (error) {
-        console.error("AI analysis failed:", error);
-        // Continue without analysis if AI fails
+        return res.status(400).json({
+          success: false,
+          message: "Invalid Reddit URL provided"
+        });
       }
       
-      const quoteRequest = await storage.createQuoteRequest(validatedData);
-      
-      // Create a ticket for user tracking
+      // Create ticket directly - no legacy quote request table needed
       const ticket = await storage.createTicket({
         userId: 'anonymous',
-        type: 'quote_request',
-        title: `Quote Request - ${new URL(validatedData.redditUrl).hostname}`,
-        description: `Reddit URL: ${validatedData.redditUrl}\nClient Email: ${validatedData.email}`,
-        redditUrl: validatedData.redditUrl,
+        type: 'removal_request',
+        title: `Reddit Removal Request - ${new URL(redditUrl).pathname}`,
+        description: `Client requesting removal of Reddit content:\n${redditUrl}\n\nClient Email: ${email}`,
+        redditUrl: redditUrl,
         status: 'pending',
         priority: 'standard',
-        amount: analysis?.estimatedPrice?.toString() || null,
+        amount: null, // To be determined by specialist
         requestData: {
-          email: validatedData.email,
-          redditUrl: validatedData.redditUrl,
-          analysis: analysis,
-          quoteRequestId: quoteRequest.id
+          email: email,
+          redditUrl: redditUrl,
+          submittedAt: new Date().toISOString()
         }
       });
       
-      // Send email notification
+      // Send notification to specialist team
       try {
         await sendQuoteNotification({
-          redditUrl: validatedData.redditUrl,
-          email: validatedData.email,
-          analysis,
+          redditUrl: redditUrl,
+          email: email,
           ticketId: ticket.id
         });
+        console.log(`✅ Specialist notification sent for ticket ${ticket.id}`);
       } catch (error) {
-        console.error("Failed to send email notification:", error);
-        // Continue even if email fails
+        console.error("Failed to send specialist notification:", error);
+        // Continue even if email fails - ticket is still created
       }
       
       res.status(201).json({
         success: true,
-        message: "Quote request submitted successfully",
-        id: quoteRequest.id,
+        message: "Quote request submitted successfully. Our specialist will review and respond within 24 hours.",
         ticketId: ticket.id,
-        analysis
+        ticketNumber: `REP-${ticket.id.toString().padStart(4, '0')}`
       });
     } catch (error) {
-      if (error instanceof z.ZodError) {
-        console.error("Validation error:", error.errors);
-        res.status(400).json({
-          success: false,
-          message: "Invalid request data",
-          errors: error.errors,
-          received: Object.keys(req.body)
-        });
-      } else {
-        console.error("Error creating quote request:", error);
-        res.status(500).json({
-          success: false,
-          message: "Internal server error"
-        });
-      }
+      console.error("Error creating quote request:", error);
+      res.status(500).json({
+        success: false,
+        message: "Internal server error"
+      });
     }
   });
 
-  // Get all quote requests (for admin purposes)
-  app.get("/api/quote-requests", async (req, res) => {
+  // Specialist reply endpoint for adding report and quote to ticket
+  app.post("/api/tickets/:ticketId/reply", isAuthenticated, async (req, res) => {
     try {
-      const requests = await storage.getQuoteRequests();
+      const ticketId = parseInt(req.params.ticketId);
+      const { report, quote, estimatedTime } = req.body;
+      
+      // Verify user is admin/specialist
+      const user = await storage.getUser(req.user.id);
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied. Only specialists can reply to tickets."
+        });
+      }
+      
+      if (!report || !quote) {
+        return res.status(400).json({
+          success: false,
+          message: "Report and quote are required"
+        });
+      }
+      
+      // Get the ticket to update
+      const ticket = await storage.getTicket(ticketId);
+      if (!ticket) {
+        return res.status(404).json({
+          success: false,
+          message: "Ticket not found"
+        });
+      }
+      
+      // Update ticket with specialist reply
+      const specialistReply = `
+SPECIALIST REPORT:
+${report}
+
+QUOTE: ${quote}
+${estimatedTime ? `ESTIMATED TIME: ${estimatedTime}` : ''}
+
+Replied by: ${user.email}
+Date: ${new Date().toISOString()}
+      `.trim();
+      
+      // Update ticket status and add notes
+      await storage.updateTicketStatus(ticketId, 'quoted', user.email);
+      await storage.updateTicketNotes(ticketId, specialistReply);
+      
+      // TODO: Send email notification to client about the quote
+      const clientEmail = ticket.requestData?.email;
+      if (clientEmail) {
+        console.log(`📧 TODO: Send quote email to ${clientEmail} for ticket ${ticketId}`);
+      }
+      
       res.json({
         success: true,
-        data: requests
+        message: "Specialist reply added successfully",
+        ticketId: ticketId
       });
     } catch (error) {
-      console.error("Error fetching quote requests:", error);
+      console.error("Error adding specialist reply:", error);
       res.status(500).json({
         success: false,
         message: "Internal server error"
@@ -882,130 +921,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Chatbot endpoint
+  // DEPRECATED: OpenAI chatbot endpoint removed for simplified workflow
   app.post("/api/chatbot", async (req, res) => {
-    try {
-      const { message, conversationHistory = [] } = req.body;
-      
-      if (!message || typeof message !== 'string') {
-        return res.status(400).json({
-          success: false,
-          message: "Message is required"
-        });
-      }
-
-      const response = await getChatbotResponse(message, conversationHistory);
-      
-      // Send Telegram notification and broadcast to connected clients
-      try {
-        const userInfo = {
-          ip: req.ip || req.connection?.remoteAddress,
-          userAgent: req.get('User-Agent')
-        };
-        
-        // Check if this needs escalation to human
-        const needsEscalation = message.toLowerCase().includes('complex') || 
-                               message.toLowerCase().includes('difficult') || 
-                               message.toLowerCase().includes('urgent') || 
-                               message.toLowerCase().includes('lawsuit') || 
-                               message.toLowerCase().includes('emergency') || 
-                               message.toLowerCase().includes('immediately') ||
-                               response.includes('connect you with our specialist');
-        
-        if (needsEscalation) {
-          // Send priority escalation notification
-          await telegramBot.sendMessage(parseInt(process.env.TELEGRAM_ADMIN_CHAT_ID!), 
-            `🚨 URGENT ESCALATION NEEDED\n\n` +
-            `👤 User Message: "${message}"\n` +
-            `🤖 Bot Response: "${response}"\n\n` +
-            `⚡ This visitor needs immediate human assistance!\n` +
-            `📱 IP: ${userInfo.ip}\n` +
-            `💻 Browser: ${userInfo.userAgent?.substring(0, 50)}...\n` +
-            `⏰ Time: ${new Date().toLocaleString()}`
-          );
-        } else {
-          // Send regular chatbot interaction notification
-          await telegramBot.sendChatbotInteraction(message, response, userInfo);
-        }
-        
-        notificationManager.broadcastChatbotInteraction(message, response, userInfo);
-      } catch (notificationError) {
-        console.error("Failed to send notifications:", notificationError);
-        // Don't fail the request if notification fails
-      }
-      
-      res.json({
-        success: true,
-        response
-      });
-    } catch (error) {
-      console.error("Error in chatbot:", error);
-      res.status(500).json({
-        success: false,
-        message: "Chatbot service unavailable",
-        response: "I'm experiencing technical difficulties. Please use our contact form for immediate assistance with Reddit content removal."
-      });
-    }
+    res.json({
+      success: true,
+      response: "Hello! I'm here to help with Reddit content removal. For the fastest service, please submit your Reddit URL using our quote request form, and our specialist will respond within 24 hours with a custom analysis and quote."
+    });
   });
 
-  // Enhanced URL analysis with account creation
-  app.post("/api/analyze-and-create-account", async (req, res) => {
-    try {
-      const { redditUrl, email } = req.body;
-      
-      if (!redditUrl || !email) {
-        return res.status(400).json({
-          success: false,
-          message: "Reddit URL and email are required"
-        });
-      }
-
-      // Analyze the URL using OpenAI
-      const analysis = await analyzeRedditUrl(redditUrl);
-      
-      // Create user account if doesn't exist
-      const userId = email.replace('@', '_').replace(/\./g, '_');
-      const user = await storage.upsertUser({
-        id: userId,
-        email: email,
-        role: 'user'
-      });
-
-      // Create removal case
-      const removalCase = await storage.createRemovalCase({
-        userId: user.id,
-        redditUrl,
-        status: 'analyzing',
-        estimatedPrice: analysis.estimatedPrice,
-        description: analysis.description,
-        progress: 15
-      });
-
-      // Send notification to admin
-      await telegramBot.sendNewLeadNotification({
-        type: 'URL Analysis & Account Creation',
-        email,
-        redditUrl,
-        caseId: removalCase.id,
-        estimatedPrice: analysis.estimatedPrice,
-        description: analysis.description
-      });
-
-      res.json({
-        success: true,
-        accountCreated: true,
-        caseId: removalCase.id,
-        analysis,
-        user: { id: user.id, email: user.email }
-      });
-    } catch (error) {
-      console.error("Error in URL analysis and account creation:", error);
-      res.status(500).json({
-        success: false,
-        message: "Analysis failed. Please try again or contact support."
-      });
-    }
-  });
+  // DEPRECATED: OpenAI URL analysis endpoint removed for simplified workflow
 
   // User dashboard endpoints
   app.get("/api/user/orders", isAuthenticated, async (req: any, res) => {
@@ -1063,36 +987,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // URL analysis endpoint (legacy)
+  // DEPRECATED: OpenAI URL analysis endpoint removed for simplified workflow
   app.post("/api/analyze-url", async (req, res) => {
-    try {
-      const { url } = req.body;
-      
-      if (!url || typeof url !== 'string') {
-        return res.status(400).json({
-          success: false,
-          message: "URL is required"
-        });
+    res.json({
+      success: true,
+      analysis: {
+        contentType: "Reddit content",
+        estimatedPrice: "Contact specialist for quote",
+        description: "Please submit a quote request for professional analysis and pricing."
       }
-
-      const analysis = await analyzeRedditUrl(url);
-      
-      res.json({
-        success: true,
-        analysis
-      });
-    } catch (error) {
-      console.error("Error analyzing URL:", error);
-      res.status(500).json({
-        success: false,
-        message: "URL analysis unavailable",
-        analysis: {
-          contentType: "Reddit content",
-          estimatedPrice: "$780",
-          description: "We can analyze and remove this content. Contact us for a detailed quote."
-        }
-      });
-    }
+    });
   });
 
   // Brand scan ticket submission endpoint with lead capture
@@ -1278,105 +1182,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Stripe payment endpoints for case approval
-  app.post("/api/create-payment-intent", async (req, res) => {
-    try {
-      const { caseId, amount } = req.body;
-      
-      if (!caseId || !amount) {
-        return res.status(400).json({ message: "Case ID and amount are required" });
-      }
-
-      // Get case details
-      const case_ = await storage.getRemovalCase(caseId);
-      if (!case_) {
-        return res.status(404).json({ message: "Case not found" });
-      }
-
-      // Create Stripe PaymentIntent
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Convert to cents
-        currency: "usd",
-        metadata: {
-          caseId: caseId.toString(),
-          service: "reddit_removal"
-        },
-        description: `Reddit Content Removal - Case #${caseId}`,
-      });
-
-      res.json({ clientSecret: paymentIntent.client_secret });
-    } catch (error: any) {
-      console.error("Error creating payment intent:", error);
-      res.status(500).json({ 
-        message: "Error creating payment intent: " + error.message 
-      });
-    }
-  });
-
-  // Handle successful payments
-  app.post("/api/payment-success", async (req, res) => {
-    try {
-      const { caseId, paymentIntentId } = req.body;
-      
-      // Verify payment with Stripe
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-      
-      if (paymentIntent.status === 'succeeded') {
-        // Update case status to approved/in_progress
-        await storage.updateRemovalCaseStatus(caseId, 'in_progress', 25);
-        
-        // Send notifications
-        await telegramBot.sendNewLeadNotification({
-          type: 'Payment Received - Case Approved',
-          caseId,
-          amount: `$${paymentIntent.amount / 100}`,
-          paymentId: paymentIntentId,
-          status: 'Ready to begin removal process'
-        });
-
-        res.json({ success: true, message: "Payment confirmed and case approved" });
-      } else {
-        res.status(400).json({ message: "Payment not completed" });
-      }
-    } catch (error: any) {
-      console.error("Error processing payment success:", error);
-      res.status(500).json({ message: "Error processing payment" });
-    }
-  });
-
-  // Stripe webhook for payment updates
-  app.post("/api/stripe/webhook", async (req, res) => {
-    try {
-      const event = req.body;
-
-      switch (event.type) {
-        case 'payment_intent.succeeded':
-          const paymentIntent = event.data.object;
-          const caseId = parseInt(paymentIntent.metadata.caseId);
-          
-          if (caseId) {
-            await storage.updateRemovalCaseStatus(caseId, 'in_progress', 25);
-            
-            await telegramBot.sendNewLeadNotification({
-              type: 'Payment Confirmed via Webhook',
-              caseId,
-              amount: `$${paymentIntent.amount / 100}`,
-              paymentId: paymentIntent.id
-            });
-          }
-          break;
-        
-        case 'payment_intent.payment_failed':
-          console.log('Payment failed:', event.data.object);
-          break;
-      }
-
-      res.json({ received: true });
-    } catch (error) {
-      console.error("Stripe webhook error:", error);
-      res.status(400).json({ error: "Webhook error" });
-    }
-  });
+  // DEPRECATED: Stripe payment endpoints removed for simplified workflow
+  // Payment processing will be handled manually by specialists
 
   // Real-time notification stream
   app.get("/api/notifications/stream", (req, res) => {

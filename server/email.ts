@@ -16,7 +16,7 @@ const ADMIN_EMAIL = 'jamie@straightupsearch.com';
 export async function sendQuoteNotification(data: {
   redditUrl: string;
   email?: string;
-  analysis?: any;
+  ticketId?: number;
 }) {
   const msg = {
     to: ADMIN_EMAIL,
@@ -26,19 +26,16 @@ export async function sendQuoteNotification(data: {
       <h2>New Quote Request Received</h2>
       <p><strong>Reddit URL:</strong> ${data.redditUrl}</p>
       <p><strong>Client Email:</strong> ${data.email || 'Not provided'}</p>
+      ${data.ticketId ? `<p><strong>Ticket ID:</strong> REP-${data.ticketId.toString().padStart(4, '0')}</p>` : ''}
       
-      ${data.analysis ? `
-        <h3>AI Analysis:</h3>
-        <p><strong>Content Type:</strong> ${data.analysis.contentType}</p>
-        <p><strong>Estimated Price:</strong> ${data.analysis.estimatedPrice}</p>
-        <p><strong>Description:</strong> ${data.analysis.description}</p>
-      ` : ''}
+      <p><strong>Action Required:</strong> Specialist review and quote needed</p>
+      <p>Please log into the admin panel to provide analysis, pricing, and timeline.</p>
       
       <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
       
       <hr>
       <p style="font-size: 12px; color: #666;">
-        RepShield Quote Request System
+        RepShield Simplified Workflow - No AI Analysis
       </p>
     `,
   };

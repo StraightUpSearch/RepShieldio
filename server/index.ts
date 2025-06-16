@@ -11,6 +11,7 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'", "https://replit.com", "https://fonts.googleapis.com"],
+      scriptSrcElem: ["'self'", "'unsafe-inline'", "https://replit.com", "https://fonts.googleapis.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:"],
@@ -99,6 +100,20 @@ app.use((req, res, next) => {
   // It is the only port that is not firewalled.
   const port = 5000;
   const host = process.platform === 'win32' ? 'localhost' : '0.0.0.0';
+  
+  server.on('error', (err: any) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`❌ Port ${port} is already in use. Please:
+1. Stop any other applications using port ${port}
+2. Or run: netstat -ano | findstr :${port} (Windows) or lsof -ti:${port} (Mac/Linux)
+3. Then kill the process using the port`);
+      process.exit(1);
+    } else {
+      console.error('Server error:', err);
+      throw err;
+    }
+  });
+  
   server.listen(port, host, () => {
     log(`serving on port ${port} (${host})`);
   });
