@@ -1,17 +1,14 @@
 import sgMail from '@sendgrid/mail';
 
-// Only require SENDGRID_API_KEY in production
-const isProduction = process.env.NODE_ENV === 'production';
+// Make email optional for both development and production
 const apiKey = process.env.SENDGRID_API_KEY;
-
-if (isProduction && !apiKey) {
-  throw new Error("SENDGRID_API_KEY environment variable must be set in production");
-}
 
 if (apiKey) {
   sgMail.setApiKey(apiKey);
+  console.log('📧 SendGrid configured for email notifications');
 } else {
-  console.log('📧 Running in development mode without SendGrid - emails will be logged only');
+  const envMsg = process.env.NODE_ENV === 'production' ? 'production (logging only)' : 'development';
+  console.log(`📧 SendGrid not configured for ${envMsg} - emails will be logged only`);
 }
 
 const ADMIN_EMAIL = 'jamie@straightupsearch.com';

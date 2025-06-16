@@ -1,12 +1,13 @@
 import OpenAI from "openai";
 
-// Make OpenAI optional for development
+// Make OpenAI optional for both development and production
 const openai = process.env.OPENAI_API_KEY ? new OpenAI({ 
   apiKey: process.env.OPENAI_API_KEY 
 }) : null;
 
-if (!openai && process.env.NODE_ENV === 'production') {
-  throw new Error("OPENAI_API_KEY environment variable must be set in production");
+if (!openai) {
+  const envMsg = process.env.NODE_ENV === 'production' ? 'production (using fallback responses)' : 'development';
+  console.log(`🤖 OpenAI not configured for ${envMsg} - using fallback chatbot responses`);
 }
 
 export async function getChatbotResponse(userMessage: string, conversationHistory: string[] = []): Promise<string> {
