@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": ["@playwright/test", "serve-mcp"],
+      "tools": ["*"]
+    },
+    "browser-automation": {
+      "command": "npx", 
+      "args": ["playwright", "test", "--reporter=json"],
+      "tools": ["browser_snapshot", "browser_click", "browser_type", "browser_navigate"]
+    }
+  },
+  "playwright": {
+    "testDir": "./tests",
+    "baseURL": "https://repshield.io",
+    "trace": "on",
+    "screenshot": "only-on-failure",
+    "video": "retain-on-failure"
+  }
+} 

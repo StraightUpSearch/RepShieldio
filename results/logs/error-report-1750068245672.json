@@ -1,0 +1,18 @@
+{
+  "consoleErrors": [],
+  "networkErrors": [
+    {
+      "url": "https://repshield.io/api/auth/user",
+      "status": 401
+    },
+    {
+      "url": "https://repshield.io/api/auth/user",
+      "status": 401
+    },
+    {
+      "url": "https://repshield.io/api/register",
+      "status": 500
+    }
+  ],
+  "timestamp": "2025-06-16T10:04:16.461Z"
+}

@@ -29,7 +29,7 @@ async function sendBrandScanNotification(data: any) {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication middleware
-  setupSimpleAuth(app);
+  await setupSimpleAuth(app);
 
   // Authentication endpoints
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
@@ -148,7 +148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/admin/orders', isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       if (user?.role !== 'admin') {
         return res.status(403).json({ message: "Access denied" });
       }
@@ -163,7 +163,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get('/api/admin/users', isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       if (user?.role !== 'admin') {
         return res.status(403).json({ message: "Access denied" });
       }
@@ -178,7 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch('/api/admin/orders/:id', isAuthenticated, async (req: any, res) => {
     try {
-      const user = await storage.getUser(req.user.claims.sub);
+      const user = await storage.getUser(req.user.id);
       if (user?.role !== 'admin') {
         return res.status(403).json({ message: "Access denied" });
       }

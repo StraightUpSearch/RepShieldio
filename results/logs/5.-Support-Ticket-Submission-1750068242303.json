@@ -1,0 +1,101 @@
+{
+  "testName": "5. Support Ticket Submission",
+  "user": "e2e-test-1750068242303@playwright.test",
+  "timestamp": "2025-06-16T10:04:09.386Z",
+  "logs": [
+    "🚀 Starting test with user: e2e-test-1750068242303@playwright.test",
+    "🎫 Testing ticket submission",
+    "🔄 Navigating to login page...",
+    "📝 Registering user: e2e-test-1750068242303@playwright.test",
+    "✅ Filled field: input[id*=\"firstname\"]",
+    "✅ Filled field: input[id*=\"lastname\"]",
+    "✅ Filled field: input[type=\"email\"]",
+    "✅ Filled field: input[type=\"password\"]",
+    "✅ Registration form submitted",
+    "📡 API Response: 500 | URL: https://repshield.io/api/register",
+    "📄 Response Body: {\"success\":false,\"message\":\"no such table: users\"}",
+    "❌ Registration error detected: Registration failed",
+    "🎫 Submitting support ticket...",
+    "⚠️ Ticket form not found",
+    "✅ Ticket submission attempted"
+  ],
+  "consoleLogs": [
+    {
+      "type": "error",
+      "text": "X-Frame-Options may only be set via an HTTP header sent along with a document. It may not be set inside <meta>.",
+      "timestamp": "2025-06-16T10:04:02.590Z"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+      "timestamp": "2025-06-16T10:04:02.893Z"
+    },
+    {
+      "type": "error",
+      "text": "Refused to load the script 'https://js.stripe.com/basil/stripe.js' because it violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' https://replit.com https://fonts.googleapis.com\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.\n",
+      "timestamp": "2025-06-16T10:04:02.909Z"
+    },
+    {
+      "type": "error",
+      "text": "Refused to load the script 'https://js.stripe.com/basil/stripe.js' because it violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' https://replit.com https://fonts.googleapis.com\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.\n",
+      "timestamp": "2025-06-16T10:04:02.909Z"
+    },
+    {
+      "type": "warning",
+      "text": "Error: Failed to load Stripe.js\n    at HTMLScriptElement.<anonymous> (https://repshield.io/assets/index-OCymUNdW.js:560:8486)",
+      "timestamp": "2025-06-16T10:04:02.943Z"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 ()",
+      "timestamp": "2025-06-16T10:04:03.090Z"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 500 ()",
+      "timestamp": "2025-06-16T10:04:06.219Z"
+    }
+  ],
+  "networkLogs": [
+    {
+      "url": "https://repshield.io/login",
+      "status": 200,
+      "timestamp": "2025-06-16T10:04:02.527Z"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap",
+      "status": 200,
+      "timestamp": "2025-06-16T10:04:02.630Z"
+    },
+    {
+      "url": "https://repshield.io/assets/index-DeZMKbxP.css",
+      "status": 200,
+      "timestamp": "2025-06-16T10:04:02.633Z"
+    },
+    {
+      "url": "https://replit.com/public/js/replit-dev-banner.js",
+      "status": 200,
+      "timestamp": "2025-06-16T10:04:02.638Z"
+    },
+    {
+      "url": "https://repshield.io/assets/index-OCymUNdW.js",
+      "status": 200,
+      "timestamp": "2025-06-16T10:04:02.830Z"
+    },
+    {
+      "url": "https://repshield.io/api/auth/user",
+      "status": 401,
+      "timestamp": "2025-06-16T10:04:03.090Z"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/inter/v19/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2",
+      "status": 200,
+      "timestamp": "2025-06-16T10:04:03.256Z"
+    },
+    {
+      "url": "https://repshield.io/api/register",
+      "status": 500,
+      "timestamp": "2025-06-16T10:04:06.216Z"
+    }
+  ]
+}

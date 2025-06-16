@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Shield, Users, BarChart3 } from "lucide-react";
 import { LoadingSpinner } from "@/components/loading-spinner";
 import { FaGoogle } from "react-icons/fa";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -18,6 +18,7 @@ export default function AuthPage() {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [registerForm, setRegisterForm] = useState({ 
     email: "", 
@@ -26,28 +27,53 @@ export default function AuthPage() {
     lastName: "" 
   });
 
-  // Redirect if already logged in
-  if (!isLoading && user) {
-    setLocation("/my-account");
-    return null;
-  }
+  // Redirect if already logged in - use useEffect to avoid setState during render
+  useEffect(() => {
+    if (!isLoading && user) {
+      setLocation("/my-account");
+    }
+  }, [isLoading, user, setLocation]);
 
   const loginMutation = useMutation({
     mutationFn: async (data: { email: string; password: string }) => {
       const response = await apiRequest("POST", "/api/login", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Invalidate and refetch user query to get the new user data
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
       toast({
         title: "Login successful",
         description: "Welcome back!",
       });
-      setLocation("/my-account");
+      
+      // Small delay to ensure query has time to update
+      setTimeout(() => {
+        setLocation("/my-account");
+      }, 100);
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      console.error("Login error:", error);
+      let errorMessage = "Login failed";
+      
+      if (error.message) {
+        if (error.message.includes("Invalid email or password")) {
+          errorMessage = "Invalid email or password. Please check your credentials.";
+        } else if (error.message.includes("401")) {
+          errorMessage = "Invalid email or password. Please check your credentials.";
+        } else if (error.message.includes("400")) {
+          errorMessage = "Please enter a valid email and password.";
+        } else if (error.message.includes("500")) {
+          errorMessage = "Server error. Please try again later.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Login failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -58,17 +84,45 @@ export default function AuthPage() {
       const response = await apiRequest("POST", "/api/register", data);
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
+      console.log("Registration successful, response:", data);
+      
+      // Invalidate and refetch user query to get the new user data
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
       toast({
         title: "Registration successful",
         description: "Welcome to RepShield!",
       });
-      setLocation("/my-account");
+      
+      // Small delay to ensure query has time to update
+      setTimeout(() => {
+        setLocation("/my-account");
+      }, 100);
     },
-    onError: (error: Error) => {
+    onError: (error: any) => {
+      console.error("Registration error:", error);
+      let errorMessage = "Registration failed";
+      
+      if (error.message) {
+        if (error.message.includes("already exists")) {
+          errorMessage = "An account with this email already exists. Please try logging in instead.";
+        } else if (error.message.includes("Password must be at least 8 characters")) {
+          errorMessage = "Password must be at least 8 characters long.";
+        } else if (error.message.includes("valid email")) {
+          errorMessage = "Please enter a valid email address.";
+        } else if (error.message.includes("required")) {
+          errorMessage = "Please fill in all required fields.";
+        } else if (error.message.includes("500")) {
+          errorMessage = "Server error. Please try again later.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Registration failed",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -83,8 +137,6 @@ export default function AuthPage() {
     e.preventDefault();
     registerMutation.mutate(registerForm);
   };
-
-
 
   if (isLoading) {
     return (
@@ -204,7 +256,7 @@ export default function AuthPage() {
                         value={registerForm.password}
                         onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
                         required
-                        minLength={6}
+                        minLength={8}
                       />
                     </div>
                     <Button 

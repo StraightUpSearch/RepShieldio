@@ -1,0 +1,81 @@
+{
+  "testName": "1. Homepage Access and Navigation",
+  "user": "e2e-test-1750067848774@playwright.test",
+  "timestamp": "2025-06-16T09:57:30.156Z",
+  "logs": [
+    "🚀 Starting test with user: e2e-test-1750067848774@playwright.test",
+    "🏠 Testing homepage access",
+    "✅ Homepage loaded",
+    "✅ Found: Login navigation",
+    "✅ Found: Scan navigation"
+  ],
+  "consoleLogs": [
+    {
+      "type": "error",
+      "text": "X-Frame-Options may only be set via an HTTP header sent along with a document. It may not be set inside <meta>.",
+      "timestamp": "2025-06-16T09:57:28.938Z"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+      "timestamp": "2025-06-16T09:57:29.092Z"
+    },
+    {
+      "type": "error",
+      "text": "Refused to load the script 'https://js.stripe.com/basil/stripe.js' because it violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' https://replit.com https://fonts.googleapis.com\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.\n",
+      "timestamp": "2025-06-16T09:57:29.097Z"
+    },
+    {
+      "type": "error",
+      "text": "Refused to load the script 'https://js.stripe.com/basil/stripe.js' because it violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' https://replit.com https://fonts.googleapis.com\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.\n",
+      "timestamp": "2025-06-16T09:57:29.098Z"
+    },
+    {
+      "type": "warning",
+      "text": "Error: Failed to load Stripe.js\n    at HTMLScriptElement.<anonymous> (https://repshield.io/assets/index-OCymUNdW.js:560:8486)",
+      "timestamp": "2025-06-16T09:57:29.134Z"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 ()",
+      "timestamp": "2025-06-16T09:57:29.207Z"
+    }
+  ],
+  "networkLogs": [
+    {
+      "url": "https://repshield.io/",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:28.904Z"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:28.980Z"
+    },
+    {
+      "url": "https://replit.com/public/js/replit-dev-banner.js",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:28.982Z"
+    },
+    {
+      "url": "https://repshield.io/assets/index-DeZMKbxP.css",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:29.002Z"
+    },
+    {
+      "url": "https://repshield.io/assets/index-OCymUNdW.js",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:29.060Z"
+    },
+    {
+      "url": "https://repshield.io/api/auth/user",
+      "status": 401,
+      "timestamp": "2025-06-16T09:57:29.207Z"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/inter/v19/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:29.261Z"
+    }
+  ]
+}

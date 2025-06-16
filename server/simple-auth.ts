@@ -24,15 +24,49 @@ async function comparePasswords(supplied: string, stored: string) {
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
-export function setupSimpleAuth(app: Express) {
+export async function setupSimpleAuth(app: Express) {
+  // Validate essential environment variables
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
+      throw new Error('SESSION_SECRET must be set and at least 32 characters long in production');
+    }
+    if (!process.env.DATABASE_URL) {
+      throw new Error('DATABASE_URL must be set in production');
+    }
+  }
+
   // Session configuration
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: true,
-    ttl: sessionTtl,
-    tableName: "sessions",
+  
+  let sessionStore;
+  
+  if (process.env.DATABASE_URL) {
+    // Use PostgreSQL session store for production
+    const pgStore = connectPg(session);
+    sessionStore = new pgStore({
+      conString: process.env.DATABASE_URL,
+      createTableIfMissing: true,
+      ttl: sessionTtl,
+      tableName: "sessions",
+    });
+    console.log("Using PostgreSQL session store");
+  } else {
+    // Use SQLite session store for development
+    const { default: connectSqlite3 } = await import('connect-sqlite3');
+    const SQLiteStore = connectSqlite3(session);
+    sessionStore = new SQLiteStore({
+      db: 'sessions.db',
+      dir: '.',
+      ttl: sessionTtl
+    });
+    console.log("Using SQLite session store for development");
+  }
+  
+  console.log("Setting up session store with:", {
+    hasDbUrl: !!process.env.DATABASE_URL,
+    hasSessionSecret: !!process.env.SESSION_SECRET,
+    nodeEnv: process.env.NODE_ENV,
+    isSecure: process.env.NODE_ENV === "production"
   });
   
   app.set("trust proxy", 1);
@@ -78,56 +112,83 @@ export function setupSimpleAuth(app: Express) {
 
   // Register endpoint
   app.post("/api/register", handleAsyncErrors(async (req, res) => {
-    // Validate input
-    const validatedData = validateInput(registerSchema, req.body);
-    
-    // Check if user already exists
-    const existingUser = await storage.getUserByEmail(validatedData.email);
-    if (existingUser) {
-      throw new AppError("An account with this email already exists", 400);
+    try {
+      console.log("Registration attempt:", { email: req.body.email, hasPassword: !!req.body.password });
+      
+      // Validate input
+      const validatedData = validateInput(registerSchema, req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(validatedData.email);
+      if (existingUser) {
+        console.log("Registration failed: User already exists", validatedData.email);
+        throw new AppError("An account with this email already exists", 400);
+      }
+
+      // Hash password
+      const hashedPassword = await hashPassword(validatedData.password);
+      
+      // Set role based on email
+      const role = validatedData.email === "jamie@straightupsearch.com" ? "admin" : "user";
+      
+      // Create user
+      const user = await storage.upsertUser({
+        id: `user_${Date.now()}`,
+        email: validatedData.email,
+        firstName: validatedData.firstName || null,
+        lastName: validatedData.lastName || null,
+        profileImageUrl: null,
+        role,
+        password: hashedPassword,
+        accountBalance: "0.00",
+        creditsRemaining: role === "admin" ? 1000 : 0,
+      });
+
+      console.log("User created successfully:", { id: user.id, email: user.email, role: user.role });
+
+      // Auto-login after registration
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Auto-login failed after registration:", err);
+          throw new AppError("Registration successful but login failed", 500);
+        }
+        console.log("Auto-login successful after registration");
+        res.status(201).json({ user, message: "Registration successful" });
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      throw error;
     }
-
-    // Hash password
-    const hashedPassword = await hashPassword(validatedData.password);
-    
-    // Set role based on email
-    const role = validatedData.email === "jamie@straightupsearch.com" ? "admin" : "user";
-    
-    // Create user
-    const user = await storage.upsertUser({
-      id: `user_${Date.now()}`,
-      email: validatedData.email,
-      firstName: validatedData.firstName || null,
-      lastName: validatedData.lastName || null,
-      profileImageUrl: null,
-      role,
-      password: hashedPassword,
-      accountBalance: "0.00",
-      creditsRemaining: role === "admin" ? 1000 : 0,
-    });
-
-    // Auto-login after registration
-    req.login(user, (err) => {
-      if (err) throw new AppError("Registration failed", 500);
-      res.status(201).json({ user, message: "Registration successful" });
-    });
   }));
 
   // Login endpoint
   app.post("/api/login", (req, res, next) => {
+    console.log("Login attempt:", { email: req.body.email, hasPassword: !!req.body.password });
+    
     // Validate input first
     try {
       validateInput(loginSchema, req.body);
     } catch (error) {
+      console.log("Login validation failed:", error.message);
       return res.status(400).json({ message: error.message });
     }
 
     passport.authenticate("local", (err: any, user: any, info: any) => {
-      if (err) return res.status(500).json({ message: "Login failed" });
-      if (!user) return res.status(401).json({ message: "Invalid email or password" });
+      if (err) {
+        console.error("Login authentication error:", err);
+        return res.status(500).json({ message: "Login failed" });
+      }
+      if (!user) {
+        console.log("Login failed: Invalid credentials for", req.body.email);
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
       
       req.login(user, (err) => {
-        if (err) return res.status(500).json({ message: "Login failed" });
+        if (err) {
+          console.error("Login session creation failed:", err);
+          return res.status(500).json({ message: "Login failed" });
+        }
+        console.log("Login successful:", { id: user.id, email: user.email });
         res.json({ user, message: "Login successful" });
       });
     })(req, res, next);

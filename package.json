@@ -9,7 +9,10 @@
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
     "start": "cross-env NODE_ENV=production node dist/index.js",
     "check": "tsc",
-    "db:push": "drizzle-kit push"
+    "db:push": "drizzle-kit push",
+    "test:e2e": "playwright test tests/repshield-complete-e2e.spec.ts --project=chromium",
+    "test:e2e:ui": "playwright test tests/repshield-complete-e2e.spec.ts --project=chromium --ui",
+    "test:e2e:headed": "playwright test tests/repshield-complete-e2e.spec.ts --project=chromium --headed"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -54,6 +57,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "connect-pg-simple": "^10.0.0",
+    "connect-sqlite3": "^0.9.15",
     "date-fns": "^3.6.0",
     "drizzle-orm": "^0.39.3",
     "drizzle-zod": "^0.7.0",
@@ -91,6 +95,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.53.0",
     "@replit/vite-plugin-cartographer": "^0.2.7",
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
     "@tailwindcss/typography": "^0.5.15",
@@ -109,6 +114,7 @@
     "cross-env": "^7.0.3",
     "drizzle-kit": "^0.30.4",
     "esbuild": "^0.25.0",
+    "playwright": "^1.53.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.1",

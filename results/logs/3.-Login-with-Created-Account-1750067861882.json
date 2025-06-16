@@ -1,0 +1,166 @@
+{
+  "testName": "3. Login with Created Account",
+  "user": "e2e-test-1750067861882@playwright.test",
+  "timestamp": "2025-06-16T09:57:51.935Z",
+  "logs": [
+    "🚀 Starting test with user: e2e-test-1750067861882@playwright.test",
+    "🔑 Testing login flow",
+    "🔄 Navigating to login page...",
+    "📝 Registering user: e2e-test-1750067861882@playwright.test",
+    "✅ Filled field: input[id*=\"firstname\"]",
+    "✅ Filled field: input[id*=\"lastname\"]",
+    "✅ Filled field: input[type=\"email\"]",
+    "✅ Filled field: input[type=\"password\"]",
+    "✅ Clicked: button:has-text(\"Create Account\")",
+    "⚠️ Registration unclear, attempting login",
+    "🔑 Logging in: e2e-test-1750067861882@playwright.test",
+    "✅ Filled field: input[type=\"email\"]",
+    "✅ Filled field: input[type=\"password\"]",
+    "✅ Clicked: button:has-text(\"Sign In\")",
+    "❌ Login failed",
+    "🔓 Logging out...",
+    "⚠️ No logout option found",
+    "🔄 Navigating to login page...",
+    "🔑 Logging in: e2e-test-1750067861882@playwright.test",
+    "❌ Login failed: Error: locator.isVisible: Error: strict mode violation: locator('button:has-text(\"Sign In\")') resolved to 2 elements:\n    1) <button role=\"tab\" type=\"button\" tabindex=\"-1\" data-state=\"active\" aria-selected=\"true\" id=\"radix-:r0:-trigger-login\" data-orientation=\"horizontal\" data-radix-collection-item=\"\" aria-controls=\"radix-:r0:-content-login\" class=\"inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opa…>Sign In</button> aka getByRole('tab', { name: 'Sign In' })\n    2) <button type=\"submit\" class=\"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full\">Sign In</button> aka getByRole('button', { name: 'Sign In' })\n\nCall log:\n\u001b[2m    - checking visibility of locator('button:has-text(\"Sign In\")')\u001b[22m\n"
+  ],
+  "consoleLogs": [
+    {
+      "type": "error",
+      "text": "X-Frame-Options may only be set via an HTTP header sent along with a document. It may not be set inside <meta>.",
+      "timestamp": "2025-06-16T09:57:42.275Z"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+      "timestamp": "2025-06-16T09:57:42.758Z"
+    },
+    {
+      "type": "error",
+      "text": "Refused to load the script 'https://js.stripe.com/basil/stripe.js' because it violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' https://replit.com https://fonts.googleapis.com\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.\n",
+      "timestamp": "2025-06-16T09:57:42.758Z"
+    },
+    {
+      "type": "error",
+      "text": "Refused to load the script 'https://js.stripe.com/basil/stripe.js' because it violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' https://replit.com https://fonts.googleapis.com\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.\n",
+      "timestamp": "2025-06-16T09:57:42.758Z"
+    },
+    {
+      "type": "warning",
+      "text": "Error: Failed to load Stripe.js\n    at HTMLScriptElement.<anonymous> (https://repshield.io/assets/index-OCymUNdW.js:560:8486)",
+      "timestamp": "2025-06-16T09:57:42.760Z"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 ()",
+      "timestamp": "2025-06-16T09:57:42.839Z"
+    },
+    {
+      "type": "error",
+      "text": "X-Frame-Options may only be set via an HTTP header sent along with a document. It may not be set inside <meta>.",
+      "timestamp": "2025-06-16T09:57:51.040Z"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://reactjs.org/link/react-devtools font-weight:bold",
+      "timestamp": "2025-06-16T09:57:51.121Z"
+    },
+    {
+      "type": "error",
+      "text": "Refused to load the script 'https://js.stripe.com/basil/stripe.js' because it violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' https://replit.com https://fonts.googleapis.com\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.\n",
+      "timestamp": "2025-06-16T09:57:51.131Z"
+    },
+    {
+      "type": "error",
+      "text": "Refused to load the script 'https://js.stripe.com/basil/stripe.js' because it violates the following Content Security Policy directive: \"script-src 'self' 'unsafe-inline' https://replit.com https://fonts.googleapis.com\". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.\n",
+      "timestamp": "2025-06-16T09:57:51.132Z"
+    },
+    {
+      "type": "warning",
+      "text": "Error: Failed to load Stripe.js\n    at HTMLScriptElement.<anonymous> (https://repshield.io/assets/index-OCymUNdW.js:560:8486)",
+      "timestamp": "2025-06-16T09:57:51.159Z"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 401 ()",
+      "timestamp": "2025-06-16T09:57:51.194Z"
+    }
+  ],
+  "networkLogs": [
+    {
+      "url": "https://repshield.io/login",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:42.216Z"
+    },
+    {
+      "url": "https://repshield.io/assets/index-DeZMKbxP.css",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:42.366Z"
+    },
+    {
+      "url": "https://replit.com/public/js/replit-dev-banner.js",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:42.373Z"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:42.374Z"
+    },
+    {
+      "url": "https://repshield.io/assets/index-OCymUNdW.js",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:42.627Z"
+    },
+    {
+      "url": "https://repshield.io/api/auth/user",
+      "status": 401,
+      "timestamp": "2025-06-16T09:57:42.839Z"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/inter/v19/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:42.968Z"
+    },
+    {
+      "url": "https://repshield.io/login",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:51.033Z"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:51.042Z"
+    },
+    {
+      "url": "https://replit.com/public/js/replit-dev-banner.js",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:51.044Z"
+    },
+    {
+      "url": "https://repshield.io/assets/index-DeZMKbxP.css",
+      "status": 304,
+      "timestamp": "2025-06-16T09:57:51.078Z"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/inter/v19/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:51.083Z"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/inter/v19/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2",
+      "status": 200,
+      "timestamp": "2025-06-16T09:57:51.084Z"
+    },
+    {
+      "url": "https://repshield.io/assets/index-OCymUNdW.js",
+      "status": 304,
+      "timestamp": "2025-06-16T09:57:51.119Z"
+    },
+    {
+      "url": "https://repshield.io/api/auth/user",
+      "status": 401,
+      "timestamp": "2025-06-16T09:57:51.194Z"
+    }
+  ]
+}
