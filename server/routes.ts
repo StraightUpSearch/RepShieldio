@@ -18,6 +18,7 @@ import { errorRecovery } from "./error-recovery";
 import { notificationManager } from "./notification-manager";
 import { liveScannerService } from "./live-scanner";
 import { randomBytes } from "crypto";
+import { initializeDatabase } from "./db-init";
 
 // DEPRECATED: Stripe initialization removed for simplified workflow
 
@@ -28,6 +29,9 @@ async function sendBrandScanNotification(data: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Initialize database tables on startup
+  await initializeDatabase();
+  
   // Setup authentication middleware
   await setupSimpleAuth(app);
 
