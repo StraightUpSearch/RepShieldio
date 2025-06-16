@@ -738,9 +738,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Create or find user based on email to satisfy foreign key constraint
+      const userId = email.replace('@', '_').replace(/\./g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+      const user = await storage.upsertUser({
+        id: userId,
+        email: email,
+        role: 'user',
+        firstName: null,
+        lastName: null,
+        profileImageUrl: null,
+        password: null,
+        accountBalance: "0.00",
+        creditsRemaining: 0
+      });
+
       // Create ticket directly - no legacy quote request table needed
       const ticket = await storage.createTicket({
-        userId: 'anonymous',
+        userId: user.id,
         type: 'removal_request',
         title: `Reddit Removal Request - ${new URL(redditUrl).pathname}`,
         description: `Client requesting removal of Reddit content:\n${redditUrl}\n\nClient Email: ${email}`,
