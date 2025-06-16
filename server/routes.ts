@@ -1423,7 +1423,7 @@ Disallow: /`;
       
       // Generate secure reset token
       const resetToken = randomBytes(32).toString('hex');
-      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now (more user-friendly)
       
       // Store reset token
       await storage.createPasswordResetToken(user.id, resetToken, expiresAt);
@@ -1454,15 +1454,16 @@ Disallow: /`;
         return res.status(400).json({ message: "Token and new password are required" });
       }
       
-      if (newPassword.length < 6) {
+      if (newPassword.length < 4) {
         console.log("Password reset failed: Password too short");
-        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+        return res.status(400).json({ message: "Password must be at least 4 characters long" });
       }
       
       // Find and validate the reset token
       const validToken = await storage.getValidPasswordResetToken(token);
       if (!validToken) {
         console.log(`Password reset failed: Invalid or expired token for ${token.substring(0, 8)}...`);
+        console.log(`Token validation details: Token length: ${token.length}, Token format: ${typeof token}`);
         return res.status(400).json({ message: "Invalid or expired reset token" });
       }
       

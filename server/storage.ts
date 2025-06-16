@@ -552,6 +552,16 @@ export class DatabaseStorage implements IStorage {
     try {
       const now = isPostgres ? new Date() : Math.floor(Date.now() / 1000);
       
+      console.log(`Looking for token: ${token.substring(0, 8)}... (length: ${token.length})`);
+      console.log(`Current time: ${now} (${isPostgres ? 'postgres' : 'sqlite'})`);
+      
+      // First, let's see all tokens for debugging
+      const allTokens = await db.select().from(passwordResetTokens);
+      console.log(`Total tokens in database: ${allTokens.length}`);
+      allTokens.forEach((t, i) => {
+        console.log(`Token ${i + 1}: ${t.token.substring(0, 8)}... expires: ${t.expiresAt} used: ${t.used}`);
+      });
+      
       const [resetToken] = await db
         .select()
         .from(passwordResetTokens)
@@ -562,11 +572,22 @@ export class DatabaseStorage implements IStorage {
         ));
         
       if (resetToken) {
-        console.log(`Valid password reset token found for user: ${resetToken.userId}`);
+        console.log(`✅ Valid password reset token found for user: ${resetToken.userId}`);
         return { userId: resetToken.userId, token: resetToken.token };
       }
       
-      console.log(`No valid password reset token found for token: ${token.substring(0, 8)}...`);
+      // Check if token exists but is expired or used
+      const [anyToken] = await db
+        .select()
+        .from(passwordResetTokens)
+        .where(eq(passwordResetTokens.token, token));
+        
+      if (anyToken) {
+        console.log(`❌ Token found but invalid - expires: ${anyToken.expiresAt}, used: ${anyToken.used}, current: ${now}`);
+      } else {
+        console.log(`❌ No token found matching: ${token.substring(0, 8)}...`);
+      }
+      
       return undefined;
     } catch (error) {
       console.error("Error getting password reset token:", error);
