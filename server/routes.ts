@@ -31,11 +31,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication middleware
   await setupSimpleAuth(app);
 
-  // Authentication endpoints
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  // Authentication endpoints - Allow checking auth status without requiring login
+  app.get('/api/auth/user', async (req: any, res) => {
     try {
-      const user = req.user; // User is already available from session
-      res.json(user);
+      if (!req.user) {
+        return res.status(401).json({ 
+          authenticated: false, 
+          message: "Not authenticated" 
+        });
+      }
+      res.json({ 
+        authenticated: true, 
+        user: req.user 
+      });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -705,6 +713,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Quote request submission endpoint
   app.post("/api/quote-request", async (req, res) => {
     try {
+      console.log("Quote request received:", JSON.stringify(req.body, null, 2));
+      
+      // Validate required fields
+      if (!req.body.redditUrl || !req.body.email) {
+        return res.status(400).json({
+          success: false,
+          message: "Reddit URL and email are required",
+          received: Object.keys(req.body)
+        });
+      }
+
       const validatedData = insertQuoteRequestSchema.parse(req.body);
       
       // Get AI analysis of the Reddit URL
@@ -758,10 +777,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Validation error:", error.errors);
         res.status(400).json({
           success: false,
           message: "Invalid request data",
-          errors: error.errors
+          errors: error.errors,
+          received: Object.keys(req.body)
         });
       } else {
         console.error("Error creating quote request:", error);

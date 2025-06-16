@@ -214,8 +214,28 @@ export async function setupSimpleAuth(app: Express) {
 }
 
 export const isAuthenticated = (req: any, res: any, next: any) => {
-  if (req.isAuthenticated()) {
+  console.log("Auth check:", { 
+    hasUser: !!req.user, 
+    sessionID: req.sessionID,
+    isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false 
+  });
+  
+  // Check if user is authenticated using Passport's built-in method
+  if (req.isAuthenticated && req.isAuthenticated()) {
     return next();
   }
-  res.status(401).json({ message: "Unauthorized" });
+  
+  // Log unauthorized access attempts for debugging
+  console.log("Unauthorized access attempt:", {
+    url: req.url,
+    method: req.method,
+    headers: req.headers.authorization ? 'present' : 'missing',
+    sessionExists: !!req.session,
+    sessionData: req.session ? Object.keys(req.session) : 'no session'
+  });
+  
+  return res.status(401).json({ 
+    authenticated: false,
+    message: "Authentication required. Please login to access this resource." 
+  });
 };

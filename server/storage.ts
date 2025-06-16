@@ -18,6 +18,40 @@ import {
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 
+// Helper functions for SQLite timestamp conversion
+const isPostgres = !!process.env.DATABASE_URL;
+
+function toDbTimestamp(date?: Date): any {
+  if (!date) return isPostgres ? new Date() : Math.floor(Date.now() / 1000);
+  return isPostgres ? date : Math.floor(date.getTime() / 1000);
+}
+
+function fromDbTimestamp(timestamp: any): Date {
+  if (!timestamp) return new Date();
+  return isPostgres ? timestamp : new Date(timestamp * 1000);
+}
+
+function convertUserFromDb(user: any): User {
+  if (!user) return user;
+  return {
+    ...user,
+    createdAt: fromDbTimestamp(user.createdAt),
+    updatedAt: fromDbTimestamp(user.updatedAt),
+  };
+}
+
+function convertTicketFromDb(ticket: any): Ticket {
+  if (!ticket) return ticket;
+  return {
+    ...ticket,
+    createdAt: fromDbTimestamp(ticket.createdAt),
+    updatedAt: fromDbTimestamp(ticket.updatedAt),
+    requestData: ticket.requestData ? (
+      isPostgres ? ticket.requestData : JSON.parse(ticket.requestData)
+    ) : null,
+  };
+}
+
 export interface IStorage {
   // User operations for authentication
   getUser(id: string): Promise<User | undefined>;
@@ -70,7 +104,7 @@ export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
     try {
       const [user] = await db.select().from(users).where(eq(users.id, id));
-      return user;
+      return user ? convertUserFromDb(user) : undefined;
     } catch (error) {
       console.error("Error getting user:", error);
       return undefined;
@@ -80,7 +114,7 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     try {
       const [user] = await db.select().from(users).where(eq(users.email, email));
-      return user;
+      return user ? convertUserFromDb(user) : undefined;
     } catch (error) {
       console.error("Error getting user by email:", error);
       return undefined;
@@ -89,18 +123,24 @@ export class DatabaseStorage implements IStorage {
 
   async upsertUser(userData: UpsertUser): Promise<User> {
     try {
+      const dbUserData = {
+        ...userData,
+        createdAt: toDbTimestamp(userData.createdAt),
+        updatedAt: toDbTimestamp(new Date()),
+      };
+      
       const [user] = await db
         .insert(users)
-        .values(userData)
+        .values(dbUserData)
         .onConflictDoUpdate({
           target: users.id,
           set: {
-            ...userData,
-            updatedAt: new Date(),
+            ...dbUserData,
+            updatedAt: toDbTimestamp(new Date()),
           },
         })
         .returning();
-      return user;
+      return convertUserFromDb(user);
     } catch (error) {
       console.error("Error upserting user:", error);
       throw error;
@@ -114,14 +154,19 @@ export class DatabaseStorage implements IStorage {
         ...ticketData,
         redditUrl: ticketData.redditUrl || null,
         amount: ticketData.amount || null,
-        progress: ticketData.progress || 0
+        progress: ticketData.progress || 0,
+        requestData: ticketData.requestData ? (
+          isPostgres ? ticketData.requestData : JSON.stringify(ticketData.requestData)
+        ) : null,
+        createdAt: toDbTimestamp(),
+        updatedAt: toDbTimestamp(),
       };
       
       const [ticket] = await db
         .insert(tickets)
         .values(completeTicketData)
         .returning();
-      return ticket;
+      return convertTicketFromDb(ticket);
     } catch (error) {
       console.error("Error creating ticket:", error);
       throw error;
@@ -130,7 +175,8 @@ export class DatabaseStorage implements IStorage {
 
   async getTickets(): Promise<Ticket[]> {
     try {
-      return await db.select().from(tickets).orderBy(desc(tickets.createdAt));
+      const results = await db.select().from(tickets).orderBy(desc(tickets.createdAt));
+      return results.map(convertTicketFromDb);
     } catch (error) {
       console.error("Error getting tickets:", error);
       return [];
@@ -139,11 +185,12 @@ export class DatabaseStorage implements IStorage {
 
   async getUserTickets(userId: string): Promise<Ticket[]> {
     try {
-      return await db
+      const results = await db
         .select()
         .from(tickets)
         .where(eq(tickets.userId, userId))
         .orderBy(desc(tickets.createdAt));
+      return results.map(convertTicketFromDb);
     } catch (error) {
       console.error("Error getting user tickets:", error);
       return [];
@@ -153,7 +200,7 @@ export class DatabaseStorage implements IStorage {
   async getTicket(id: number): Promise<Ticket | undefined> {
     try {
       const [ticket] = await db.select().from(tickets).where(eq(tickets.id, id));
-      return ticket;
+      return ticket ? convertTicketFromDb(ticket) : undefined;
     } catch (error) {
       console.error("Error getting ticket:", error);
       return undefined;
@@ -162,7 +209,10 @@ export class DatabaseStorage implements IStorage {
 
   async updateTicketStatus(id: number, status: string, assignedTo?: string): Promise<Ticket | undefined> {
     try {
-      const updateData: any = { status, updatedAt: new Date() };
+      const updateData: any = { 
+        status, 
+        updatedAt: toDbTimestamp(new Date()) 
+      };
       if (assignedTo !== undefined) {
         updateData.assignedTo = assignedTo;
       }
@@ -172,7 +222,7 @@ export class DatabaseStorage implements IStorage {
         .set(updateData)
         .where(eq(tickets.id, id))
         .returning();
-      return ticket;
+      return ticket ? convertTicketFromDb(ticket) : undefined;
     } catch (error) {
       console.error("Error updating ticket status:", error);
       return undefined;
@@ -183,10 +233,13 @@ export class DatabaseStorage implements IStorage {
     try {
       const [ticket] = await db
         .update(tickets)
-        .set({ notes, updatedAt: new Date() })
+        .set({ 
+          notes, 
+          updatedAt: toDbTimestamp(new Date()) 
+        })
         .where(eq(tickets.id, id))
         .returning();
-      return ticket;
+      return ticket ? convertTicketFromDb(ticket) : undefined;
     } catch (error) {
       console.error("Error updating ticket notes:", error);
       return undefined;
@@ -195,7 +248,8 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     try {
-      return await db.select().from(users);
+      const results = await db.select().from(users);
+      return results.map(convertUserFromDb);
     } catch (error) {
       console.error("Error getting all users:", error);
       return [];
@@ -223,108 +277,163 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Legacy operations - in-memory for compatibility
-  private auditRequests: Map<number, AuditRequest> = new Map();
-  private quoteRequests: Map<number, QuoteRequest> = new Map();
-  private brandScanTickets: Map<number, BrandScanTicket> = new Map();
-  private currentAuditId: number = 1;
-  private currentQuoteId: number = 1;
-  private currentBrandScanId: number = 1;
-
+  // Database implementations for all legacy operations
   async createAuditRequest(insertRequest: InsertAuditRequest): Promise<AuditRequest> {
-    const id = this.currentAuditId++;
-    const request: AuditRequest = {
-      ...insertRequest,
-      id,
-      website: insertRequest.website || null,
-      message: insertRequest.message || null,
-      processed: false,
-      createdAt: new Date(),
-    };
-    this.auditRequests.set(id, request);
-    return request;
+    try {
+      const requestData = {
+        ...insertRequest,
+        website: insertRequest.website || null,
+        message: insertRequest.message || null,
+        processed: false,
+        createdAt: new Date(),
+      };
+      
+      const [request] = await db
+        .insert(auditRequests)
+        .values(requestData)
+        .returning();
+      return request;
+    } catch (error) {
+      console.error("Error creating audit request:", error);
+      throw error;
+    }
   }
 
   async getAuditRequests(): Promise<AuditRequest[]> {
-    return Array.from(this.auditRequests.values()).sort(
-      (a, b) => b.createdAt!.getTime() - a.createdAt!.getTime()
-    );
+    try {
+      return await db.select().from(auditRequests).orderBy(desc(auditRequests.createdAt));
+    } catch (error) {
+      console.error("Error getting audit requests:", error);
+      return [];
+    }
   }
 
   async getAuditRequest(id: number): Promise<AuditRequest | undefined> {
-    return this.auditRequests.get(id);
+    try {
+      const [request] = await db.select().from(auditRequests).where(eq(auditRequests.id, id));
+      return request;
+    } catch (error) {
+      console.error("Error getting audit request:", error);
+      return undefined;
+    }
   }
 
   async updateAuditRequestStatus(id: number, processed: boolean): Promise<AuditRequest | undefined> {
-    const request = this.auditRequests.get(id);
-    if (request) {
-      const updatedRequest = { ...request, processed };
-      this.auditRequests.set(id, updatedRequest);
-      return updatedRequest;
+    try {
+      const [request] = await db
+        .update(auditRequests)
+        .set({ processed })
+        .where(eq(auditRequests.id, id))
+        .returning();
+      return request;
+    } catch (error) {
+      console.error("Error updating audit request status:", error);
+      return undefined;
     }
-    return undefined;
   }
 
   async createQuoteRequest(insertRequest: InsertQuoteRequest): Promise<QuoteRequest> {
-    const id = this.currentQuoteId++;
-    const request: QuoteRequest = {
-      ...insertRequest,
-      id,
-      processed: false,
-      createdAt: new Date(),
-    };
-    this.quoteRequests.set(id, request);
-    return request;
+    try {
+      const requestData = {
+        ...insertRequest,
+        processed: false,
+        createdAt: new Date(),
+      };
+      
+      const [request] = await db
+        .insert(quoteRequests)
+        .values(requestData)
+        .returning();
+      return request;
+    } catch (error) {
+      console.error("Error creating quote request:", error);
+      throw error;
+    }
   }
 
   async getQuoteRequests(): Promise<QuoteRequest[]> {
-    return Array.from(this.quoteRequests.values()).sort(
-      (a, b) => b.createdAt!.getTime() - a.createdAt!.getTime()
-    );
+    try {
+      return await db.select().from(quoteRequests).orderBy(desc(quoteRequests.createdAt));
+    } catch (error) {
+      console.error("Error getting quote requests:", error);
+      return [];
+    }
   }
 
   async getQuoteRequest(id: number): Promise<QuoteRequest | undefined> {
-    return this.quoteRequests.get(id);
+    try {
+      const [request] = await db.select().from(quoteRequests).where(eq(quoteRequests.id, id));
+      return request;
+    } catch (error) {
+      console.error("Error getting quote request:", error);
+      return undefined;
+    }
   }
 
   async updateQuoteRequestStatus(id: number, processed: boolean): Promise<QuoteRequest | undefined> {
-    const request = this.quoteRequests.get(id);
-    if (request) {
-      const updatedRequest = { ...request, processed };
-      this.quoteRequests.set(id, updatedRequest);
-      return updatedRequest;
+    try {
+      const [request] = await db
+        .update(quoteRequests)
+        .set({ processed })
+        .where(eq(quoteRequests.id, id))
+        .returning();
+      return request;
+    } catch (error) {
+      console.error("Error updating quote request status:", error);
+      return undefined;
     }
-    return undefined;
   }
 
   async createBrandScanTicket(insertRequest: InsertBrandScanTicket): Promise<BrandScanTicket> {
-    const id = this.currentBrandScanId++;
-    const request: BrandScanTicket = {
-      id,
-      ...insertRequest,
-      processed: false,
-      createdAt: new Date()
-    };
-    this.brandScanTickets.set(id, request);
-    return request;
+    try {
+      const requestData = {
+        ...insertRequest,
+        processed: false,
+        createdAt: new Date(),
+      };
+      
+      const [request] = await db
+        .insert(brandScanTickets)
+        .values(requestData)
+        .returning();
+      return request;
+    } catch (error) {
+      console.error("Error creating brand scan ticket:", error);
+      throw error;
+    }
   }
 
   async getBrandScanTickets(): Promise<BrandScanTicket[]> {
-    return Array.from(this.brandScanTickets.values());
+    try {
+      return await db.select().from(brandScanTickets).orderBy(desc(brandScanTickets.createdAt));
+    } catch (error) {
+      console.error("Error getting brand scan tickets:", error);
+      return [];
+    }
   }
 
   async getBrandScanTicket(id: number): Promise<BrandScanTicket | undefined> {
-    return this.brandScanTickets.get(id);
+    try {
+      const [request] = await db.select().from(brandScanTickets).where(eq(brandScanTickets.id, id));
+      return request;
+    } catch (error) {
+      console.error("Error getting brand scan ticket:", error);
+      return undefined;
+    }
   }
 
   async updateBrandScanTicketStatus(id: number, processed: boolean): Promise<BrandScanTicket | undefined> {
-    const request = this.brandScanTickets.get(id);
-    if (request) {
-      request.processed = processed;
-      this.brandScanTickets.set(id, request);
+    try {
+      const [request] = await db
+        .update(brandScanTickets)
+        .set({ processed })
+        .where(eq(brandScanTickets.id, id))
+        .returning();
       return request;
+    } catch (error) {
+      console.error("Error updating brand scan ticket status:", error);
+      return undefined;
     }
-    return undefined;
   }
 
   // Blog CMS operations - using tickets table as content

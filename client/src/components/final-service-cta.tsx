@@ -12,9 +12,11 @@ export default function FinalServiceCTA() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [redditUrl, setRedditUrl] = useState("");
+  const [email, setEmail] = useState("");
+  const [showEmailStep, setShowEmailStep] = useState(false);
 
   const submitQuoteRequest = useMutation({
-    mutationFn: async (data: { redditUrl: string }) => {
+    mutationFn: async (data: { redditUrl: string; email: string }) => {
       return await apiRequest("POST", "/api/quote-request", data);
     },
     onSuccess: () => {
@@ -24,6 +26,8 @@ export default function FinalServiceCTA() {
         variant: "default",
       });
       setRedditUrl("");
+      setEmail("");
+      setShowEmailStep(false);
       setLocation("/ticket-status");
     },
     onError: () => {
@@ -47,7 +51,21 @@ export default function FinalServiceCTA() {
       return;
     }
 
-    submitQuoteRequest.mutate({ redditUrl });
+    if (!showEmailStep) {
+      setShowEmailStep(true);
+      return;
+    }
+
+    if (!email.trim()) {
+      toast({
+        title: "Email Required",
+        description: "Please enter your email to receive the quote.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    submitQuoteRequest.mutate({ redditUrl, email });
   };
 
   return (
@@ -73,27 +91,63 @@ export default function FinalServiceCTA() {
         
         {/* URL Input Form */}
         <div className="max-w-2xl mx-auto mb-8">
-          <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1 relative">
-              <SiReddit className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-orange-500" />
-              <Input
-                type="url"
-                placeholder="https://reddit.com/r/..."
-                value={redditUrl}
-                onChange={(e) => setRedditUrl(e.target.value)}
-                className="pl-12 h-14 text-lg bg-gray-800 border-2 border-gray-700 focus:border-orange-500 text-white placeholder:text-gray-400 rounded-xl"
-                required
-              />
-            </div>
-            <Button 
-              type="submit" 
-              size="lg"
-              disabled={submitQuoteRequest.isPending}
-              className="h-14 px-8 bg-orange-500 hover:bg-orange-600 text-white font-semibold text-lg whitespace-nowrap rounded-xl"
-            >
-              {submitQuoteRequest.isPending ? "Processing..." : "Start Case Review"}
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!showEmailStep ? (
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <SiReddit className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-orange-500" />
+                  <Input
+                    type="url"
+                    placeholder="https://reddit.com/r/..."
+                    value={redditUrl}
+                    onChange={(e) => setRedditUrl(e.target.value)}
+                    className="pl-12 h-14 text-lg bg-gray-800 border-2 border-gray-700 focus:border-orange-500 text-white placeholder:text-gray-400 rounded-xl"
+                    required
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  size="lg"
+                  className="h-14 px-8 bg-orange-500 hover:bg-orange-600 text-white font-semibold text-lg whitespace-nowrap rounded-xl"
+                >
+                  Start Case Review
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="text-left bg-gray-800 p-4 rounded-xl">
+                  <p className="text-sm text-gray-400 mb-2">Analyzing URL:</p>
+                  <p className="text-white text-sm break-all">{redditUrl}</p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Input
+                    type="email"
+                    placeholder="Enter your email to receive the quote"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="flex-1 h-14 text-lg bg-gray-800 border-2 border-gray-700 focus:border-orange-500 text-white placeholder:text-gray-400 rounded-xl"
+                    required
+                  />
+                  <Button 
+                    type="submit" 
+                    size="lg"
+                    disabled={submitQuoteRequest.isPending}
+                    className="h-14 px-8 bg-orange-500 hover:bg-orange-600 text-white font-semibold text-lg whitespace-nowrap rounded-xl"
+                  >
+                    {submitQuoteRequest.isPending ? "Processing..." : "Get Quote"}
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowEmailStep(false)}
+                  className="text-gray-400 hover:text-white text-sm"
+                >
+                  ← Change URL
+                </button>
+              </div>
+            )}
           </form>
         </div>
         
