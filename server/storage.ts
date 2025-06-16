@@ -20,7 +20,8 @@ import { db } from "./db";
 import { eq, desc, and, gt } from "drizzle-orm";
 
 // Helper functions for SQLite timestamp conversion
-const isPostgres = !!process.env.DATABASE_URL;
+import { getDatabaseConfig } from './config/database';
+const isPostgres = getDatabaseConfig().type === 'postgresql';
 
 function toDbTimestamp(date?: Date): any {
   if (!date) return isPostgres ? new Date() : Math.floor(Date.now() / 1000);
@@ -1006,4 +1007,10 @@ export class MemStorage implements IStorage {
 }
 
 // Use memory storage for development until database tables are set up
-export const storage = process.env.NODE_ENV === 'development' ? new MemStorage() : new DatabaseStorage();
+// Updated to use centralized database configuration
+const dbConfig = getDatabaseConfig();
+export const storage = (
+  process.env.NODE_ENV === 'development' && process.env.USE_MEMORY_STORAGE === 'true'
+) ? new MemStorage() : new DatabaseStorage();
+
+console.log(`📦 Storage: ${storage.constructor.name} (${dbConfig.environment})`);

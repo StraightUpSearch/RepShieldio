@@ -1,0 +1,85 @@
+import { drizzle as drizzlePg } from 'drizzle-orm/postgres-js';
+import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
+import postgres from 'postgres';
+import Database from 'better-sqlite3';
+import * as schema from '@shared/schema';
+
+interface DatabaseConfig {
+  url: string;
+  type: 'sqlite' | 'postgresql';
+  environment: string;
+}
+
+/**
+ * Get environment-specific database configuration
+ * Enforces strict separation between development and production databases
+ */
+function getDatabaseConfig(): DatabaseConfig {
+  const nodeEnv = process.env.NODE_ENV || 'development';
+  
+  // Environment-specific database URL selection
+  let dbUrl: string;
+  let dbType: 'sqlite' | 'postgresql';
+  
+  if (nodeEnv === 'production') {
+    // Production environment - prefer PROD_DATABASE_URL
+    dbUrl = process.env.PROD_DATABASE_URL || process.env.DATABASE_URL || '';
+    
+    if (!dbUrl) {
+      console.warn('⚠️  No production database URL configured - falling back to SQLite');
+      dbUrl = 'sqlite://production.db';
+      dbType = 'sqlite';
+    } else if (dbUrl.startsWith('postgresql://') || dbUrl.startsWith('postgres://')) {
+      dbType = 'postgresql';
+    } else {
+      dbType = 'sqlite';
+    }
+  } else {
+    // Development environment - prefer DEV_DATABASE_URL
+    dbUrl = process.env.DEV_DATABASE_URL || 'sqlite://development.db';
+    dbType = dbUrl.startsWith('postgresql://') || dbUrl.startsWith('postgres://') ? 'postgresql' : 'sqlite';
+  }
+  
+  // Validation: Prevent cross-environment contamination
+  if (nodeEnv === 'production' && dbUrl.includes('development.db')) {
+    throw new Error('❌ CRITICAL: Production environment cannot use development database');
+  }
+  
+  if (nodeEnv === 'development' && dbUrl.includes('production.db')) {
+    console.warn('⚠️  Development environment using production database - this is unusual');
+  }
+  
+  return {
+    url: dbUrl,
+    type: dbType,
+    environment: nodeEnv
+  };
+}
+
+/**
+ * Initialize database connection with environment-specific configuration
+ */
+function initializeDatabase() {
+  const config = getDatabaseConfig();
+  
+  console.log(`🔧 Database Config: ${config.type} (${config.environment})`);
+  
+  if (config.type === 'postgresql') {
+    // PostgreSQL connection for production
+    const sql = postgres(config.url);
+    const db = drizzlePg(sql, { schema });
+    console.log(`✅ Using PostgreSQL database for ${config.environment}`);
+    return db;
+  } else {
+    // SQLite connection for development or fallback
+    const dbPath = config.url.replace('sqlite://', '');
+    const sqlite = new Database(dbPath);
+    const db = drizzleSqlite(sqlite, { schema });
+    console.log(`✅ Using SQLite database (${dbPath}) for ${config.environment}`);
+    return db;
+  }
+}
+
+// Export configured database instance
+export const db = initializeDatabase();
+export { getDatabaseConfig }; 

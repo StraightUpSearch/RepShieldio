@@ -9,6 +9,7 @@ import connectPg from "connect-pg-simple";
 import connectSqlite3 from "connect-sqlite3";
 import { validateInput, registerSchema, loginSchema } from "./validation";
 import { handleAsyncErrors, AppError } from "./error-handler";
+import { getDatabaseConfig } from './config/database';
 
 const scryptAsync = promisify(scrypt);
 
@@ -31,8 +32,12 @@ export async function setupSimpleAuth(app: Express) {
     if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32) {
       throw new Error('SESSION_SECRET must be set and at least 32 characters long in production');
     }
-    // DATABASE_URL is now optional - SQLite will be used as fallback
-    if (!process.env.DATABASE_URL) {
+    
+    // Validate production database configuration
+    const dbConfig = getDatabaseConfig();
+    if (dbConfig.type === 'sqlite' && dbConfig.url.includes('development')) {
+      throw new Error('❌ CRITICAL: Production cannot use development database for sessions');
+    } else if (dbConfig.type === 'sqlite') {
       console.warn('⚠️  DATABASE_URL not set in production - using SQLite as fallback. For production deployments, consider setting DATABASE_URL for better performance and persistence.');
     }
   }
@@ -41,31 +46,33 @@ export async function setupSimpleAuth(app: Express) {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   
   let sessionStore;
+  const dbConfig = getDatabaseConfig();
   
-  if (process.env.DATABASE_URL) {
+  if (dbConfig.type === 'postgresql') {
     // Use PostgreSQL session store for production with DATABASE_URL
     const pgStore = connectPg(session);
     sessionStore = new pgStore({
-      conString: process.env.DATABASE_URL,
+      conString: dbConfig.url,
       createTableIfMissing: true,
       ttl: sessionTtl,
       tableName: "sessions",
     });
-    console.log("✅ Using PostgreSQL session store with DATABASE_URL");
+    console.log(`✅ Using PostgreSQL session store for ${dbConfig.environment}`);
   } else {
-    // Use SQLite session store as fallback (development or production without DATABASE_URL)
+    // Use SQLite session store for development or fallback
     const SQLiteStore = connectSqlite3(session);
+    const sessionDbPath = dbConfig.environment === 'production' ? 'sessions-production.db' : 'sessions.db';
     sessionStore = new SQLiteStore({
-      db: 'sessions.db',
+      db: sessionDbPath,
       dir: '.',
       ttl: sessionTtl
     });
-    const envMsg = process.env.NODE_ENV === 'production' ? 'production (fallback)' : 'development';
-    console.log(`✅ Using SQLite session store for ${envMsg}`);
+    console.log(`✅ Using SQLite session store (${sessionDbPath}) for ${dbConfig.environment}`);
   }
   
   console.log("Setting up session store with:", {
-    hasDbUrl: !!process.env.DATABASE_URL,
+    dbType: dbConfig.type,
+    dbUrl: dbConfig.url.replace(/\/\/.*@/, '//***:***@'), // Mask credentials in logs
     hasSessionSecret: !!process.env.SESSION_SECRET,
     nodeEnv: process.env.NODE_ENV,
     isSecure: process.env.NODE_ENV === "production"
