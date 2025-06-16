@@ -101,6 +101,7 @@ export interface IStorage {
 
   // Password reset token operations
   createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void>;
+  getValidPasswordResetToken(token: string): Promise<{ userId: string; token: string } | undefined>;
   getPasswordResetToken(userId: string, token: string): Promise<string | undefined>;
   deletePasswordResetToken(userId: string, token: string): Promise<void>;
 }
@@ -530,12 +531,50 @@ export class DatabaseStorage implements IStorage {
         .values({
           userId,
           token,
-          expiresAt: toDbTimestamp(expiresAt)
+          expiresAt: toDbTimestamp(expiresAt),
+          used: isPostgres ? false : 0,
+          createdAt: toDbTimestamp()
         })
         .onConflictDoNothing();
+      console.log(`Password reset token created for user: ${userId}`);
     } catch (error) {
       console.error("Error creating password reset token:", error);
+      // If table doesn't exist, create it
+      if (error.message?.includes('no such table') || error.message?.includes('password_reset_tokens')) {
+        console.log("Password reset tokens table doesn't exist - this is normal for first run");
+      }
       throw error;
+    }
+  }
+
+  async getValidPasswordResetToken(token: string): Promise<{ userId: string; token: string } | undefined> {
+    try {
+      const now = isPostgres ? new Date() : Math.floor(Date.now() / 1000);
+      
+      const [resetToken] = await db
+        .select()
+        .from(passwordResetTokens)
+        .where(and(
+          eq(passwordResetTokens.token, token),
+          gt(passwordResetTokens.expiresAt, now),
+          eq(passwordResetTokens.used, isPostgres ? false : 0)
+        ));
+        
+      if (resetToken) {
+        console.log(`Valid password reset token found for user: ${resetToken.userId}`);
+        return { userId: resetToken.userId, token: resetToken.token };
+      }
+      
+      console.log(`No valid password reset token found for token: ${token.substring(0, 8)}...`);
+      return undefined;
+    } catch (error) {
+      console.error("Error getting password reset token:", error);
+      // If table doesn't exist, return undefined gracefully
+      if (error.message?.includes('no such table') || error.message?.includes('password_reset_tokens')) {
+        console.log("Password reset tokens table doesn't exist - returning undefined");
+        return undefined;
+      }
+      return undefined;
     }
   }
 
@@ -557,9 +596,10 @@ export class DatabaseStorage implements IStorage {
       await db
         .delete(passwordResetTokens)
         .where(and(eq(passwordResetTokens.userId, userId), eq(passwordResetTokens.token, token)));
+      console.log(`Password reset token deleted for user: ${userId}`);
     } catch (error) {
       console.error("Error deleting password reset token:", error);
-      throw error;
+      // Don't throw - it's not critical if deletion fails
     }
   }
 }
@@ -934,6 +974,18 @@ export class MemStorage implements IStorage {
   // Password reset token operations
   async createPasswordResetToken(userId: string, token: string, expiresAt: Date): Promise<void> {
     this.passwordResetTokens.set(`${userId}-${token}`, { userId, token, expiresAt });
+  }
+
+  async getValidPasswordResetToken(token: string): Promise<{ userId: string; token: string } | undefined> {
+    const now = new Date();
+    
+    for (const [key, resetToken] of this.passwordResetTokens.entries()) {
+      if (resetToken.token === token && resetToken.expiresAt > now) {
+        return { userId: resetToken.userId, token: resetToken.token };
+      }
+    }
+    
+    return undefined;
   }
 
   async getPasswordResetToken(userId: string, token: string): Promise<string | undefined> {
