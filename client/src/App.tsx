@@ -6,54 +6,74 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SchemaOrg } from "@/components/schema-org";
 import SEOHead from "@/components/seo-head";
 import AdvancedSEO from "@/components/advanced-seo";
-import Home from "@/pages/home";
-import HomeRedesigned from "@/pages/home-redesigned";
+import { Suspense, lazy } from "react";
+import { LoadingSpinner } from "@/components/loading-spinner";
+
+// Core pages - loaded immediately for fast initial experience
 import HomeServiceFirst from "@/pages/home-service-first";
-import Scan from "@/pages/scan";
-import Dashboard from "@/pages/dashboard";
-import AdminPanel from "@/pages/admin";
-import MyAccount from "@/pages/my-account";
-import AdminDashboard from "@/pages/admin-dashboard";
-import DataAdmin from "@/pages/data-admin";
 import AuthPage from "@/pages/auth-page";
-import About from "@/pages/about";
-import TicketStatusPage from "@/pages/ticket-status";
-import PrivacyPolicy from "@/pages/privacy-policy";
-import TermsOfService from "@/pages/terms-of-service";
-import LegalCompliance from "@/pages/legal-compliance";
 import Contact from "@/pages/contact";
-import ResetPassword from "@/pages/reset-password";
+
+// Secondary pages - lazy loaded to reduce bundle size
+const Home = lazy(() => import("@/pages/home"));
+const HomeRedesigned = lazy(() => import("@/pages/home-redesigned"));
+const Scan = lazy(() => import("@/pages/scan"));
+const Dashboard = lazy(() => import("@/pages/dashboard"));
+const MyAccount = lazy(() => import("@/pages/my-account"));
+const About = lazy(() => import("@/pages/about"));
+const TicketStatusPage = lazy(() => import("@/pages/ticket-status"));
+const PrivacyPolicy = lazy(() => import("@/pages/privacy-policy"));
+const TermsOfService = lazy(() => import("@/pages/terms-of-service"));
+const LegalCompliance = lazy(() => import("@/pages/legal-compliance"));
+const ResetPassword = lazy(() => import("@/pages/reset-password"));
+
+// Admin pages - lazy loaded to reduce main bundle size significantly
+const AdminPanel = lazy(() => import("@/pages/admin"));
+const AdminDashboard = lazy(() => import("@/pages/admin-dashboard"));
+const DataAdmin = lazy(() => import("@/pages/data-admin"));
 
 function Router() {
   return (
-          <Switch>
+    <Suspense fallback={
+      <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
+        <LoadingSpinner />
+      </div>
+    }>
+      <Switch>
+        {/* Core pages - no suspense needed as they're not lazy loaded */}
         <Route path="/" component={HomeServiceFirst} />
+        <Route path="/login" component={AuthPage} />
+        <Route path="/auth" component={AuthPage} />
+        <Route path="/contact" component={Contact} />
+        
+        {/* Secondary pages - lazy loaded */}
         <Route path="/old" component={Home} />
         <Route path="/redesign" component={HomeRedesigned} />
         <Route path="/scan" component={Scan} />
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/my-account" component={MyAccount} />
-      <Route path="/about" component={About} />
-      <Route path="/ticket-status" component={TicketStatusPage} />
-      <Route path="/login" component={AuthPage} />
-      <Route path="/auth" component={AuthPage} />
-      <Route path="/admin" component={AdminPanel} />
-      <Route path="/admin-dashboard" component={AdminDashboard} />
-      <Route path="/data-admin" component={DataAdmin} />
-      <Route path="/privacy-policy" component={PrivacyPolicy} />
-      <Route path="/terms-of-service" component={TermsOfService} />
-      <Route path="/legal-compliance" component={LegalCompliance} />
-      <Route path="/contact" component={Contact} />
-      <Route path="/reset-password" component={ResetPassword} />
-      <Route>
-        <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">404 - Page Not Found</h1>
-            <p className="text-gray-600">The page you're looking for doesn't exist.</p>
+        <Route path="/dashboard" component={Dashboard} />
+        <Route path="/my-account" component={MyAccount} />
+        <Route path="/about" component={About} />
+        <Route path="/ticket-status" component={TicketStatusPage} />
+        <Route path="/privacy-policy" component={PrivacyPolicy} />
+        <Route path="/terms-of-service" component={TermsOfService} />
+        <Route path="/legal-compliance" component={LegalCompliance} />
+        <Route path="/reset-password" component={ResetPassword} />
+        
+        {/* Admin pages - lazy loaded to keep main bundle small */}
+        <Route path="/admin" component={AdminPanel} />
+        <Route path="/admin-dashboard" component={AdminDashboard} />
+        <Route path="/data-admin" component={DataAdmin} />
+        
+        <Route>
+          <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold text-gray-900 mb-4">404 - Page Not Found</h1>
+              <p className="text-gray-600">The page you're looking for doesn't exist.</p>
+            </div>
           </div>
-        </div>
-      </Route>
-    </Switch>
+        </Route>
+      </Switch>
+    </Suspense>
   );
 }
 

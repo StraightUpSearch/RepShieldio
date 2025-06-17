@@ -1,0 +1,25 @@
+# ⚠️ MIGRATED TO MODERN PROJECT RULES
+
+This project now uses the modern Cursor Project Rules system instead of the legacy `.cursorrules` format.
+
+## 📁 New Rules Location
+All rules have been migrated to: `.cursor/rules/`
+
+## 📋 Available Rules
+- `repshield-core.mdc` - Core development standards (always applied)
+- `frontend-components.mdc` - React/UI component standards (auto-attached to frontend files)
+- `backend-api.mdc` - Express/API development standards (auto-attached to server files)
+- `testing-e2e.mdc` - Playwright E2E testing standards (auto-attached to test files)
+- `reddit-integration.mdc` - Reddit API integration patterns (agent-requested)
+
+## 🔄 How to Use
+The new rules automatically apply based on:
+- **File patterns**: Rules auto-attach to relevant files
+- **Manual invocation**: Use `@ruleName` in chat
+- **AI decision**: Agent-requested rules are included when relevant
+
+## 📚 Documentation
+Learn more about modern Cursor Rules: https://docs.cursor.com/context/rules
+
+---
+*This legacy file is kept for reference but is no longer active.* 

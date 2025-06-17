@@ -1,0 +1,41 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# RepShield.io Core Development Standards
+
+You are working on RepShield.io, a Reddit content removal ticketing service with:
+- Frontend: React 18 + TypeScript + Vite + Tailwind CSS + shadcn/ui
+- Backend: Node.js + Express + TypeScript + SQLite/PostgreSQL
+- Database: Drizzle ORM with type-safe queries
+- Authentication: Passport.js with local strategy
+- Testing: Playwright for E2E testing
+
+## TypeScript Excellence
+- Use TypeScript for ALL code - frontend, backend, and shared types
+- Prefer interfaces over types for object shapes
+- Avoid enums; use string literal unions or maps instead
+- Use strict TypeScript configuration
+- Implement proper error types: `ActionState<T>` pattern
+
+## React Best Practices
+- Use functional components with TypeScript interfaces
+- Prefer const arrow functions over function declarations
+- Use descriptive variable names with auxiliary verbs (isLoading, hasError)
+- Implement early returns to reduce nesting
+- Minimize useEffect usage; prefer event handlers and derived state
+
+## Backend API Design
+- Use Express.js with TypeScript
+- Implement consistent error handling with try-catch blocks
+- Use Zod for request validation and type inference
+- Follow RESTful conventions: GET /api/tickets, POST /api/tickets
+- Return consistent response format: `{ success: boolean, data?: T, error?: string }`
+
+## Error Handling
+- Implement global error boundaries for unexpected errors
+- Use early returns and guard clauses
+- Return errors as values, not exceptions for expected errors
+- Log errors with structured logging (JSON format)
+- Provide user-friendly error messages

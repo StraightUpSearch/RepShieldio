@@ -1,5 +1,9 @@
 # RepShield.io - Reddit Content Removal Service
 
+[![CI/CD Pipeline](https://github.com/StraightUpSearch/RepShieldio/actions/workflows/ci.yml/badge.svg)](https://github.com/StraightUpSearch/RepShieldio/actions/workflows/ci.yml)
+[![Security Scan](https://github.com/StraightUpSearch/RepShieldio/actions/workflows/security.yml/badge.svg)](https://github.com/StraightUpSearch/RepShieldio/actions/workflows/security.yml)
+[![Performance](https://github.com/StraightUpSearch/RepShieldio/actions/workflows/performance.yml/badge.svg)](https://github.com/StraightUpSearch/RepShieldio/actions/workflows/performance.yml)
+
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![Express](https://img.shields.io/badge/Express.js-404D59?style=for-the-badge)](https://expressjs.com/)
@@ -9,6 +13,17 @@
 ## 🚀 Overview
 
 RepShield.io is a **simple ticketing system** for Reddit content removal services. The MVP focuses on providing the best service possible for leads who need professional help removing harmful Reddit content.
+
+## ⚡ CI/CD Pipeline
+
+This project features a comprehensive CI/CD pipeline with:
+- **Automated Testing**: TypeScript compilation, E2E tests with Playwright
+- **Security Scanning**: Daily vulnerability audits, CodeQL analysis
+- **Performance Monitoring**: Lighthouse audits, bundle analysis, load testing  
+- **Multi-Environment Deployment**: Staging and production with automated rollbacks
+- **Quality Gates**: No broken code reaches production
+
+[📖 View Pipeline Documentation](docs/CI-CD-SETUP.md)
 
 ### Current MVP Features (Phase 1)
 

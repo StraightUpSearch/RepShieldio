@@ -1,0 +1,30 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# E2E Testing Standards
+
+## Testing Strategy
+- Write E2E tests with Playwright for critical user journeys
+- Test user flows: registration → login → ticket creation → status tracking
+- Mock external APIs (SendGrid, Reddit) in tests
+- Use data-testid attributes for test selectors
+
+## Test Organization
+- Group tests by user journey, not by page
+- Test error scenarios and edge cases
+- Implement visual regression testing for UI components
+- Test authentication flows thoroughly
+
+## Best Practices
+- Use page object model for complex workflows
+- Implement proper test isolation
+- Handle async operations correctly
+- Test both happy path and error scenarios
+
+## RepShield-Specific Flows
+- User registration and email verification
+- Ticket submission for Reddit URLs
+- Admin ticket management
+- Email notification delivery

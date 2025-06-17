@@ -113,7 +113,22 @@ const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
     }
   });
   
+  // Global error handling for production stability
+  process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    // Log to external service in production
+    process.exit(1);
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    // Log to external service in production
+  });
+
   server.listen(port, host, () => {
     log(`serving on port ${port} (${host})`);
+    console.log(`🌟 RepShield.io is running!`);
+    console.log(`📊 Health check: http://${host}:${port}/health`);
+    console.log(`🎯 Environment: ${process.env.NODE_ENV}`);
   });
 })();

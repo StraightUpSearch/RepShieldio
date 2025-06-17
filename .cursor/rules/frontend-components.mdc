@@ -1,0 +1,30 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Frontend Component Standards
+
+## Component Architecture
+- Use shadcn/ui components as base building blocks
+- Extend with custom variants using class-variance-authority
+- Implement responsive design with Tailwind's mobile-first approach
+- Structure: `components/ui/` for base, `components/` for feature components
+
+## Styling Conventions
+- Use Tailwind utility classes exclusively; avoid custom CSS
+- Follow mobile-first responsive design patterns
+- Class naming: Use conditional classes with clsx/cn utility
+- Never use @apply directive; prefer utility composition
+
+## Form Handling
+- Use React Hook Form for all form implementations
+- Integrate with Zod for schema validation
+- Implement proper error states and user feedback
+- Use controlled components for form inputs
+
+## Performance Optimization
+- Use React.memo(), useMemo(), and useCallback() for optimization
+- Implement code splitting with React.lazy() and Suspense
+- Lazy load non-critical components
+- Monitor Core Web Vitals (LCP, FID, CLS)

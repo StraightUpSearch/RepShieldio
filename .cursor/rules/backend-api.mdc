@@ -1,0 +1,32 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Backend API Standards
+
+## Database Patterns
+- Use Drizzle ORM for all database operations
+- Define schemas in `shared/schema.ts` with proper relationships
+- Use transactions for multi-table operations
+- Implement proper indexing for performance
+- Follow naming: `users`, `tickets`, `ticketReplies` (camelCase for fields)
+
+## API Design
+- Follow RESTful conventions: GET /api/tickets, POST /api/tickets
+- Return consistent response format: `{ success: boolean, data?: T, error?: string }`
+- Use middleware for authentication, validation, and error handling
+- Implement rate limiting for API endpoints
+
+## Security Standards
+- Use Passport.js with local strategy for authentication
+- Hash passwords with bcrypt (12+ rounds)
+- Sanitize all user inputs to prevent XSS
+- Use prepared statements to prevent SQL injection
+- Validate all user inputs server-side
+
+## External Service Integration
+- Implement proper error handling for external APIs
+- Use retry mechanisms with exponential backoff
+- Monitor API rate limits and usage
+- Log all external API interactions for debugging

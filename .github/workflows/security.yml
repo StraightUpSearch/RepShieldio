@@ -1,0 +1,310 @@
+name: Security & Dependency Scanning
+
+on:
+  schedule:
+    # Run daily security scans at 2 AM UTC
+    - cron: '0 2 * * *'
+  push:
+    branches: [ main, staging ]
+  pull_request:
+    branches: [ main, staging ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  codeql-analysis:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'javascript', 'typescript' ]
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build application
+      run: |
+        npm run build
+        npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+        
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{matrix.language}}"
+
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Dependency Review
+      uses: actions/dependency-review-action@v4
+      with:
+        fail-on-severity: moderate
+        allow-licenses: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC
+
+  npm-audit:
+    name: NPM Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install audit-ci
+      run: npm install -g audit-ci
+      
+    - name: Run npm audit
+      run: |
+        echo "🔒 Running comprehensive security audit..."
+        npm audit --audit-level=moderate
+        
+    - name: Run audit-ci
+      run: |
+        echo "🔍 Running audit-ci for detailed vulnerability analysis..."
+        audit-ci --moderate --report-type=full
+        
+    - name: Check for known vulnerabilities in dependencies
+      run: |
+        echo "📋 Generating dependency vulnerability report..."
+        npm audit --json > npm-audit-report.json || true
+        
+    - name: Upload audit report
+      uses: actions/upload-artifact@v4
+      with:
+        name: npm-audit-report-${{ github.sha }}
+        path: npm-audit-report.json
+        retention-days: 30
+
+  license-check:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Install license checker
+      run: npm install -g license-checker
+      
+    - name: Check licenses
+      run: |
+        echo "📄 Checking license compliance..."
+        license-checker --summary
+        license-checker --onlyAllow "MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC" --excludePrivatePackages
+        
+    - name: Generate license report
+      run: |
+        echo "📋 Generating license report..."
+        license-checker --csv > license-report.csv
+        license-checker --json > license-report.json
+        
+    - name: Upload license reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: license-reports-${{ github.sha }}
+        path: |
+          license-report.csv
+          license-report.json
+        retention-days: 30
+
+  security-headers-check:
+    name: Security Headers Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Start application
+      run: |
+        echo "🚀 Starting application for security header check..."
+        npm run dev &
+        sleep 15
+        
+    - name: Check security headers
+      run: |
+        echo "🔒 Checking security headers..."
+        
+        # Check if application is running
+        curl -f http://localhost:5000/health || exit 1
+        
+        # Check security headers
+        echo "Testing security headers on health endpoint..."
+        curl -I http://localhost:5000/health | grep -E "(X-Content-Type-Options|X-Frame-Options|X-XSS-Protection|Strict-Transport-Security|Content-Security-Policy)" || echo "⚠️ Some security headers may be missing"
+        
+        # Validate helmet configuration
+        echo "Validating helmet security configuration..."
+        node -e "
+          const response = require('http').get('http://localhost:5000/health', (res) => {
+            const headers = res.headers;
+            console.log('Security Headers Found:');
+            Object.keys(headers).filter(h => h.startsWith('x-') || h.includes('security') || h.includes('content-security')).forEach(h => {
+              console.log(\`  \${h}: \${headers[h]}\`);
+            });
+          });
+        "
+
+  environment-security:
+    name: Environment Security Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Check for hardcoded secrets
+      run: |
+        echo "🔍 Scanning for potential hardcoded secrets..."
+        
+        # Check for common secret patterns
+        if grep -r -E "(password|secret|key|token).*=" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" . | grep -v "node_modules" | grep -v ".git"; then
+          echo "⚠️ Potential hardcoded secrets found - please review"
+        else
+          echo "✅ No obvious hardcoded secrets detected"
+        fi
+        
+    - name: Check environment template
+      run: |
+        echo "📋 Validating environment template..."
+        if [ -f "env-template.txt" ]; then
+          echo "✅ Environment template found"
+          # Check for placeholder values
+          if grep -E "your_|example_|placeholder" env-template.txt; then
+            echo "✅ Template contains placeholder values"
+          else
+            echo "⚠️ Environment template may contain real values"
+          fi
+        else
+          echo "❌ No environment template found"
+        fi
+        
+    - name: Check for exposed configuration
+      run: |
+        echo "🔍 Checking for exposed configuration files..."
+        
+        # Look for configuration files that might expose sensitive data
+        find . -name "*.env*" -not -path "./node_modules/*" -not -path "./.git/*" | while read file; do
+          if [[ "$file" != "./env-template.txt" ]]; then
+            echo "⚠️ Found environment file: $file"
+          fi
+        done
+
+  docker-security:
+    name: Docker Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Build Docker image
+      run: |
+        if [ -f "Dockerfile" ]; then
+          docker build -t repshield:security-scan .
+        else
+          echo "No Dockerfile found - skipping Docker security scan"
+          exit 0
+        fi
+        
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'repshield:security-scan'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  security-summary:
+    name: Security Summary
+    runs-on: ubuntu-latest
+    needs: [codeql-analysis, npm-audit, license-check, security-headers-check, environment-security]
+    if: always()
+    
+    steps:
+    - name: Generate security summary
+      run: |
+        echo "## 🔒 Security Scan Summary" >> $GITHUB_STEP_SUMMARY
+        echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| CodeQL Analysis | ${{ needs.codeql-analysis.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| NPM Audit | ${{ needs.npm-audit.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| License Check | ${{ needs.license-check.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Security Headers | ${{ needs.security-headers-check.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Environment Security | ${{ needs.environment-security.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📊 Scan Details" >> $GITHUB_STEP_SUMMARY
+        echo "- **Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Date**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+        
+    - name: Check overall security status
+      run: |
+        if [[ "${{ needs.codeql-analysis.result }}" != "success" || 
+              "${{ needs.npm-audit.result }}" != "success" || 
+              "${{ needs.license-check.result }}" != "success" ]]; then
+          echo "❌ Security checks failed - review required"
+          exit 1
+        else
+          echo "✅ All security checks passed"
+        fi 

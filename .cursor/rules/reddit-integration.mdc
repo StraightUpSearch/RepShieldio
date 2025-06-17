@@ -1,0 +1,43 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Reddit API Integration Patterns
+
+## Rate Limiting Strategy
+- Implement rate limiting to respect Reddit API limits (100 requests/minute free tier)
+- Use proper authentication (OAuth2) for Reddit API
+- Cache Reddit data to reduce API calls
+- Implement fallback to ScrapingBee when Reddit API is unavailable
+
+## Content Scanning Workflow
+- Quick scan: 2-4 seconds for immediate results
+- Comprehensive scan: 30-60 seconds for detailed analysis
+- Batch multiple brand searches when possible
+- Handle Reddit API errors gracefully with retries
+
+## Data Handling
+- Store scan results in database with TTL
+- Implement proper error logging for debugging
+- Use structured logging (JSON format) for all Reddit interactions
+- Monitor API usage and costs
+
+## Security Considerations
+- Never expose Reddit API credentials to frontend
+- Validate all Reddit URLs before processing
+- Sanitize Reddit content before storing
+- Implement proper CORS for API endpoints
+
+## Example Integration Pattern
+```typescript
+// Rate-limited Reddit scanner
+class RedditScanner {
+  private rateLimiter = new RateLimiter(100, 60000); // 100 per minute
+  
+  async scanBrand(brandName: string): Promise<ScanResult> {
+    await this.rateLimiter.acquire();
+    // Implementation
+  }
+}
+```

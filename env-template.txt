@@ -10,8 +10,8 @@
 
 # Application Settings
 NODE_ENV=development
-PORT=5000
-SESSION_SECRET=your-super-secret-session-key-here-generate-random-32-chars
+PORT=3000
+SESSION_SECRET=your-secure-32-character-secret-key-here
 
 # Database Configuration
 # Environment-specific database URLs (REQUIRED for proper separation)
@@ -20,7 +20,7 @@ PROD_DATABASE_URL=
 
 # Legacy variable (DEPRECATED - use environment-specific variables above)
 # DATABASE_URL will be ignored if environment-specific variables are set
-DATABASE_URL=
+DATABASE_URL=sqlite://development.db
 
 # ===========================================
 # ESSENTIAL API KEYS (Required for core functionality)
@@ -29,17 +29,17 @@ DATABASE_URL=
 # ScrapingBee API - REQUIRED for Reddit scanning
 # Sign up at: https://app.scrapingbee.com/
 # Used in: server/scrapingbee.ts, server/webscraping.ts
-SCRAPINGBEE_API_KEY=your_scrapingbee_api_key
+SCRAPINGBEE_API_KEY=your-scrapingbee-api-key
 
 # OpenAI API - REQUIRED for chatbot and content analysis
 # Get API key from: https://platform.openai.com/api-keys
 # Used in: server/openai.ts
-OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_API_KEY=your-openai-api-key
 
 # SendGrid API - REQUIRED for email notifications
 # Get API key from: https://app.sendgrid.com/settings/api_keys
 # Used in: server/email.ts
-SENDGRID_API_KEY=your_sendgrid_api_key_here
+SENDGRID_API_KEY=your-sendgrid-api-key
 
 # Google OAuth - REQUIRED for user authentication
 # Create credentials at: https://console.developers.google.com/
@@ -54,7 +54,7 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret_here
 # Stripe API - For payment processing
 # Get keys from: https://dashboard.stripe.com/apikeys
 # Used in: server/routes.ts
-STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key_here
+STRIPE_SECRET_KEY=your-stripe-secret-key
 STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key_here
 
 # ===========================================
@@ -75,7 +75,7 @@ REDDIT_USER_AGENT=RepShield:v1.0.0 (by /u/yourusername)
 # Telegram Bot - For admin notifications (optional)
 # Create bot with @BotFather on Telegram
 # Used in: server/telegram.ts
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token_here
+TELEGRAM_BOT_TOKEN=your-telegram-bot-token
 
 # Alternative Web Scraping APIs (backup options)
 BRIGHT_DATA_API_KEY=your_bright_data_api_key_here
@@ -171,7 +171,7 @@ NODE_ENV=development
 # ================================
 
 # Port for the application to run on
-PORT=5000
+PORT=3000
 
 # ================================
 # INSTRUCTIONS
@@ -183,4 +183,12 @@ PORT=5000
 # 4. Never commit the .env file to version control
 # 5. For production, ensure SESSION_SECRET is strong and unique
 # 6. For production, use PostgreSQL with DATABASE_URL
-# 7. Configure SendGrid for email functionality in production 
+# 7. Configure SendGrid for email functionality in production
+
+# 🛡️ Security Settings
+TRUSTED_PROXIES=127.0.0.1
+RATE_LIMIT_REQUESTS=100
+RATE_LIMIT_WINDOW=15
+
+# 📊 Monitoring (Recommended)
+SENTRY_DSN=your-sentry-dsn-for-error-tracking 

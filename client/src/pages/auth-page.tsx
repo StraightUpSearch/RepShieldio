@@ -101,12 +101,19 @@ export default function AuthPage() {
 
       return response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      // Invalidate and refetch user query to get the new user data
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
       toast({
-        title: "Success!",
-        description: "Account created successfully",
+        title: "Welcome to RepShield!",
+        description: "Account created successfully. Redirecting to your dashboard...",
       });
-      setLocation("/");
+      
+      // Small delay to ensure query has time to update
+      setTimeout(() => {
+        setLocation("/my-account");
+      }, 1500); // Longer delay so user can see the success message
     },
     onError: (error: Error) => {
       const errorMessage = error.message || "Registration failed";
@@ -365,6 +372,14 @@ export default function AuthPage() {
                         required
                         minLength={8}
                       />
+                      {registerForm.password && (
+                        <div className="text-sm space-y-1">
+                          <div className={`flex items-center ${registerForm.password.length >= 8 ? 'text-green-600' : 'text-red-600'}`}>
+                            {registerForm.password.length >= 8 ? <CheckCircle className="h-3 w-3 mr-1" /> : <AlertCircle className="h-3 w-3 mr-1" />}
+                            At least 8 characters
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <Button 
                       type="submit" 

@@ -1,0 +1,299 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main, staging, develop ]
+  pull_request:
+    branches: [ main, staging ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: TypeScript type checking
+      run: npm run check
+      
+    - name: ESLint (if configured)
+      run: |
+        if [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || [ -f "eslint.config.js" ]; then
+          npx eslint . --ext .ts,.tsx,.js,.jsx
+        else
+          echo "ℹ️ ESLint not configured - skipping"
+        fi
+        
+    - name: Prettier check (if configured)
+      run: |
+        if [ -f ".prettierrc" ] || [ -f ".prettierrc.json" ] || [ -f "prettier.config.js" ]; then
+          npx prettier --check .
+        else
+          echo "ℹ️ Prettier not configured - skipping"
+        fi
+
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Run npm audit
+      run: |
+        echo "🔒 Running security audit..."
+        npm audit --audit-level=moderate || exit 1
+        
+    - name: Check for known vulnerabilities
+      run: |
+        echo "🔍 Checking for known vulnerabilities..."
+        npx audit-ci --moderate
+        
+    - name: License compliance check
+      run: |
+        echo "📄 Checking license compliance..."
+        npx license-checker --summary
+
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build frontend
+      run: npm run build
+      
+    - name: Build backend
+      run: |
+        echo "🏗️ Building backend..."
+        npx esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-artifacts-${{ github.sha }}
+        path: |
+          dist/
+          client/dist/
+        retention-days: 7
+
+  test-unit:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Setup test database
+      run: |
+        echo "🗄️ Setting up test database..."
+        export NODE_ENV=test
+        export DATABASE_URL="file:./test.db"
+        npm run db:push
+        
+    - name: Run unit tests (if configured)
+      run: |
+        if [ -f "jest.config.js" ] || [ -f "vitest.config.ts" ]; then
+          npm test
+        else
+          echo "ℹ️ Unit tests not configured - skipping"
+        fi
+
+  test-e2e:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: [build]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Install Playwright browsers
+      run: npx playwright install --with-deps chromium
+      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-artifacts-${{ github.sha }}
+        
+    - name: Setup test environment
+      run: |
+        echo "🧪 Setting up E2E test environment..."
+        cp env-template.txt .env
+        echo "NODE_ENV=test" >> .env
+        echo "DATABASE_URL=file:./test-e2e.db" >> .env
+        echo "SESSION_SECRET=test-secret-key-for-e2e-testing" >> .env
+        npm run db:push
+        
+    - name: Start application
+      run: |
+        echo "🚀 Starting application for E2E tests..."
+        npm run dev &
+        sleep 10
+        curl -f http://localhost:5000/health || exit 1
+        
+    - name: Run E2E tests
+      run: npm run test:e2e
+      
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-test-results-${{ github.sha }}
+        path: |
+          test-results/
+          playwright-report/
+        retention-days: 7
+        
+    - name: Upload screenshots on failure
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: e2e-screenshots-${{ github.sha }}
+        path: results/screenshots/
+        retention-days: 7
+
+  database-compatibility:
+    name: Database Compatibility
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        database: [sqlite, postgresql]
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_USER: testuser
+          POSTGRES_DB: testdb
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Test SQLite
+      if: matrix.database == 'sqlite'
+      run: |
+        echo "🗄️ Testing SQLite compatibility..."
+        export DATABASE_URL="file:./test-sqlite.db"
+        npm run db:push
+        echo "✅ SQLite compatibility verified"
+        
+    - name: Test PostgreSQL
+      if: matrix.database == 'postgresql'
+      run: |
+        echo "🐘 Testing PostgreSQL compatibility..."
+        export DATABASE_URL="postgresql://testuser:testpass@localhost:5432/testdb"
+        npm run db:push
+        echo "✅ PostgreSQL compatibility verified"
+
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck, security-audit, build, test-unit, test-e2e, database-compatibility]
+    if: always()
+    
+    steps:
+    - name: Check all jobs status
+      run: |
+        echo "🔍 Checking quality gate..."
+        echo "Lint & Type Check: ${{ needs.lint-and-typecheck.result }}"
+        echo "Security Audit: ${{ needs.security-audit.result }}"
+        echo "Build: ${{ needs.build.result }}"
+        echo "Unit Tests: ${{ needs.test-unit.result }}"
+        echo "E2E Tests: ${{ needs.test-e2e.result }}"
+        echo "Database Compatibility: ${{ needs.database-compatibility.result }}"
+        
+        if [[ "${{ needs.lint-and-typecheck.result }}" != "success" || 
+              "${{ needs.security-audit.result }}" != "success" || 
+              "${{ needs.build.result }}" != "success" || 
+              "${{ needs.test-e2e.result }}" != "success" || 
+              "${{ needs.database-compatibility.result }}" != "success" ]]; then
+          echo "❌ Quality gate failed - blocking deployment"
+          exit 1
+        else
+          echo "✅ Quality gate passed - ready for deployment"
+        fi
+        
+    - name: Post summary
+      run: |
+        echo "## CI Summary 🚀" >> $GITHUB_STEP_SUMMARY
+        echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Lint & Type Check | ${{ needs.lint-and-typecheck.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Security Audit | ${{ needs.security-audit.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Build | ${{ needs.build.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Unit Tests | ${{ needs.test-unit.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| E2E Tests | ${{ needs.test-e2e.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Database Tests | ${{ needs.database-compatibility.result == 'success' && '✅' || '❌' }} |" >> $GITHUB_STEP_SUMMARY 

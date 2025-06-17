@@ -1,0 +1,114 @@
+version: 2
+updates:
+  # Enable version updates for npm (frontend and backend)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "04:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    target-branch: "develop"
+    reviewers:
+      - "StraightUpSearch"
+    assignees:
+      - "StraightUpSearch"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+    ignore:
+      # Ignore major version updates for critical dependencies
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "express"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+    groups:
+      # Group React-related updates
+      react-ecosystem:
+        patterns:
+          - "react*"
+          - "@types/react*"
+      # Group TypeScript-related updates
+      typescript-ecosystem:
+        patterns:
+          - "typescript"
+          - "@types/*"
+          - "tsx"
+      # Group testing-related updates
+      testing-ecosystem:
+        patterns:
+          - "@playwright/*"
+          - "playwright"
+          - "jest*"
+          - "vitest*"
+      # Group build tools
+      build-tools:
+        patterns:
+          - "vite*"
+          - "esbuild*"
+          - "webpack*"
+          - "rollup*"
+      # Group security-related packages
+      security:
+        patterns:
+          - "helmet"
+          - "passport*"
+          - "express-session"
+      # Group database-related packages
+      database:
+        patterns:
+          - "drizzle*"
+          - "better-sqlite3"
+          - "postgres"
+          - "pg"
+
+  # Enable version updates for GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    target-branch: "develop"
+    reviewers:
+      - "StraightUpSearch"
+    assignees:
+      - "StraightUpSearch"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci"
+
+  # Enable version updates for Docker (if Dockerfile exists)
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "04:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 3
+    target-branch: "develop"
+    reviewers:
+      - "StraightUpSearch"
+    assignees:
+      - "StraightUpSearch"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "docker" 
