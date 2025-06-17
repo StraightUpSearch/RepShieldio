@@ -19,7 +19,12 @@
     "test:e2e": "playwright test tests/repshield-complete-e2e.spec.ts --project=chromium",
     "test:e2e:ui": "playwright test tests/repshield-complete-e2e.spec.ts --project=chromium --ui",
     "test:e2e:headed": "playwright test tests/repshield-complete-e2e.spec.ts --project=chromium --headed",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "ci:install": "npm ci --prefer-offline --no-audit",
+    "ci:build": "npm run check && npm run build",
+    "ci:test": "npm run test:e2e",
+    "pipeline:trigger": "git add . && git commit -m \"🚀 trigger CI/CD pipeline\" && git push",
+    "pipeline:status": "echo \"View pipeline: https://github.com/StraightUpSearch/RepShieldio/actions\""
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
