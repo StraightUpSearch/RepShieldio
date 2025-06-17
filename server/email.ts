@@ -109,7 +109,11 @@ export async function sendPasswordResetEmail(data: {
   resetToken: string;
   userName?: string;
 }) {
-  const resetUrl = `https://repshield.io/reset-password?token=${data.resetToken}`;
+  // Use environment variable for reset URL base or fallback to localhost for development
+  const RESET_URL_BASE = process.env.RESET_URL_BASE || 
+    (process.env.NODE_ENV === 'production' ? 'https://repshield.io' : 'http://localhost:3000');
+  
+  const resetUrl = `${RESET_URL_BASE}/reset-password?token=${data.resetToken}`;
   
   const msg = {
     to: data.email,
@@ -135,7 +139,7 @@ export async function sendPasswordResetEmail(data: {
           ${resetUrl}
         </p>
         
-        <p><strong>This link will expire in 1 hour</strong> for security reasons.</p>
+        <p><strong>This link will expire in 24 hours</strong> for security reasons.</p>
         
         <p>If you didn't request this password reset, please ignore this email or contact our support team if you have concerns.</p>
         
@@ -144,7 +148,7 @@ export async function sendPasswordResetEmail(data: {
         <p style="color: #666; font-size: 14px;">
           Best regards,<br>
           The RepShield Team<br>
-          <a href="https://repshield.io" style="color: #2563eb;">repshield.io</a>
+          <a href="${RESET_URL_BASE}" style="color: #2563eb;">repshield.io</a>
         </p>
         
         <p style="font-size: 12px; color: #999; margin-top: 20px;">

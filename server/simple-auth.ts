@@ -170,8 +170,8 @@ export async function setupSimpleAuth(app: Express) {
     }
   }));
 
-  // Login endpoint
-  app.post("/api/login", (req, res, next) => {
+  // Login endpoint - Fix path to match frontend expectations
+  app.post("/api/auth/login", (req, res, next) => {
     console.log("Login attempt:", { email: req.body.email, hasPassword: !!req.body.password });
     
     // Validate input first
@@ -201,6 +201,14 @@ export async function setupSimpleAuth(app: Express) {
         res.json({ user, message: "Login successful" });
       });
     })(req, res, next);
+  });
+
+  // Keep legacy login endpoint for backwards compatibility
+  app.post("/api/login", (req, res, next) => {
+    console.log("Legacy login endpoint used - redirecting to /api/auth/login");
+    // Forward to the new endpoint
+    req.url = "/api/auth/login";
+    return app._router.handle(req, res, next);
   });
 
   // Logout endpoint

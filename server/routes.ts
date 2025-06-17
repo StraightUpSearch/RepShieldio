@@ -129,23 +129,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/user/stats', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
-      const orders = await storage.getUserTickets(userId);
+      const tickets = await storage.getUserTickets(userId);
       
-      const totalOrders = orders.length;
-      const successfulRemovals = orders.filter(order => order.status === 'completed').length;
+      const stats = {
+        totalOrders: tickets.length,
+        successfulRemovals: tickets.filter(t => t.status === 'completed').length,
+        accountBalance: parseFloat(req.user.accountBalance || '0'),
+        creditsRemaining: req.user.creditsRemaining || 0
+      };
       
-      res.json({
-        success: true,
-        data: {
-          totalOrders,
-          successfulRemovals,
-          accountBalance: 0,
-          creditsRemaining: 0
-        }
-      });
+      res.json({ success: true, data: stats });
     } catch (error) {
       console.error("Error fetching user stats:", error);
-      res.status(500).json({ success: false, message: "Failed to fetch stats" });
+      res.status(500).json({ message: "Failed to fetch stats" });
     }
   });
 
@@ -1413,6 +1409,12 @@ Disallow: /`;
       if (!email) {
         return res.status(400).json({ message: "Email is required" });
       }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: "Please enter a valid email address" });
+      }
       
       // Check if user exists
       const user = await storage.getUserByEmail(email);
@@ -1421,9 +1423,10 @@ Disallow: /`;
         return res.json({ message: "If an account with this email exists, you will receive a password reset link." });
       }
       
-      // Generate secure reset token
+      // Generate cryptographically secure reset token
       const resetToken = randomBytes(32).toString('hex');
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now (more user-friendly)
+      const TOKEN_EXPIRATION_HOURS = 24; // Configurable expiration
+      const expiresAt = new Date(Date.now() + TOKEN_EXPIRATION_HOURS * 60 * 60 * 1000);
       
       // Store reset token
       await storage.createPasswordResetToken(user.id, resetToken, expiresAt);
@@ -1454,16 +1457,15 @@ Disallow: /`;
         return res.status(400).json({ message: "Token and new password are required" });
       }
       
-      if (newPassword.length < 4) {
+      if (newPassword.length < 6) {
         console.log("Password reset failed: Password too short");
-        return res.status(400).json({ message: "Password must be at least 4 characters long" });
+        return res.status(400).json({ message: "Password must be at least 6 characters long" });
       }
       
       // Find and validate the reset token
       const validToken = await storage.getValidPasswordResetToken(token);
       if (!validToken) {
         console.log(`Password reset failed: Invalid or expired token for ${token.substring(0, 8)}...`);
-        console.log(`Token validation details: Token length: ${token.length}, Token format: ${typeof token}`);
         return res.status(400).json({ message: "Invalid or expired reset token" });
       }
       

@@ -29,7 +29,7 @@ DATABASE_URL=
 # ScrapingBee API - REQUIRED for Reddit scanning
 # Sign up at: https://app.scrapingbee.com/
 # Used in: server/scrapingbee.ts, server/webscraping.ts
-SCRAPINGBEE_API_KEY=your_scrapingbee_api_key_here
+SCRAPINGBEE_API_KEY=your_scrapingbee_api_key
 
 # OpenAI API - REQUIRED for chatbot and content analysis
 # Get API key from: https://platform.openai.com/api-keys
@@ -122,4 +122,65 @@ REPL_ID=your-repl-id-here
 # - Use test/development keys for local development
 # - Rotate API keys regularly in production
 # - Set up environment variables in your hosting provider
-# - For Render.com: Use their environment variables section 
+# - For Render.com: Use their environment variables section
+
+# ================================
+# CRITICAL - REQUIRED FOR PRODUCTION
+# ================================
+
+# Reset URL base for password reset emails
+RESET_URL_BASE=https://repshield.io
+
+# ================================
+# EMAIL CONFIGURATION
+# ================================
+
+# Email addresses
+SENDER_EMAIL=noreply@repshield.io
+FROM_EMAIL=noreply@repshield.io
+
+# ================================
+# OPTIONAL INTEGRATIONS
+# ================================
+
+# Reddit API credentials (for Reddit scanning features)
+# REDDIT_CLIENT_ID=your-reddit-client-id
+# REDDIT_CLIENT_SECRET=your-reddit-client-secret
+# REDDIT_USERNAME=your-reddit-username
+# REDDIT_PASSWORD=your-reddit-password
+
+# ScrapingBee API Key (for web scraping)
+# SCRAPINGBEE_API_KEY=your-scrapingbee-api-key
+
+# Telegram Bot Token (for notifications)
+# TELEGRAM_BOT_TOKEN=your-telegram-bot-token
+# TELEGRAM_CHAT_ID=your-telegram-chat-id
+
+# OpenAI API Key (for AI features)
+# OPENAI_API_KEY=your-openai-api-key
+
+# ================================
+# ENVIRONMENT SETTINGS
+# ================================
+
+# Set to 'production' for production deployment
+NODE_ENV=development
+
+# ================================
+# PORT CONFIGURATION
+# ================================
+
+# Port for the application to run on
+PORT=5000
+
+# ================================
+# INSTRUCTIONS
+# ================================
+
+# 1. Copy this file to .env in your project root
+# 2. Fill in the required values marked as CRITICAL
+# 3. Fill in optional values as needed for your features
+# 4. Never commit the .env file to version control
+# 5. For production, ensure SESSION_SECRET is strong and unique
+# 6. For production, use PostgreSQL with DATABASE_URL
+# 7. Configure SendGrid for email functionality in production 
