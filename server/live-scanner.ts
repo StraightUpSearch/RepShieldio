@@ -280,8 +280,7 @@ class LiveScannerService {
   }
   
   private async scanWebPlatforms(brandName: string, platforms: string[]) {
-    // Web platform scanning — returns real data only when APIs are integrated
-    // TODO: Integrate TrustPilot, Google Reviews, BBB APIs for live data
+    // Web platform scanning — Reddit only for MVP; other platforms require API integration
     return {
       totalMentions: 0,
       negativeMentions: 0,

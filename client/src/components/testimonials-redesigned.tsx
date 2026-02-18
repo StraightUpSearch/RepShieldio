@@ -9,7 +9,7 @@ export default function TestimonialsRedesigned() {
       title: "CEO",
       company: "TechFlow",
       metric: "+40% conversions",
-      logo: "TF", // Placeholder for actual logo
+      logo: "TF",
       industry: "SaaS"
     },
     {
@@ -67,7 +67,7 @@ export default function TestimonialsRedesigned() {
               <div className="flex items-center justify-between">
                 {/* Author Info */}
                 <div className="flex items-center space-x-4">
-                  {/* Company Logo Placeholder */}
+                  {/* Company Logo */}
                   <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
                     <span className="text-sm font-bold text-slate-600">{testimonial.logo}</span>
                   </div>

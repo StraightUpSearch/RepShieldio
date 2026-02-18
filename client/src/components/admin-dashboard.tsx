@@ -279,7 +279,38 @@ export const AdminDashboard: React.FC = () => {
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
-          {tickets.map((ticket) => (
+          {tickets.map((ticket) => renderTicketCard(ticket))}
+        </TabsContent>
+
+        <TabsContent value="pending" className="space-y-4">
+          {tickets.filter(t => t.status === 'pending').length === 0 ? (
+            <Card><CardContent className="text-center py-8 text-gray-500">No pending tickets</CardContent></Card>
+          ) : tickets.filter(t => t.status === 'pending').map((ticket) => renderTicketCard(ticket))}
+        </TabsContent>
+
+        <TabsContent value="processing" className="space-y-4">
+          {tickets.filter(t => t.status === 'processing').length === 0 ? (
+            <Card><CardContent className="text-center py-8 text-gray-500">No processing tickets</CardContent></Card>
+          ) : tickets.filter(t => t.status === 'processing').map((ticket) => renderTicketCard(ticket))}
+        </TabsContent>
+
+        <TabsContent value="completed" className="space-y-4">
+          {tickets.filter(t => t.status === 'completed').length === 0 ? (
+            <Card><CardContent className="text-center py-8 text-gray-500">No completed tickets</CardContent></Card>
+          ) : tickets.filter(t => t.status === 'completed').map((ticket) => renderTicketCard(ticket))}
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <FunnelAnalytics />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+  // Extracted ticket card renderer - reused across all tabs
+  function renderTicketCard(ticket: any) {
+    return (
             <Card key={ticket.id}>
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
@@ -452,37 +483,5 @@ export const AdminDashboard: React.FC = () => {
                 )}
               </CardContent>
             </Card>
-          ))}
-        </TabsContent>
-
-        <TabsContent value="pending" className="space-y-4">
-          {tickets.filter(t => t.status === 'pending').map((ticket) => (
-            <Card key={ticket.id}>
-              {/* Same ticket content as above */}
-            </Card>
-          ))}
-        </TabsContent>
-
-        <TabsContent value="processing" className="space-y-4">
-          {tickets.filter(t => t.status === 'processing').map((ticket) => (
-            <Card key={ticket.id}>
-              {/* Same ticket content as above */}
-            </Card>
-          ))}
-        </TabsContent>
-
-        <TabsContent value="completed" className="space-y-4">
-          {tickets.filter(t => t.status === 'completed').map((ticket) => (
-            <Card key={ticket.id}>
-              {/* Same ticket content as above */}
-            </Card>
-          ))}
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-4">
-          <FunnelAnalytics />
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-}; 
+          );
+  } 

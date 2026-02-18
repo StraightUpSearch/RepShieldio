@@ -101,12 +101,20 @@ export default function AuthPage() {
 
       return response.json();
     },
-    onSuccess: (data) => {
-      toast({
-        title: "Success!",
-        description: "Account created successfully",
-      });
-      setLocation("/");
+    onSuccess: async () => {
+      // Auto-login after registration
+      try {
+        await loginMutation.mutateAsync({
+          email: registerForm.email,
+          password: registerForm.password,
+        });
+      } catch {
+        // If auto-login fails, redirect to login tab
+        toast({
+          title: "Account Created!",
+          description: "Please sign in with your new credentials.",
+        });
+      }
     },
     onError: (error: Error) => {
       const errorMessage = error.message || "Registration failed";
@@ -365,6 +373,7 @@ export default function AuthPage() {
                         required
                         minLength={8}
                       />
+                      <p className="text-xs text-gray-500">Must be at least 8 characters</p>
                     </div>
                     <Button 
                       type="submit" 
