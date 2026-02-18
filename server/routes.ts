@@ -1,14 +1,17 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
-// DEPRECATED: Stripe integration removed for simplified workflow
+import { isStripeConfigured, createTicketCheckoutSession, createCreditPurchaseSession, createSubscriptionCheckoutSession, cancelStripeSubscription, constructWebhookEvent, CREDIT_PACKAGES } from './stripe';
 import { storage } from "./storage";
 import { setupSimpleAuth, isAuthenticated } from "./simple-auth";
 import { insertAuditRequestSchema, insertQuoteRequestSchema, insertBrandScanTicketSchema } from "@shared/schema";
 import { globalErrorHandler, handleAsyncErrors, AppError } from "./error-handler";
 import { validateInput, brandScanSchema, contactSchema } from "./validation";
 import { strictLimiter, moderateLimiter, generalLimiter } from "./rate-limiter";
-// DEPRECATED: OpenAI integration removed for simplified workflow
+import { ticketLifecycle } from './ticket-lifecycle';
+import { trackEvent, FUNNEL_EVENTS } from './analytics';
+import { isOpenAIConfigured, generateSpecialistReport, getChatbotResponse } from './openai';
+import { sendWelcomeEmail } from './email';
 import { sendQuoteNotification, sendContactNotification, sendPasswordResetEmail } from "./email";
 import { redditAPI } from "./reddit";
 import { scrapingBeeAPI } from "./scrapingbee";
@@ -20,7 +23,17 @@ import { liveScannerService } from "./live-scanner";
 import { randomBytes } from "crypto";
 import { initializeDatabase } from "./db-init";
 
-// DEPRECATED: Stripe initialization removed for simplified workflow
+// Admin middleware
+const isAdmin = async (req: any, res: any, next: any) => {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+  const user = await storage.getUser(req.user.id);
+  if (user?.role !== 'admin') {
+    return res.status(403).json({ message: "Admin access required" });
+  }
+  next();
+};
 
 // Brand scanning with real Reddit data
 async function sendBrandScanNotification(data: any) {
@@ -233,6 +246,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateTicketNotes(orderId, notes);
       }
 
+      // If status changed, fire lifecycle events
+      if (status) {
+        try {
+          await ticketLifecycle.transitionTicket({
+            ticketId: orderId,
+            newStatus: status,
+            assignedTo,
+            notes,
+          });
+        } catch (lifecycleErr) {
+          console.error('Lifecycle transition error:', lifecycleErr);
+        }
+      }
+
       res.json({ success: true, data: updatedOrder });
     } catch (error) {
       console.error("Error updating order:", error);
@@ -241,7 +268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Data administration endpoints (fallback access)
-  app.get('/api/data-admin/users', async (req, res) => {
+  app.get('/api/data-admin/users', isAdmin, async (req: any, res) => {
     try {
       const users = await storage.getAllUsers();
       res.json({ success: true, data: users });
@@ -251,7 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/data-admin/orders', async (req, res) => {
+  app.get('/api/data-admin/orders', isAdmin, async (req: any, res) => {
     try {
       const orders = await storage.getTicketsWithUsers();
       res.json({ success: true, data: orders });
@@ -261,7 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/data-admin/users', async (req, res) => {
+  app.post('/api/data-admin/users', isAdmin, async (req: any, res) => {
     try {
       const { email, firstName, lastName, role, accountBalance, creditsRemaining } = req.body;
       
@@ -283,7 +310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/data-admin/orders', async (req, res) => {
+  app.post('/api/data-admin/orders', isAdmin, async (req: any, res) => {
     try {
       const { userId, type, status, title, redditUrl, amount, progress } = req.body;
       
@@ -332,31 +359,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Monitoring subscription endpoint
-  app.post('/api/monitoring/subscribe', async (req, res) => {
+  app.post('/api/monitoring/subscribe', isAuthenticated, async (req: any, res) => {
     try {
-      const { planId, paymentMethod, price } = req.body;
-      
-      // Create monitoring subscription
-      const subscription = {
-        id: Date.now(),
-        planId,
-        paymentMethod,
-        price,
-        status: 'active',
-        createdAt: new Date(),
-        nextBilling: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
-      };
+      const { planId } = req.body;
+      const userId = req.user.id;
 
-      // Send notification to admin
-      await telegramBot.sendNewLeadNotification({
-        type: 'Monitoring Subscription',
+      const existing = await storage.getUserSubscription(userId);
+      if (existing && existing.status === 'active') {
+        return res.status(400).json({ message: 'You already have an active subscription' });
+      }
+
+      if (isStripeConfigured()) {
+        try {
+          const base = process.env.RESET_URL_BASE || 'http://localhost:3000';
+          const session = await createSubscriptionCheckoutSession({
+            userId,
+            planId,
+            customerEmail: req.user.email,
+            successUrl: `${base}/monitoring?subscribed=true`,
+            cancelUrl: `${base}/monitoring?cancelled=true`,
+          });
+          return res.json({ success: true, checkoutUrl: session.url });
+        } catch (stripeError) {
+          console.error('Stripe subscription error:', stripeError);
+          // Fall through to manual flow
+        }
+      }
+
+      // Manual flow when Stripe not available
+      const subscription = await storage.createSubscription({
+        userId,
         planId,
-        paymentMethod,
-        price,
-        id: subscription.id
+        status: 'pending',
       });
 
-      res.json(subscription);
+      await trackEvent(FUNNEL_EVENTS.SUBSCRIPTION_CREATED, userId, undefined, { planId });
+
+      try {
+        await telegramBot.sendNewLeadNotification({
+          type: 'Monitoring Subscription Request',
+          name: req.user.firstName || req.user.email,
+          email: req.user.email,
+          planId,
+        });
+      } catch {}
+
+      res.json({ success: true, subscription, message: 'Subscription request submitted. We will contact you to set up billing.' });
     } catch (error) {
       console.error("Monitoring subscription error:", error);
       res.status(500).json({ message: "Failed to create subscription" });
@@ -392,12 +440,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const { brandName, userEmail, platforms = ['reddit'] } = req.body;
     
     if (!brandName || typeof brandName !== 'string') {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: "Brand name is required" 
+        error: "Brand name is required"
       });
     }
-    
+
+    await trackEvent(FUNNEL_EVENTS.SCAN_STARTED, req.user?.id, undefined, { brandName });
+
     console.log(`🔍 Live Scanner: Quick scan for ${brandName}`);
     
     const scanRequest = {
@@ -408,9 +458,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
     
     const results = await liveScannerService.quickScan(scanRequest);
-    
-    res.json({ 
-      success: true, 
+
+    await trackEvent(FUNNEL_EVENTS.SCAN_COMPLETED, req.user?.id, undefined, { brandName, totalMentions: results.totalMentions });
+
+    // Persist scan result to database
+    try {
+      await storage.saveScanResult({
+        scanId: results.scanId,
+        userId: req.user?.id || null,
+        brandName,
+        scanType: 'quick',
+        totalMentions: results.totalMentions,
+        riskLevel: results.riskLevel,
+        riskScore: results.riskScore,
+        platformData: results.platforms,
+        processingTime: results.processingTime,
+      });
+    } catch (err) {
+      console.error('Failed to persist scan result:', err);
+    }
+
+    res.json({
+      success: true,
       data: {
         scanId: results.scanId,
         totalMentions: results.totalMentions,
@@ -804,6 +873,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       });
       
+      await trackEvent(FUNNEL_EVENTS.TICKET_CREATED, userId, undefined, { redditUrl });
+
       // Send notification to specialist team
       try {
         await sendQuoteNotification({
@@ -816,7 +887,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Failed to send specialist notification:", error);
         // Continue even if email fails - ticket is still created
       }
-      
+
+      // Auto-generate AI draft report if OpenAI is configured
+      if (isOpenAIConfigured()) {
+        try {
+          const draftReport = await generateSpecialistReport({ redditUrl, contentType: 'removal_request' });
+          if (draftReport) {
+            await storage.updateTicketNotes(ticket.id, `AI DRAFT REPORT:\n${draftReport}`);
+          }
+        } catch (err) {
+          console.error('Failed to auto-generate report:', err);
+        }
+      }
+
       res.status(201).json({
         success: true,
         message: "Quote request submitted successfully. Our specialist will review and respond within 24 hours.",
@@ -874,16 +957,14 @@ ${estimatedTime ? `ESTIMATED TIME: ${estimatedTime}` : ''}
 Replied by: ${user.email}
 Date: ${new Date().toISOString()}
       `.trim();
-      
-      // Update ticket status and add notes
-      await storage.updateTicketStatus(ticketId, 'quoted', user.email);
-      await storage.updateTicketNotes(ticketId, specialistReply);
-      
-      // TODO: Send email notification to client about the quote
-      const clientEmail = ticket.requestData?.email;
-      if (clientEmail) {
-        console.log(`📧 TODO: Send quote email to ${clientEmail} for ticket ${ticketId}`);
-      }
+
+      // Use ticket lifecycle to transition and send notifications
+      await ticketLifecycle.transitionTicket({
+        ticketId: parseInt(ticketId),
+        newStatus: 'quoted',
+        notes: specialistReply,
+        amount: quote,
+      });
       
       res.json({
         success: true,
@@ -944,72 +1025,9 @@ Date: ${new Date().toISOString()}
     }
   });
 
-  // Reddit brand scanning endpoint
-  app.post("/api/scan-brand", async (req, res) => {
-    try {
-      const { brandName } = req.body;
-      
-      if (!brandName || typeof brandName !== 'string') {
-        return res.status(400).json({ 
-          success: false,
-          error: "Brand name is required" 
-        });
-      }
-      
-      const results = await redditAPI.searchBrand(brandName.trim());
-      res.json({
-        success: true,
-        data: results
-      });
-    } catch (error) {
-      console.error("Reddit API error:", error);
-      res.status(500).json({ 
-        success: false,
-        error: "Failed to scan Reddit for brand mentions" 
-      });
-    }
-  });
 
-  // DEPRECATED: OpenAI chatbot endpoint removed for simplified workflow
-  app.post("/api/chatbot", async (req, res) => {
-    res.json({
-      success: true,
-      response: "Hello! I'm here to help with Reddit content removal. For the fastest service, please submit your Reddit URL using our quote request form, and our specialist will respond within 24 hours with a custom analysis and quote."
-    });
-  });
 
-  // DEPRECATED: OpenAI URL analysis endpoint removed for simplified workflow
 
-  // User dashboard endpoints
-  app.get("/api/user/orders", isAuthenticated, async (req: any, res) => {
-    try {
-      const user = req.user;
-      const tickets = await storage.getUserTickets(user.id);
-      res.json({ success: true, data: tickets });
-    } catch (error) {
-      console.error("Error fetching user orders:", error);
-      res.status(500).json({ message: "Failed to fetch orders" });
-    }
-  });
-
-  app.get("/api/user/stats", isAuthenticated, async (req: any, res) => {
-    try {
-      const user = req.user;
-      const tickets = await storage.getUserTickets(user.id);
-      
-      const stats = {
-        totalOrders: tickets.length,
-        successfulRemovals: tickets.filter(t => t.status === 'completed').length,
-        accountBalance: parseFloat(user.accountBalance || '0'),
-        creditsRemaining: user.creditsRemaining || 0
-      };
-      
-      res.json({ success: true, data: stats });
-    } catch (error) {
-      console.error("Error fetching user stats:", error);
-      res.status(500).json({ message: "Failed to fetch stats" });
-    }
-  });
 
   app.get("/api/user/cases", isAuthenticated, async (req: any, res) => {
     try {
@@ -1079,6 +1097,8 @@ Date: ${new Date().toISOString()}
           source: 'brand_scanner'
         }
       });
+
+      await trackEvent(FUNNEL_EVENTS.LEAD_FORM_SUBMITTED, userId, undefined, { brandName: validatedData.name || validatedData.company });
 
       // Send Telegram notification to Jamie
       try {
@@ -1231,8 +1251,145 @@ Date: ${new Date().toISOString()}
     }
   });
 
-  // DEPRECATED: Stripe payment endpoints removed for simplified workflow
-  // Payment processing will be handled manually by specialists
+  // ============ PAYMENT ROUTES ============
+
+  // Check if Stripe is configured
+  app.get('/api/payments/status', (req, res) => {
+    res.json({
+      stripeConfigured: isStripeConfigured(),
+      creditPackages: CREDIT_PACKAGES,
+    });
+  });
+
+  // Create checkout session for a quoted ticket
+  app.post('/api/payments/create-checkout', isAuthenticated, async (req: any, res) => {
+    if (!isStripeConfigured()) {
+      return res.status(503).json({ message: 'Payment processing not available. Contact support.' });
+    }
+    try {
+      const { ticketId } = req.body;
+      const ticket = await storage.getTicket(ticketId);
+      if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+      if (ticket.userId !== req.user.id) return res.status(403).json({ message: 'Not authorized' });
+
+      const amount = Math.round(parseFloat(ticket.amount || '899') * 100);
+      const base = process.env.RESET_URL_BASE || 'http://localhost:3000';
+
+      const session = await createTicketCheckoutSession({
+        ticketId: ticket.id,
+        amount,
+        description: ticket.title || 'Content removal service',
+        customerEmail: req.user.email,
+        successUrl: `${base}/my-account?payment=success&ticket=${ticketId}`,
+        cancelUrl: `${base}/dashboard?payment=cancelled`,
+      });
+
+      res.json({ success: true, sessionId: session.id, url: session.url });
+    } catch (error) {
+      console.error('Checkout session error:', error);
+      res.status(500).json({ message: 'Failed to create checkout session' });
+    }
+  });
+
+  // Create checkout session for credit purchase
+  app.post('/api/payments/create-credit-purchase', isAuthenticated, async (req: any, res) => {
+    if (!isStripeConfigured()) {
+      return res.status(503).json({ message: 'Payment processing not available. Contact support.' });
+    }
+    try {
+      const { packageId } = req.body;
+      const pkg = CREDIT_PACKAGES.find(p => p.id === packageId);
+      if (!pkg) return res.status(400).json({ message: 'Invalid credit package' });
+
+      const base = process.env.RESET_URL_BASE || 'http://localhost:3000';
+
+      const session = await createCreditPurchaseSession({
+        userId: req.user.id,
+        credits: pkg.credits,
+        amount: pkg.price,
+        customerEmail: req.user.email,
+        successUrl: `${base}/my-account?tab=wallet&credits=purchased`,
+        cancelUrl: `${base}/my-account?tab=wallet&credits=cancelled`,
+      });
+
+      res.json({ success: true, sessionId: session.id, url: session.url });
+    } catch (error) {
+      console.error('Credit purchase error:', error);
+      res.status(500).json({ message: 'Failed to create credit purchase session' });
+    }
+  });
+
+  // User transactions
+  app.get('/api/user/transactions', isAuthenticated, async (req: any, res) => {
+    try {
+      const txns = await storage.getUserTransactions(req.user.id);
+      res.json({ success: true, data: txns });
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      res.status(500).json({ message: 'Failed to fetch transactions' });
+    }
+  });
+
+  // User scan history
+  app.get('/api/user/scan-history', isAuthenticated, async (req: any, res) => {
+    try {
+      const history = await storage.getUserScanHistory(req.user.id);
+      res.json({ success: true, data: history });
+    } catch (error) {
+      console.error('Error fetching scan history:', error);
+      res.status(500).json({ message: 'Failed to fetch scan history' });
+    }
+  });
+
+  // User subscription
+  app.get('/api/user/subscription', isAuthenticated, async (req: any, res) => {
+    try {
+      const sub = await storage.getUserSubscription(req.user.id);
+      res.json({ success: true, data: sub || null });
+    } catch (error) {
+      console.error('Error fetching subscription:', error);
+      res.status(500).json({ message: 'Failed to fetch subscription' });
+    }
+  });
+
+  // ============ MONITORING SUBSCRIPTION ROUTES ============
+
+  // Cancel monitoring subscription
+  app.post('/api/monitoring/cancel', isAuthenticated, async (req: any, res) => {
+    try {
+      const sub = await storage.getUserSubscription(req.user.id);
+      if (!sub) return res.status(404).json({ message: 'No active subscription' });
+
+      if (sub.stripeSubscriptionId && isStripeConfigured()) {
+        await cancelStripeSubscription(sub.stripeSubscriptionId);
+      }
+      await storage.cancelSubscription(sub.id);
+      res.json({ success: true, message: 'Subscription cancelled' });
+    } catch (error) {
+      console.error('Cancel subscription error:', error);
+      res.status(500).json({ message: 'Failed to cancel subscription' });
+    }
+  });
+
+  // ============ ANALYTICS ROUTES ============
+
+  // Track client-side funnel events
+  app.post('/api/analytics/track', async (req: any, res) => {
+    const { eventType, metadata, sessionId } = req.body;
+    await trackEvent(eventType, req.user?.id, sessionId, metadata);
+    res.json({ success: true });
+  });
+
+  // Admin analytics dashboard
+  app.get('/api/admin/analytics', isAdmin, async (req: any, res) => {
+    try {
+      const stats = await storage.getFunnelStats();
+      res.json({ success: true, data: stats });
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      res.status(500).json({ message: 'Failed to fetch analytics' });
+    }
+  });
 
   // Real-time notification stream
   app.get("/api/notifications/stream", (req, res) => {
@@ -1327,7 +1484,10 @@ ${JSON.stringify(errorDetails, null, 2)}
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       services: {
-        database: "connected",
+        database: 'connected',
+        stripe: isStripeConfigured() ? 'configured' : 'not configured',
+        openai: isOpenAIConfigured() ? 'configured' : 'not configured',
+        email: process.env.SENDGRID_API_KEY ? 'configured' : 'not configured',
         scrapingBee: process.env.SCRAPINGBEE_API_KEY ? "configured" : "missing",
         authentication: "active"
       }

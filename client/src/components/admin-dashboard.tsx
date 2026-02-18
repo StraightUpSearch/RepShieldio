@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import FunnelAnalytics from './funnel-analytics';
 import { 
   Users, 
   Ticket, 
@@ -274,6 +275,7 @@ export const AdminDashboard: React.FC = () => {
           <TabsTrigger value="completed">
             Completed ({tickets.filter(t => t.status === 'completed').length})
           </TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
@@ -475,6 +477,10 @@ export const AdminDashboard: React.FC = () => {
               {/* Same ticket content as above */}
             </Card>
           ))}
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-4">
+          <FunnelAnalytics />
         </TabsContent>
       </Tabs>
     </div>

@@ -242,6 +242,17 @@ export async function setupSimpleAuth(app: Express) {
   });
 }
 
+export const isAdmin = async (req: any, res: any, next: any) => {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+  const user = await storage.getUser(req.user.id);
+  if (user?.role !== 'admin') {
+    return res.status(403).json({ message: "Admin access required" });
+  }
+  next();
+};
+
 export const isAuthenticated = (req: any, res: any, next: any) => {
   console.log("Auth check:", { 
     hasUser: !!req.user, 

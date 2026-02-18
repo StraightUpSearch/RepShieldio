@@ -280,12 +280,12 @@ class LiveScannerService {
   }
   
   private async scanWebPlatforms(brandName: string, platforms: string[]) {
-    // Placeholder for web platform scanning
-    // This would integrate with other APIs for comprehensive scanning
+    // Web platform scanning — returns real data only when APIs are integrated
+    // TODO: Integrate TrustPilot, Google Reviews, BBB APIs for live data
     return {
-      totalMentions: Math.floor(Math.random() * 10) + 5,
-      negativeMentions: Math.floor(Math.random() * 3),
-      sources: ['TrustPilot', 'Google Reviews', 'BBB']
+      totalMentions: 0,
+      negativeMentions: 0,
+      sources: platforms.length > 0 ? platforms : ['TrustPilot', 'Google Reviews', 'BBB']
     };
   }
   

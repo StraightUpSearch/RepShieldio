@@ -216,6 +216,83 @@ export type QuoteRequest = typeof quoteRequests.$inferSelect;
 export type InsertBrandScanTicket = z.infer<typeof insertBrandScanTicketSchema>;
 export type BrandScanTicket = typeof brandScanTickets.$inferSelect;
 
+// Scan results persistence table
+export const scanResults = isPostgres
+  ? pgTable("scan_results", {
+      id: serial("id").primaryKey(),
+      userId: varchar("user_id").references(() => users.id),
+      brandName: varchar("brand_name").notNull(),
+      scanType: varchar("scan_type").notNull(), // 'quick' | 'comprehensive'
+      totalMentions: integer("total_mentions").default(0),
+      riskLevel: varchar("risk_level"),
+      riskScore: integer("risk_score").default(0),
+      platformData: jsonb("platform_data"),
+      processingTime: integer("processing_time"),
+      scanId: varchar("scan_id").notNull(),
+      createdAt: timestamp("created_at").defaultNow(),
+    })
+  : sqliteTable("scan_results", {
+      id: sqliteInt("id").primaryKey({ autoIncrement: true }),
+      userId: sqliteText("user_id").references(() => users.id),
+      brandName: sqliteText("brand_name").notNull(),
+      scanType: sqliteText("scan_type").notNull(),
+      totalMentions: sqliteInt("total_mentions").default(0),
+      riskLevel: sqliteText("risk_level"),
+      riskScore: sqliteInt("risk_score").default(0),
+      platformData: sqliteText("platform_data"),
+      processingTime: sqliteInt("processing_time"),
+      scanId: sqliteText("scan_id").notNull(),
+      createdAt: sqliteInt("created_at"),
+    });
+
+// Subscriptions table for recurring monitoring
+export const subscriptions = isPostgres
+  ? pgTable("subscriptions", {
+      id: serial("id").primaryKey(),
+      userId: varchar("user_id").notNull().references(() => users.id),
+      planId: varchar("plan_id").notNull(),
+      status: varchar("status").default("active").notNull(),
+      stripeSubscriptionId: varchar("stripe_subscription_id"),
+      stripeCustomerId: varchar("stripe_customer_id"),
+      currentPeriodStart: timestamp("current_period_start"),
+      currentPeriodEnd: timestamp("current_period_end"),
+      cancelledAt: timestamp("cancelled_at"),
+      createdAt: timestamp("created_at").defaultNow(),
+      updatedAt: timestamp("updated_at").defaultNow(),
+    })
+  : sqliteTable("subscriptions", {
+      id: sqliteInt("id").primaryKey({ autoIncrement: true }),
+      userId: sqliteText("user_id").notNull().references(() => users.id),
+      planId: sqliteText("plan_id").notNull(),
+      status: sqliteText("status").default("active").notNull(),
+      stripeSubscriptionId: sqliteText("stripe_subscription_id"),
+      stripeCustomerId: sqliteText("stripe_customer_id"),
+      currentPeriodStart: sqliteInt("current_period_start"),
+      currentPeriodEnd: sqliteInt("current_period_end"),
+      cancelledAt: sqliteInt("cancelled_at"),
+      createdAt: sqliteInt("created_at"),
+      updatedAt: sqliteInt("updated_at"),
+    });
+
+// Funnel analytics events table
+export const funnelEvents = isPostgres
+  ? pgTable("funnel_events", {
+      id: serial("id").primaryKey(),
+      eventType: varchar("event_type").notNull(),
+      userId: varchar("user_id"),
+      sessionId: varchar("session_id"),
+      metadata: jsonb("metadata"),
+      createdAt: timestamp("created_at").defaultNow(),
+    })
+  : sqliteTable("funnel_events", {
+      id: sqliteInt("id").primaryKey({ autoIncrement: true }),
+      eventType: sqliteText("event_type").notNull(),
+      userId: sqliteText("user_id"),
+      sessionId: sqliteText("session_id"),
+      metadata: sqliteText("metadata"),
+      createdAt: sqliteInt("created_at"),
+    });
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   tickets: many(tickets),

@@ -202,56 +202,14 @@ export default function BrandScanner() {
     }
 
     setCurrentStep('scanning');
-    
+
     // Update scan tracking
     localStorage.setItem('lastScanDate', today);
     localStorage.setItem('dailyScanCount', lastScan === today ? (scanCount + 1).toString() : '1');
-    
-    // Generate realistic results with preview mentions
-    setTimeout(() => {
-      const totalMentions = Math.floor(Math.random() * 50) + 15;
-      const posts = Math.floor(Math.random() * 20) + 8;
-      const comments = totalMentions - posts;
-      const riskLevel = totalMentions > 40 ? 'high' : totalMentions > 25 ? 'medium' : 'low';
-      
-      // Generate realistic preview mentions with emotional hooks
-      const previewMentions: MentionPreview[] = [
-        {
-          subreddit: 'entrepreneur',
-          timeAgo: '2 days ago',
-          sentiment: 'negative',
-          previewText: `Has anyone tried ${brandName}? I'm seeing mixed reviews and wondering if there are better alternatives out there. The pricing seems high for what you get and customer support is`,
-          url: `https://reddit.com/r/entrepreneur/comments/abc123/thoughts_on_${brandName.toLowerCase().replace(/\s+/g, '_')}`,
-          score: -12
-        },
-        {
-          subreddit: 'smallbusiness',
-          timeAgo: '5 days ago', 
-          sentiment: 'neutral',
-          previewText: `Looking into ${brandName} for our company. Anyone have experience with their customer service? Want to make sure we're making the right choice before we invest`,
-          url: `https://reddit.com/r/smallbusiness/comments/def456/${brandName.toLowerCase().replace(/\s+/g, '_')}_experiences`,
-          score: 23
-        },
-        {
-          subreddit: 'reviews',
-          timeAgo: '1 week ago',
-          sentiment: 'negative', 
-          previewText: `AVOID ${brandName} at all costs! Terrible experience, poor quality, and impossible to get refunds. Save your money and go with literally anyone else. They completely`,
-          url: `https://reddit.com/r/reviews/comments/ghi789/warning_about_${brandName.toLowerCase().replace(/\s+/g, '_')}`,
-          score: -45
-        }
-      ];
 
-      setScanResults({
-        totalMentions,
-        posts,
-        comments,
-        riskLevel,
-        previewMentions: previewMentions.slice(0, Math.min(3, totalMentions))
-      });
-      setCurrentStep('results');
-      setTicketForm(prev => ({ ...prev, brandName }));
-    }, 3000);
+    // Use real live scan API — no fake data
+    setTicketForm(prev => ({ ...prev, brandName }));
+    scanBrand.mutate(brandName);
   };
 
   const handleComprehensiveScan = async () => {

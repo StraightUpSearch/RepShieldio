@@ -1,15 +1,19 @@
-import { 
+import {
   users,
   tickets,
-  auditRequests, 
+  auditRequests,
   quoteRequests,
   brandScanTickets,
   passwordResetTokens,
+  scanResults,
+  subscriptions,
+  funnelEvents,
+  transactions,
   type User,
   type UpsertUser,
   type Ticket,
   type InsertTicket,
-  type AuditRequest, 
+  type AuditRequest,
   type InsertAuditRequest,
   type QuoteRequest,
   type InsertQuoteRequest,
@@ -17,7 +21,7 @@ import {
   type InsertBrandScanTicket
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, gt } from "drizzle-orm";
+import { eq, desc, and, gt, sql } from "drizzle-orm";
 
 // Helper functions for SQLite timestamp conversion
 import { getDatabaseConfig } from './config/database';
@@ -105,6 +109,30 @@ export interface IStorage {
   getValidPasswordResetToken(token: string): Promise<{ userId: string; token: string } | undefined>;
   getPasswordResetToken(userId: string, token: string): Promise<string | undefined>;
   deletePasswordResetToken(userId: string, token: string): Promise<void>;
+
+  // Credit operations
+  getUserCredits(userId: string): Promise<number>;
+  deductCredits(userId: string, amount: number, description: string): Promise<boolean>;
+  addCredits(userId: string, amount: number, description: string, stripePaymentId?: string): Promise<void>;
+  createTransaction(data: { userId: string; type: string; amount: string; description: string; ticketId?: number; stripePaymentId?: string; status?: string }): Promise<any>;
+  getUserTransactions(userId: string): Promise<any[]>;
+
+  // Scan result persistence
+  saveScanResult(data: any): Promise<any>;
+  getScanResult(scanId: string): Promise<any | undefined>;
+  getUserScanHistory(userId: string, limit?: number): Promise<any[]>;
+  getAllScanResults(limit?: number): Promise<any[]>;
+
+  // Subscription operations
+  createSubscription(data: any): Promise<any>;
+  getUserSubscription(userId: string): Promise<any | undefined>;
+  updateSubscription(id: number, data: any): Promise<any | undefined>;
+  cancelSubscription(id: number): Promise<any | undefined>;
+
+  // Funnel analytics
+  trackFunnelEvent(data: { eventType: string; userId?: string; sessionId?: string; metadata?: any }): Promise<void>;
+  getFunnelEvents(eventType?: string, limit?: number): Promise<any[]>;
+  getFunnelStats(): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -621,7 +649,295 @@ export class DatabaseStorage implements IStorage {
       console.log(`Password reset token deleted for user: ${userId}`);
     } catch (error) {
       console.error("Error deleting password reset token:", error);
-      // Don't throw - it's not critical if deletion fails
+    }
+  }
+
+  // ============ CREDIT OPERATIONS ============
+
+  async getUserCredits(userId: string): Promise<number> {
+    try {
+      const user = await this.getUser(userId);
+      return user?.creditsRemaining || 0;
+    } catch (error) {
+      console.error("Error getting user credits:", error);
+      return 0;
+    }
+  }
+
+  async deductCredits(userId: string, amount: number, description: string): Promise<boolean> {
+    try {
+      const user = await this.getUser(userId);
+      if (!user || (user.creditsRemaining || 0) < amount) return false;
+
+      const newCredits = (user.creditsRemaining || 0) - amount;
+      await db.update(users).set({
+        creditsRemaining: newCredits,
+        updatedAt: toDbTimestamp(new Date()),
+      }).where(eq(users.id, userId));
+
+      await this.createTransaction({
+        userId,
+        type: 'credit_deduction',
+        amount: `-${amount}`,
+        description,
+      });
+
+      return true;
+    } catch (error) {
+      console.error("Error deducting credits:", error);
+      return false;
+    }
+  }
+
+  async addCredits(userId: string, amount: number, description: string, stripePaymentId?: string): Promise<void> {
+    try {
+      const user = await this.getUser(userId);
+      if (!user) throw new Error(`User ${userId} not found`);
+
+      const newCredits = (user.creditsRemaining || 0) + amount;
+      await db.update(users).set({
+        creditsRemaining: newCredits,
+        updatedAt: toDbTimestamp(new Date()),
+      }).where(eq(users.id, userId));
+
+      await this.createTransaction({
+        userId,
+        type: 'credit_purchase',
+        amount: String(amount),
+        description,
+        stripePaymentId,
+      });
+    } catch (error) {
+      console.error("Error adding credits:", error);
+      throw error;
+    }
+  }
+
+  async createTransaction(data: { userId: string; type: string; amount: string; description: string; ticketId?: number; stripePaymentId?: string; status?: string }): Promise<any> {
+    try {
+      const [txn] = await db.insert(transactions).values({
+        userId: data.userId,
+        type: data.type,
+        amount: data.amount,
+        description: data.description || null,
+        ticketId: data.ticketId || null,
+        status: data.status || 'completed',
+        createdAt: toDbTimestamp(),
+      }).returning();
+      return txn;
+    } catch (error) {
+      console.error("Error creating transaction:", error);
+      return null;
+    }
+  }
+
+  async getUserTransactions(userId: string): Promise<any[]> {
+    try {
+      const results = await db.select().from(transactions)
+        .where(eq(transactions.userId, userId))
+        .orderBy(desc(transactions.createdAt));
+      return results;
+    } catch (error) {
+      console.error("Error getting user transactions:", error);
+      return [];
+    }
+  }
+
+  // ============ SCAN RESULT PERSISTENCE ============
+
+  async saveScanResult(data: any): Promise<any> {
+    try {
+      const [result] = await db.insert(scanResults).values({
+        userId: data.userId || null,
+        brandName: data.brandName,
+        scanType: data.scanType || 'quick',
+        totalMentions: data.totalMentions || 0,
+        riskLevel: data.riskLevel || null,
+        riskScore: data.riskScore || 0,
+        platformData: isPostgres ? data.platformData : JSON.stringify(data.platformData),
+        processingTime: data.processingTime || null,
+        scanId: data.scanId,
+        createdAt: toDbTimestamp(),
+      }).returning();
+      return result;
+    } catch (error) {
+      console.error("Error saving scan result:", error);
+      return null;
+    }
+  }
+
+  async getScanResult(scanId: string): Promise<any | undefined> {
+    try {
+      const [result] = await db.select().from(scanResults)
+        .where(eq(scanResults.scanId, scanId));
+      if (!result) return undefined;
+      return {
+        ...result,
+        platformData: result.platformData ? (isPostgres ? result.platformData : JSON.parse(result.platformData as string)) : null,
+        createdAt: fromDbTimestamp(result.createdAt),
+      };
+    } catch (error) {
+      console.error("Error getting scan result:", error);
+      return undefined;
+    }
+  }
+
+  async getUserScanHistory(userId: string, limit = 50): Promise<any[]> {
+    try {
+      const results = await db.select().from(scanResults)
+        .where(eq(scanResults.userId, userId))
+        .orderBy(desc(scanResults.createdAt))
+        .limit(limit);
+      return results.map(r => ({
+        ...r,
+        platformData: r.platformData ? (isPostgres ? r.platformData : JSON.parse(r.platformData as string)) : null,
+        createdAt: fromDbTimestamp(r.createdAt),
+      }));
+    } catch (error) {
+      console.error("Error getting user scan history:", error);
+      return [];
+    }
+  }
+
+  async getAllScanResults(limit = 100): Promise<any[]> {
+    try {
+      const results = await db.select().from(scanResults)
+        .orderBy(desc(scanResults.createdAt))
+        .limit(limit);
+      return results.map(r => ({
+        ...r,
+        platformData: r.platformData ? (isPostgres ? r.platformData : JSON.parse(r.platformData as string)) : null,
+        createdAt: fromDbTimestamp(r.createdAt),
+      }));
+    } catch (error) {
+      console.error("Error getting all scan results:", error);
+      return [];
+    }
+  }
+
+  // ============ SUBSCRIPTION OPERATIONS ============
+
+  async createSubscription(data: any): Promise<any> {
+    try {
+      const [sub] = await db.insert(subscriptions).values({
+        userId: data.userId,
+        planId: data.planId,
+        status: data.status || 'active',
+        stripeSubscriptionId: data.stripeSubscriptionId || null,
+        stripeCustomerId: data.stripeCustomerId || null,
+        currentPeriodStart: data.currentPeriodStart ? toDbTimestamp(new Date(data.currentPeriodStart * 1000)) : toDbTimestamp(),
+        currentPeriodEnd: data.currentPeriodEnd ? toDbTimestamp(new Date(data.currentPeriodEnd * 1000)) : toDbTimestamp(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
+        createdAt: toDbTimestamp(),
+        updatedAt: toDbTimestamp(),
+      }).returning();
+      return sub;
+    } catch (error) {
+      console.error("Error creating subscription:", error);
+      return null;
+    }
+  }
+
+  async getUserSubscription(userId: string): Promise<any | undefined> {
+    try {
+      const [sub] = await db.select().from(subscriptions)
+        .where(and(eq(subscriptions.userId, userId), eq(subscriptions.status, 'active')));
+      return sub || undefined;
+    } catch (error) {
+      console.error("Error getting user subscription:", error);
+      return undefined;
+    }
+  }
+
+  async updateSubscription(id: number, data: any): Promise<any | undefined> {
+    try {
+      const [sub] = await db.update(subscriptions).set({
+        ...data,
+        updatedAt: toDbTimestamp(new Date()),
+      }).where(eq(subscriptions.id, id)).returning();
+      return sub;
+    } catch (error) {
+      console.error("Error updating subscription:", error);
+      return undefined;
+    }
+  }
+
+  async cancelSubscription(id: number): Promise<any | undefined> {
+    try {
+      const [sub] = await db.update(subscriptions).set({
+        status: 'cancelled',
+        cancelledAt: toDbTimestamp(new Date()),
+        updatedAt: toDbTimestamp(new Date()),
+      }).where(eq(subscriptions.id, id)).returning();
+      return sub;
+    } catch (error) {
+      console.error("Error cancelling subscription:", error);
+      return undefined;
+    }
+  }
+
+  // ============ FUNNEL ANALYTICS ============
+
+  async trackFunnelEvent(data: { eventType: string; userId?: string; sessionId?: string; metadata?: any }): Promise<void> {
+    try {
+      await db.insert(funnelEvents).values({
+        eventType: data.eventType,
+        userId: data.userId || null,
+        sessionId: data.sessionId || null,
+        metadata: data.metadata ? (isPostgres ? data.metadata : JSON.stringify(data.metadata)) : null,
+        createdAt: toDbTimestamp(),
+      });
+    } catch (error) {
+      console.error("Error tracking funnel event:", error);
+    }
+  }
+
+  async getFunnelEvents(eventType?: string, limit = 1000): Promise<any[]> {
+    try {
+      let query = db.select().from(funnelEvents).orderBy(desc(funnelEvents.createdAt)).limit(limit);
+      if (eventType) {
+        query = db.select().from(funnelEvents)
+          .where(eq(funnelEvents.eventType, eventType))
+          .orderBy(desc(funnelEvents.createdAt))
+          .limit(limit);
+      }
+      const results = await query;
+      return results.map(r => ({
+        ...r,
+        metadata: r.metadata ? (isPostgres ? r.metadata : JSON.parse(r.metadata as string)) : null,
+        createdAt: fromDbTimestamp(r.createdAt),
+      }));
+    } catch (error) {
+      console.error("Error getting funnel events:", error);
+      return [];
+    }
+  }
+
+  async getFunnelStats(): Promise<any> {
+    try {
+      const allEvents = await db.select().from(funnelEvents);
+      const counts: Record<string, number> = {};
+      for (const event of allEvents) {
+        counts[event.eventType] = (counts[event.eventType] || 0) + 1;
+      }
+
+      return {
+        totalEvents: allEvents.length,
+        eventCounts: counts,
+        conversionRates: {
+          scanToLead: counts.lead_form_submitted && counts.scan_completed
+            ? ((counts.lead_form_submitted / counts.scan_completed) * 100).toFixed(1) + '%'
+            : 'N/A',
+          leadToTicket: counts.ticket_created && counts.lead_form_submitted
+            ? ((counts.ticket_created / counts.lead_form_submitted) * 100).toFixed(1) + '%'
+            : 'N/A',
+          quoteToPayment: counts.payment_completed && counts.quote_sent
+            ? ((counts.payment_completed / counts.quote_sent) * 100).toFixed(1) + '%'
+            : 'N/A',
+        },
+      };
+    } catch (error) {
+      console.error("Error getting funnel stats:", error);
+      return { totalEvents: 0, eventCounts: {}, conversionRates: {} };
     }
   }
 }
@@ -1025,6 +1341,39 @@ export class MemStorage implements IStorage {
     const key = `${userId}-${token}`;
     this.passwordResetTokens.delete(key);
   }
+
+  // ============ STUB IMPLEMENTATIONS FOR NEW INTERFACES ============
+
+  async getUserCredits(userId: string): Promise<number> {
+    const user = await this.getUser(userId);
+    return user?.creditsRemaining || 0;
+  }
+  async deductCredits(userId: string, amount: number, description: string): Promise<boolean> {
+    const user = await this.getUser(userId);
+    if (!user || (user.creditsRemaining || 0) < amount) return false;
+    user.creditsRemaining = (user.creditsRemaining || 0) - amount;
+    return true;
+  }
+  async addCredits(userId: string, amount: number, description: string): Promise<void> {
+    const user = await this.getUser(userId);
+    if (user) user.creditsRemaining = (user.creditsRemaining || 0) + amount;
+  }
+  async createTransaction(data: any): Promise<any> { return { id: Date.now(), ...data }; }
+  async getUserTransactions(userId: string): Promise<any[]> { return []; }
+
+  async saveScanResult(data: any): Promise<any> { return { id: Date.now(), ...data }; }
+  async getScanResult(scanId: string): Promise<any | undefined> { return undefined; }
+  async getUserScanHistory(userId: string, limit?: number): Promise<any[]> { return []; }
+  async getAllScanResults(limit?: number): Promise<any[]> { return []; }
+
+  async createSubscription(data: any): Promise<any> { return { id: Date.now(), ...data }; }
+  async getUserSubscription(userId: string): Promise<any | undefined> { return undefined; }
+  async updateSubscription(id: number, data: any): Promise<any | undefined> { return undefined; }
+  async cancelSubscription(id: number): Promise<any | undefined> { return undefined; }
+
+  async trackFunnelEvent(data: any): Promise<void> { /* no-op in memory */ }
+  async getFunnelEvents(eventType?: string, limit?: number): Promise<any[]> { return []; }
+  async getFunnelStats(): Promise<any> { return { totalEvents: 0, eventCounts: {}, conversionRates: {} }; }
 }
 
 // Use memory storage for development until database tables are set up

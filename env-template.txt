@@ -31,7 +31,7 @@ DATABASE_URL=
 # Used in: server/scrapingbee.ts, server/webscraping.ts
 SCRAPINGBEE_API_KEY=your_scrapingbee_api_key
 
-# OpenAI API - REQUIRED for chatbot and content analysis
+# OpenAI API - For AI chatbot and content analysis (OPTIONAL - falls back to pattern matching)
 # Get API key from: https://platform.openai.com/api-keys
 # Used in: server/openai.ts
 OPENAI_API_KEY=your_openai_api_key_here
@@ -51,11 +51,13 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret_here
 # PAYMENT & BUSINESS APIs
 # ===========================================
 
-# Stripe API - For payment processing
+# Stripe API - For payment processing (OPTIONAL - app works without it)
 # Get keys from: https://dashboard.stripe.com/apikeys
-# Used in: server/routes.ts
+# Used in: server/stripe.ts, server/routes.ts
+# When not set, checkout falls back to manual contact flow
 STRIPE_SECRET_KEY=sk_test_your_stripe_secret_key_here
 STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key_here
+STRIPE_WEBHOOK_SECRET=whsec_your_stripe_webhook_secret_here
 
 # ===========================================
 # REDDIT API (Alternative to ScrapingBee)
