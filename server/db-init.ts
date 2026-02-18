@@ -85,6 +85,120 @@ export async function initializeDatabase(): Promise<void> {
         )
       `);
 
+      // Core tables that Drizzle migrations should create, but ensure they exist
+      ensureTable(sqlite, 'sessions', `
+        CREATE TABLE sessions (
+          sid TEXT PRIMARY KEY NOT NULL,
+          sess TEXT NOT NULL,
+          expire INTEGER NOT NULL
+        )
+      `);
+
+      ensureTable(sqlite, 'users', `
+        CREATE TABLE users (
+          id TEXT PRIMARY KEY NOT NULL,
+          email TEXT UNIQUE NOT NULL,
+          first_name TEXT,
+          last_name TEXT,
+          profile_image_url TEXT,
+          password TEXT,
+          role TEXT DEFAULT 'user' NOT NULL,
+          account_balance TEXT DEFAULT '0.00',
+          credits_remaining INTEGER DEFAULT 0,
+          created_at INTEGER,
+          updated_at INTEGER
+        )
+      `);
+
+      ensureTable(sqlite, 'tickets', `
+        CREATE TABLE tickets (
+          id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+          user_id TEXT NOT NULL REFERENCES users(id),
+          type TEXT NOT NULL,
+          status TEXT DEFAULT 'pending' NOT NULL,
+          priority TEXT DEFAULT 'standard' NOT NULL,
+          assigned_to TEXT,
+          title TEXT NOT NULL,
+          description TEXT,
+          reddit_url TEXT,
+          amount TEXT,
+          progress INTEGER DEFAULT 0,
+          request_data TEXT,
+          notes TEXT,
+          created_at INTEGER,
+          updated_at INTEGER
+        )
+      `);
+
+      ensureTable(sqlite, 'audit_requests', `
+        CREATE TABLE audit_requests (
+          id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+          name TEXT NOT NULL,
+          email TEXT NOT NULL,
+          company TEXT NOT NULL,
+          website TEXT,
+          message TEXT,
+          processed INTEGER DEFAULT 0,
+          created_at INTEGER
+        )
+      `);
+
+      ensureTable(sqlite, 'quote_requests', `
+        CREATE TABLE quote_requests (
+          id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+          reddit_url TEXT NOT NULL,
+          email TEXT NOT NULL,
+          processed INTEGER DEFAULT 0,
+          created_at INTEGER
+        )
+      `);
+
+      ensureTable(sqlite, 'brand_scan_tickets', `
+        CREATE TABLE brand_scan_tickets (
+          id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+          name TEXT NOT NULL,
+          email TEXT NOT NULL,
+          company TEXT NOT NULL,
+          brand_name TEXT NOT NULL,
+          processed INTEGER DEFAULT 0,
+          created_at INTEGER
+        )
+      `);
+
+      ensureTable(sqlite, 'blog_posts', `
+        CREATE TABLE blog_posts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+          title TEXT NOT NULL,
+          slug TEXT NOT NULL UNIQUE,
+          excerpt TEXT,
+          content TEXT NOT NULL,
+          meta_title TEXT,
+          meta_description TEXT,
+          keywords TEXT,
+          featured_image TEXT,
+          author TEXT NOT NULL,
+          status TEXT DEFAULT 'draft',
+          category TEXT,
+          tags TEXT,
+          reading_time INTEGER,
+          published_at INTEGER,
+          created_at INTEGER,
+          updated_at INTEGER
+        )
+      `);
+
+      ensureTable(sqlite, 'blog_categories', `
+        CREATE TABLE blog_categories (
+          id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+          name TEXT NOT NULL,
+          slug TEXT NOT NULL UNIQUE,
+          description TEXT,
+          meta_title TEXT,
+          meta_description TEXT,
+          created_at INTEGER
+        )
+      `);
+
       sqlite.close();
     } else {
       console.log('ℹ️  PostgreSQL detected - skipping table creation (use migrations)');

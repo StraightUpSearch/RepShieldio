@@ -9,6 +9,8 @@ import {
   subscriptions,
   funnelEvents,
   transactions,
+  blogPosts,
+  blogCategories,
   type User,
   type UpsertUser,
   type Ticket,
@@ -486,29 +488,103 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Blog CMS operations - using tickets table as content
+  // Blog CMS operations
   async getBlogPosts(): Promise<any[]> {
-    return [];
+    try {
+      const results = await db.select().from(blogPosts).orderBy(desc(blogPosts.createdAt));
+      return results.map(p => ({
+        ...p,
+        tags: p.tags ? (isPostgres ? p.tags : JSON.parse(p.tags as string)) : [],
+        createdAt: fromDbTimestamp(p.createdAt),
+        updatedAt: fromDbTimestamp(p.updatedAt),
+        publishedAt: p.publishedAt ? fromDbTimestamp(p.publishedAt) : null,
+      }));
+    } catch (error) {
+      console.error("Error fetching blog posts:", error);
+      return [];
+    }
   }
 
   async getBlogCategories(): Promise<any[]> {
-    return [];
+    try {
+      const results = await db.select().from(blogCategories).orderBy(blogCategories.name);
+      return results.map(c => ({
+        ...c,
+        createdAt: fromDbTimestamp(c.createdAt),
+      }));
+    } catch (error) {
+      console.error("Error fetching blog categories:", error);
+      return [];
+    }
   }
 
   async getBlogPostBySlug(slug: string): Promise<any | undefined> {
-    return undefined;
+    try {
+      const [post] = await db.select().from(blogPosts).where(eq(blogPosts.slug, slug));
+      if (!post) return undefined;
+      return {
+        ...post,
+        tags: post.tags ? (isPostgres ? post.tags : JSON.parse(post.tags as string)) : [],
+        createdAt: fromDbTimestamp(post.createdAt),
+        updatedAt: fromDbTimestamp(post.updatedAt),
+        publishedAt: post.publishedAt ? fromDbTimestamp(post.publishedAt) : null,
+      };
+    } catch (error) {
+      console.error("Error fetching blog post by slug:", error);
+      return undefined;
+    }
   }
 
   async createBlogPost(data: any): Promise<any> {
-    return data;
+    try {
+      const [post] = await db.insert(blogPosts).values({
+        title: data.title,
+        slug: data.slug,
+        excerpt: data.excerpt || null,
+        content: data.content,
+        metaTitle: data.metaTitle || null,
+        metaDescription: data.metaDescription || null,
+        keywords: data.keywords || null,
+        featuredImage: data.featuredImage || null,
+        author: data.author || 'RepShield Team',
+        status: data.status || 'draft',
+        category: data.category || null,
+        tags: data.tags ? (isPostgres ? data.tags : JSON.stringify(data.tags)) : null,
+        readingTime: data.readingTime || null,
+        publishedAt: data.status === 'published' ? toDbTimestamp() : null,
+        createdAt: toDbTimestamp(),
+        updatedAt: toDbTimestamp(),
+      }).returning();
+      return post;
+    } catch (error) {
+      console.error("Error creating blog post:", error);
+      throw error;
+    }
   }
 
   async updateBlogPost(id: number, data: any): Promise<any> {
-    return data;
+    try {
+      const updateData: any = { ...data, updatedAt: toDbTimestamp() };
+      if (data.tags && !isPostgres) {
+        updateData.tags = JSON.stringify(data.tags);
+      }
+      if (data.status === 'published' && !data.publishedAt) {
+        updateData.publishedAt = toDbTimestamp();
+      }
+      const [post] = await db.update(blogPosts).set(updateData).where(eq(blogPosts.id, id)).returning();
+      return post || null;
+    } catch (error) {
+      console.error("Error updating blog post:", error);
+      return null;
+    }
   }
 
   async deleteBlogPost(id: number): Promise<void> {
-    return;
+    try {
+      await db.delete(blogPosts).where(eq(blogPosts.id, id));
+    } catch (error) {
+      console.error("Error deleting blog post:", error);
+    }
   }
 
   // Removal case operations - using tickets table
@@ -579,17 +655,7 @@ export class DatabaseStorage implements IStorage {
   async getValidPasswordResetToken(token: string): Promise<{ userId: string; token: string } | undefined> {
     try {
       const now = isPostgres ? new Date() : Math.floor(Date.now() / 1000);
-      
-      console.log(`Looking for token: ${token.substring(0, 8)}... (length: ${token.length})`);
-      console.log(`Current time: ${now} (${isPostgres ? 'postgres' : 'sqlite'})`);
-      
-      // First, let's see all tokens for debugging
-      const allTokens = await db.select().from(passwordResetTokens);
-      console.log(`Total tokens in database: ${allTokens.length}`);
-      allTokens.forEach((t, i) => {
-        console.log(`Token ${i + 1}: ${t.token.substring(0, 8)}... expires: ${t.expiresAt} used: ${t.used}`);
-      });
-      
+
       const [resetToken] = await db
         .select()
         .from(passwordResetTokens)
@@ -598,24 +664,11 @@ export class DatabaseStorage implements IStorage {
           gt(passwordResetTokens.expiresAt, now),
           eq(passwordResetTokens.used, isPostgres ? false : 0)
         ));
-        
+
       if (resetToken) {
-        console.log(`✅ Valid password reset token found for user: ${resetToken.userId}`);
         return { userId: resetToken.userId, token: resetToken.token };
       }
-      
-      // Check if token exists but is expired or used
-      const [anyToken] = await db
-        .select()
-        .from(passwordResetTokens)
-        .where(eq(passwordResetTokens.token, token));
-        
-      if (anyToken) {
-        console.log(`❌ Token found but invalid - expires: ${anyToken.expiresAt}, used: ${anyToken.used}, current: ${now}`);
-      } else {
-        console.log(`❌ No token found matching: ${token.substring(0, 8)}...`);
-      }
-      
+
       return undefined;
     } catch (error) {
       console.error("Error getting password reset token:", error);

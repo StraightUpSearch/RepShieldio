@@ -336,26 +336,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin endpoints for ticket management
-  app.get('/api/admin/tickets', async (req, res) => {
-    // Basic admin check - in production you'd verify admin role
-    const tickets = await storage.getTickets();
-    res.json(tickets);
+  app.get('/api/admin/tickets', isAdmin, async (req: any, res) => {
+    try {
+      const tickets = await storage.getTickets();
+      res.json(tickets);
+    } catch (error) {
+      console.error("Error fetching admin tickets:", error);
+      res.status(500).json({ message: "Failed to fetch tickets" });
+    }
   });
 
-  app.patch('/api/admin/tickets/:id', async (req, res) => {
-    const { id } = req.params;
-    const { status, assignedTo, notes } = req.body;
-    
-    let ticket;
-    if (status || assignedTo) {
-      ticket = await storage.updateTicketStatus(parseInt(id), status, assignedTo);
+  app.patch('/api/admin/tickets/:id', isAdmin, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { status, assignedTo, notes } = req.body;
+
+      let ticket;
+      if (status || assignedTo) {
+        ticket = await storage.updateTicketStatus(parseInt(id), status, assignedTo);
+      }
+
+      if (notes) {
+        ticket = await storage.updateTicketNotes(parseInt(id), notes);
+      }
+
+      res.json(ticket);
+    } catch (error) {
+      console.error("Error updating admin ticket:", error);
+      res.status(500).json({ message: "Failed to update ticket" });
     }
-    
-    if (notes) {
-      ticket = await storage.updateTicketNotes(parseInt(id), notes);
-    }
-    
-    res.json(ticket);
   });
 
   // Monitoring subscription endpoint
@@ -1054,6 +1063,54 @@ Date: ${new Date().toISOString()}
     }
   });
 
+  // Analyze URL and create account/case (used by dashboard)
+  app.post("/api/analyze-and-create-account", isAuthenticated, async (req: any, res) => {
+    try {
+      const { redditUrl, email } = req.body;
+
+      if (!redditUrl) {
+        return res.status(400).json({ success: false, message: "Reddit URL is required" });
+      }
+
+      try {
+        new URL(redditUrl);
+        if (!redditUrl.includes('reddit.com')) throw new Error('Must be a Reddit URL');
+      } catch {
+        return res.status(400).json({ success: false, message: "Invalid Reddit URL" });
+      }
+
+      const userId = req.user.id;
+      const isPost = /\/comments\//.test(redditUrl);
+      const contentType = isPost ? 'reddit_post_removal' : 'reddit_comment_removal';
+      const estimatedPrice = isPost ? '$899' : '$199';
+
+      const ticket = await storage.createTicket({
+        userId,
+        type: contentType,
+        title: `Reddit Removal - ${new URL(redditUrl).pathname.substring(0, 60)}`,
+        description: `Client requesting removal of Reddit content:\n${redditUrl}\n\nClient Email: ${email || req.user.email}`,
+        redditUrl,
+        status: 'pending',
+        priority: 'standard',
+        amount: estimatedPrice.replace('$', ''),
+        requestData: { email: email || req.user.email, redditUrl, submittedAt: new Date().toISOString() },
+      });
+
+      res.json({
+        success: true,
+        caseId: ticket.id,
+        analysis: {
+          contentType: isPost ? 'Reddit Post' : 'Reddit Comment',
+          estimatedPrice,
+          description: `Professional removal of Reddit content. Estimated cost: ${estimatedPrice}`,
+        },
+      });
+    } catch (error) {
+      console.error("Error in analyze-and-create-account:", error);
+      res.status(500).json({ success: false, message: "Failed to analyze URL" });
+    }
+  });
+
   // DEPRECATED: OpenAI URL analysis endpoint removed for simplified workflow
   app.post("/api/analyze-url", async (req, res) => {
     res.json({
@@ -1204,7 +1261,7 @@ Date: ${new Date().toISOString()}
   });
 
   // Admin blog endpoints
-  app.get("/api/admin/blog/posts", async (req, res) => {
+  app.get("/api/admin/blog/posts", isAdmin, async (req: any, res) => {
     try {
       const posts = await storage.getBlogPosts();
       res.json(posts);
@@ -1214,7 +1271,7 @@ Date: ${new Date().toISOString()}
     }
   });
 
-  app.post("/api/admin/blog/posts", async (req, res) => {
+  app.post("/api/admin/blog/posts", isAdmin, async (req: any, res) => {
     try {
       const postData = req.body;
       const post = await storage.createBlogPost(postData);
@@ -1225,7 +1282,7 @@ Date: ${new Date().toISOString()}
     }
   });
 
-  app.patch("/api/admin/blog/posts/:id", async (req, res) => {
+  app.patch("/api/admin/blog/posts/:id", isAdmin, async (req: any, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -1240,7 +1297,7 @@ Date: ${new Date().toISOString()}
     }
   });
 
-  app.delete("/api/admin/blog/posts/:id", async (req, res) => {
+  app.delete("/api/admin/blog/posts/:id", isAdmin, async (req: any, res) => {
     try {
       const { id } = req.params;
       await storage.deleteBlogPost(parseInt(id));
