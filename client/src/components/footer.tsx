@@ -1,4 +1,4 @@
-import { SiReddit, SiLinkedin, SiX } from "react-icons/si";
+import { SiReddit, SiLinkedin } from "react-icons/si";
 import { Mail } from "lucide-react";
 import { Link } from "wouter";
 
@@ -21,9 +21,6 @@ export default function Footer() {
             <div className="flex space-x-4">
               <a href="https://www.linkedin.com/company/repshield-io/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
                 <SiLinkedin className="w-6 h-6" />
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                <SiX className="w-6 h-6" />
               </a>
               <a href="mailto:contact@repshield.io" className="text-gray-400 hover:text-white transition-colors">
                 <Mail className="w-6 h-6" />

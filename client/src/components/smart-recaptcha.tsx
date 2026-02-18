@@ -39,7 +39,7 @@ export function SmartRecaptcha({ onVerify, isRequired, reason }: SmartRecaptchaP
     if (window.grecaptcha) {
       window.grecaptcha.ready(() => {
         window.grecaptcha.render('recaptcha-container', {
-          sitekey: '6LcXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Replace with actual site key
+          sitekey: import.meta.env.VITE_RECAPTCHA_SITE_KEY || '',
           callback: (token: string) => {
             onVerify(token);
             setIsVerifying(false);
@@ -52,8 +52,13 @@ export function SmartRecaptcha({ onVerify, isRequired, reason }: SmartRecaptchaP
     }
   };
 
-  // Don't render anything if reCAPTCHA is not required
+  // Don't render if not required or if no site key configured
   if (!isRequired) return null;
+  if (!import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
+    // No reCAPTCHA configured — auto-pass verification
+    onVerify('bypass-no-key-configured');
+    return null;
+  }
 
   return (
     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">

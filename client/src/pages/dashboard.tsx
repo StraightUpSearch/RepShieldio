@@ -150,6 +150,12 @@ export default function Dashboard() {
     });
   };
 
+  // Redirect to login if not authenticated
+  if (!isLoading && !user) {
+    window.location.href = '/login';
+    return null;
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -236,7 +242,7 @@ export default function Dashboard() {
                             <CreditCard className="w-4 h-4 mr-2" />
                             Pay {activeCase.estimatedPrice} & Start Removal
                           </Button>
-                          <Button variant="outline">View Details</Button>
+                          <Button variant="outline" onClick={() => window.open(activeCase.redditUrl, '_blank')}>View on Reddit</Button>
                         </div>
                       </div>
                     )}
@@ -338,8 +344,8 @@ export default function Dashboard() {
                               Pay {case_.estimatedPrice}
                             </Button>
                           )}
-                          <Button variant="outline" size="sm">
-                            View Details
+                          <Button variant="outline" size="sm" onClick={() => window.open(case_.redditUrl, '_blank')}>
+                            View on Reddit
                           </Button>
                         </div>
                       </CardContent>

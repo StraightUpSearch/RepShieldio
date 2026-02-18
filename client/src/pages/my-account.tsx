@@ -18,7 +18,6 @@ import {
   CheckCircle,
   AlertCircle,
   DollarSign,
-  Download,
   RefreshCw,
   Search,
   Loader2,
@@ -409,10 +408,12 @@ export default function MyAccount() {
                             <p className="text-sm text-gray-600">Created: {ticket.timestamp}</p>
                           </div>
                           <div className="text-right">
-                            <Button variant="outline" size="sm" className="mt-2">
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Details
-                            </Button>
+                            {ticket.redditUrl && (
+                              <Button variant="outline" size="sm" className="mt-2" onClick={() => window.open(ticket.redditUrl, '_blank')}>
+                                <Eye className="w-4 h-4 mr-2" />
+                                View on Reddit
+                              </Button>
+                            )}
                           </div>
                         </div>
                         
@@ -453,13 +454,10 @@ export default function MyAccount() {
                     <p className="text-gray-600">{user?.email || 'Not provided'}</p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium">Member Since</label>
-                    <p className="text-gray-600">January 2024</p>
+                    <label className="text-sm font-medium">Name</label>
+                    <p className="text-gray-600">{user?.firstName ? `${user.firstName} ${user?.lastName || ''}`.trim() : 'Not set'}</p>
                   </div>
                 </div>
-                <Button variant="outline">
-                  Edit Profile
-                </Button>
               </CardContent>
             </Card>
 
@@ -471,21 +469,17 @@ export default function MyAccount() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium">Email Notifications</p>
-                    <p className="text-sm text-gray-600">Receive updates about your orders</p>
+                    <p className="text-sm text-gray-600">You'll receive email updates for all ticket status changes</p>
                   </div>
-                  <Button variant="outline" size="sm">
-                    Configure
-                  </Button>
+                  <Badge className="bg-green-100 text-green-800">Active</Badge>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium">SMS Notifications</p>
                     <p className="text-sm text-gray-600">Get instant updates via text</p>
                   </div>
-                  <Button variant="outline" size="sm">
-                    Setup
-                  </Button>
+                  <Badge className="bg-gray-100 text-gray-600">Coming Soon</Badge>
                 </div>
               </CardContent>
             </Card>
@@ -495,16 +489,13 @@ export default function MyAccount() {
                 <CardTitle>Security</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start" onClick={() => window.location.href = '/reset-password'}>
                   Change Password
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  Two-Factor Authentication
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  Download Account Data
-                  <Download className="w-4 h-4 ml-2" />
-                </Button>
+                <div className="flex items-center justify-between w-full p-3 border rounded-lg">
+                  <span className="text-sm">Two-Factor Authentication</span>
+                  <Badge className="bg-gray-100 text-gray-600">Coming Soon</Badge>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

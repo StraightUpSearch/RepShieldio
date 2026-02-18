@@ -1,5 +1,6 @@
 import { Search, BarChart3, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 
 export default function ServiceFlow() {
   const steps = [
@@ -9,15 +10,17 @@ export default function ServiceFlow() {
       title: "Scan",
       subtitle: "Paste the URL and start your case",
       description: "Submit your Reddit URL and we'll analyze the content for removal eligibility within hours.",
-      action: "Start Case Review"
+      action: "Start Case Review",
+      href: "/contact"
     },
     {
       icon: BarChart3,
-      number: "02", 
+      number: "02",
       title: "Track",
       subtitle: "Live status dashboard",
       description: "Monitor your case progress in real-time with detailed updates and timeline estimates.",
       action: "View Dashboard",
+      href: "/dashboard",
       optional: true
     },
     {
@@ -26,7 +29,8 @@ export default function ServiceFlow() {
       title: "Resolve",
       subtitle: "95%+ success rate within 24-48 hours",
       description: "Our legal team removes the content through official Reddit channels and provides confirmation.",
-      action: "See Results"
+      action: "See Results",
+      href: "/ticket-status"
     }
   ];
 
@@ -70,12 +74,13 @@ export default function ServiceFlow() {
               </p>
               
               {/* CTA Button */}
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 className="border border-gray-200 text-gray-600 hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-all"
+                asChild
               >
-                {step.action}
+                <Link href={step.href}>{step.action}</Link>
               </Button>
               
               {/* Connection Line */}
@@ -91,8 +96,8 @@ export default function ServiceFlow() {
           <p className="text-lg text-gray-700 mb-4">
             Ready to start your case? No contracts, no upfront fees.
           </p>
-          <Button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3">
-            Get Free Quote Now
+          <Button className="bg-orange-500 hover:bg-orange-600 text-white px-8 py-3" asChild>
+            <Link href="/contact">Get Free Quote Now</Link>
           </Button>
         </div>
       </div>

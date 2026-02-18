@@ -32,7 +32,11 @@ export const TicketStatus: React.FC = () => {
     e.preventDefault();
     
     if (!email.trim()) {
-      toast.error('Please enter your email address');
+      toast({
+        title: "Email Required",
+        description: "Please enter your email address",
+        variant: "destructive",
+      });
       return;
     }
 
