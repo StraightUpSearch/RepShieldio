@@ -35,15 +35,25 @@ export default function Contact() {
     setIsSubmitting(true);
 
     try {
-      // Simulate form submission
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      const response = await fetch('/api/audit-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
+          email: formData.email,
+          company: formData.company || 'Not provided',
+          website: formData.phone || undefined,
+          message: `[${formData.inquiryType || 'General'}] ${formData.message}`,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to send');
+
       toast({
         title: "Message Sent Successfully!",
         description: "We'll get back to you within 24 hours.",
       });
 
-      // Reset form
       setFormData({
         firstName: '',
         lastName: '',

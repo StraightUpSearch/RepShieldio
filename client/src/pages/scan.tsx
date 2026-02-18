@@ -54,8 +54,6 @@ export default function Scan() {
         description: `Customer requested specialist analysis for ${data.type} found in Reddit scan. Brand: ${data.brandName}. Risk Score: ${data.scanResults.riskScore}%. Total mentions: ${data.scanResults.totalFound}.`,
         priority: data.scanResults.riskScore > 70 ? 'high' : 'medium',
         category: 'Brand Scan',
-        userEmail: 'anonymous@scan.com', // For anonymous scans
-        userName: 'Anonymous Scanner'
       });
       return response.json();
     },
@@ -82,86 +80,8 @@ export default function Scan() {
     });
   };
 
-  const generateFakeData = (brand: string): ScanResults => {
-    const subreddits = ["entrepreneur", "smallbusiness", "reviews", "CustomerService", "CompanyFails", "mildlyinfuriating", "LegalAdvice", "personalfinance"];
-    const negativeComments = [
-      `Terrible experience with ${brand}. Would not recommend.`,
-      `${brand} customer service is a joke. Been waiting weeks for a response.`,
-      `Stay away from ${brand}. They took my money and disappeared.`,
-      `${brand} products are overpriced garbage. Save your money.`,
-      `Filing a complaint against ${brand} with BBB. Worst company ever.`
-    ];
-    const neutralComments = [
-      `Looking for alternatives to ${brand}. Any suggestions?`,
-      `Has anyone tried ${brand}? Thinking about purchasing.`,
-      `${brand} seems okay but nothing special.`,
-      `Mixed reviews on ${brand}. Still on the fence.`
-    ];
-
-    const posts: RedditPost[] = [];
-    const comments: RedditComment[] = [];
-    
-    // Generate 3-8 posts
-    const postCount = Math.floor(Math.random() * 6) + 3;
-    for (let i = 0; i < postCount; i++) {
-      const subreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
-      const daysAgo = Math.floor(Math.random() * 30) + 1;
-      const timestamp = Math.floor(Date.now() / 1000) - (daysAgo * 24 * 60 * 60);
-      
-      posts.push({
-        id: `post_${i}`,
-        title: `Issues with ${brand} - need advice`,
-        selftext: `Has anyone had problems with ${brand}? Looking for similar experiences...`,
-        url: `https://reddit.com/r/${subreddit}/comments/...`,
-        subreddit,
-        author: `user${Math.floor(Math.random() * 9999)}`,
-        created_utc: timestamp,
-        score: Math.floor(Math.random() * 50) - 10,
-        num_comments: Math.floor(Math.random() * 25),
-        permalink: `/r/${subreddit}/comments/...`
-      });
-    }
-
-    // Generate 15-45 comments
-    const commentCount = Math.floor(Math.random() * 31) + 15;
-    for (let i = 0; i < commentCount; i++) {
-      const isNegative = Math.random() < 0.6; // 60% negative for drama
-      const commentBody = isNegative 
-        ? negativeComments[Math.floor(Math.random() * negativeComments.length)]
-        : neutralComments[Math.floor(Math.random() * neutralComments.length)];
-      
-      const subreddit = subreddits[Math.floor(Math.random() * subreddits.length)];
-      const daysAgo = Math.floor(Math.random() * 14) + 1;
-      const timestamp = Math.floor(Date.now() / 1000) - (daysAgo * 24 * 60 * 60);
-      
-      comments.push({
-        id: `comment_${i}`,
-        body: commentBody,
-        author: `throwaway${Math.floor(Math.random() * 9999)}`,
-        subreddit,
-        created_utc: timestamp,
-        score: Math.floor(Math.random() * 20) - 5,
-        permalink: `/r/${subreddit}/comments/.../comment_${i}`,
-        link_title: `Discussion about ${brand}`
-      });
-    }
-
-    const totalFound = posts.length + comments.length;
-    const negativeRatio = comments.filter(c => negativeComments.some(neg => c.body.includes("Terrible") || c.body.includes("joke") || c.body.includes("Stay away"))).length / comments.length;
-    const riskScore = Math.floor(negativeRatio * 100) + Math.floor(Math.random() * 20);
-    
-    return {
-      posts,
-      comments,
-      totalFound,
-      riskScore: Math.min(riskScore, 95),
-      sentiment: riskScore > 60 ? 'negative' : riskScore > 30 ? 'neutral' : 'positive'
-    };
-  };
-
   const scanMutation = useMutation({
     mutationFn: async (brand: string) => {
-      console.log(`🔍 Starting live scan for: ${brand}`);
       const response = await apiRequest("POST", "/api/live-scan", {
         brandName: brand,
         platforms: ['reddit']
@@ -191,13 +111,9 @@ export default function Scan() {
       }
     },
     onError: (error: any) => {
-      console.error('Live scan failed:', error);
-      // Fallback to demo data if live scan fails
-      const demoData = generateFakeData(brandName);
-      setResults(demoData);
       toast({
-        title: "⚠️ Using Demo Data",
-        description: "Live scan unavailable - showing sample results",
+        title: "Scan Unavailable",
+        description: "Live scanning is temporarily unavailable. Please try again shortly or contact support.",
         variant: "destructive",
       });
     },

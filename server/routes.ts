@@ -51,13 +51,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication endpoints - Allow checking auth status without requiring login
   app.get('/api/auth/user', async (req: any, res) => {
     try {
-      console.log("Auth user check:", {
-        isAuthenticated: req.isAuthenticated(),
-        hasUser: !!req.user,
-        sessionID: req.sessionID,
-        session: Object.keys(req.session)
-      });
-
       if (!req.user) {
         return res.status(401).json({ 
           authenticated: false, 
@@ -1425,6 +1418,87 @@ Date: ${new Date().toISOString()}
     } catch (error) {
       console.error('Cancel subscription error:', error);
       res.status(500).json({ message: 'Failed to cancel subscription' });
+    }
+  });
+
+  // ============ STRIPE WEBHOOK ============
+
+  // Stripe webhook - must use raw body (not JSON parsed)
+  app.post('/api/webhooks/stripe', async (req, res) => {
+    if (!isStripeConfigured()) {
+      return res.status(503).send('Stripe not configured');
+    }
+
+    const sig = req.headers['stripe-signature'] as string;
+    if (!sig) {
+      return res.status(400).send('Missing stripe-signature header');
+    }
+
+    try {
+      // req.body is raw buffer when express.raw() middleware is applied for this route
+      const rawBody = typeof req.body === 'string' || Buffer.isBuffer(req.body)
+        ? req.body
+        : JSON.stringify(req.body);
+
+      const event = await constructWebhookEvent(rawBody, sig);
+
+      switch (event.type) {
+        case 'checkout.session.completed': {
+          const session = event.data.object as any;
+          const metadata = session.metadata || {};
+
+          if (metadata.type === 'ticket_payment' && metadata.ticketId) {
+            const ticketId = parseInt(metadata.ticketId);
+            await storage.updateTicketStatus(ticketId, 'approved');
+            await storage.createTransaction({
+              userId: metadata.userId || session.customer_email || 'stripe',
+              type: 'ticket_payment',
+              amount: String((session.amount_total || 0) / 100),
+              description: `Payment for ticket #${ticketId}`,
+              ticketId,
+              status: 'completed',
+            });
+            try {
+              await ticketLifecycle.transitionTicket({ ticketId, newStatus: 'approved' });
+            } catch {}
+          }
+
+          if (metadata.type === 'credit_purchase' && metadata.userId) {
+            const credits = parseInt(metadata.credits || '0');
+            await storage.addCredits(
+              metadata.userId,
+              credits,
+              `Purchased ${credits} scan credits`,
+            );
+          }
+
+          if (metadata.type === 'subscription' && metadata.userId) {
+            await storage.createSubscription({
+              userId: metadata.userId,
+              planId: metadata.planId || 'unknown',
+              status: 'active',
+              stripeSubscriptionId: session.subscription,
+              stripeCustomerId: session.customer,
+            });
+          }
+          break;
+        }
+
+        case 'customer.subscription.deleted': {
+          const sub = event.data.object as any;
+          if (sub.id) {
+            try {
+              await storage.cancelSubscription(sub.id);
+            } catch {}
+          }
+          break;
+        }
+      }
+
+      res.json({ received: true });
+    } catch (error) {
+      console.error('Stripe webhook error:', error);
+      res.status(400).send('Webhook signature verification failed');
     }
   });
 

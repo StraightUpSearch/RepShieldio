@@ -111,7 +111,7 @@ export default function Checkout({ caseId, amount, description, onSuccess, onCan
               </div>
               <div className="flex items-center gap-2">
                 <Phone className="w-4 h-4 text-blue-600" />
-                <span>+1 (555) 123-4567</span>
+                <span>Available upon request</span>
               </div>
             </div>
           </div>

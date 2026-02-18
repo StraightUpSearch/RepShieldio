@@ -42,6 +42,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// Raw body for Stripe webhook signature verification
+app.use('/api/webhooks/stripe', express.raw({ type: 'application/json' }));
+// JSON parsing for all other routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 

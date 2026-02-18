@@ -7,10 +7,22 @@ import { ArrowRight, Shield, Clock } from "lucide-react";
 export default function HeroRedesigned() {
   const [email, setEmail] = useState("");
 
-  const handleDemoRequest = (e: React.FormEvent) => {
+  const handleDemoRequest = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Demo request logic
-    console.log("Demo requested for:", email);
+    if (!email) return;
+    try {
+      await fetch('/api/audit-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'Website Visitor',
+          email,
+          company: 'Not provided',
+          message: 'Free consultation request from homepage hero',
+        }),
+      });
+      setEmail("");
+    } catch {}
   };
 
   return (
