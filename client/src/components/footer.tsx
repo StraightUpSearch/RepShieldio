@@ -3,13 +3,6 @@ import { Mail } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Footer() {
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
   return (
     <footer className="bg-gray-900 text-white py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -32,7 +25,7 @@ export default function Footer() {
               <a href="#" className="text-gray-400 hover:text-white transition-colors">
                 <SiX className="w-6 h-6" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="mailto:contact@repshield.io" className="text-gray-400 hover:text-white transition-colors">
                 <Mail className="w-6 h-6" />
               </a>
             </div>
@@ -41,27 +34,27 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Services</h4>
             <ul className="space-y-2 text-gray-400">
-              <li><button onClick={() => scrollToSection('services')} className="hover:text-white transition-colors text-left">Our Services</button></li>
-              <li><button onClick={() => scrollToSection('process')} className="hover:text-white transition-colors text-left">Our Process</button></li>
-              <li><button onClick={() => scrollToSection('results')} className="hover:text-white transition-colors text-left">Results</button></li>
-              <li><button onClick={() => scrollToSection('pricing')} className="hover:text-white transition-colors text-left">Pricing</button></li>
+              <li><Link href="/scan" className="hover:text-white transition-colors">Live Scanner</Link></li>
+              <li><Link href="/monitoring" className="hover:text-white transition-colors">Brand Monitoring</Link></li>
+              <li><Link href="/ticket-status" className="hover:text-white transition-colors">Check Status</Link></li>
+              <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
             </ul>
           </div>
-          
+
           <div>
-            <h4 className="font-semibold mb-4">Account</h4>
+            <h4 className="font-semibold mb-4">Company</h4>
             <ul className="space-y-2 text-gray-400">
-              <li><Link href="/my-account" className="hover:text-white transition-colors">My Account</Link></li>
-              <li><Link href="/scan" className="hover:text-white transition-colors">Live Scanner</Link></li>
-              <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
               <li><Link href="/about" className="hover:text-white transition-colors">About Us</Link></li>
+              <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
+              <li><Link href="/my-account" className="hover:text-white transition-colors">My Account</Link></li>
+              <li><Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link></li>
             </ul>
           </div>
         </div>
         
         <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400 text-sm">
-            © 2025 RepShield. All rights reserved. Professional reputation management services.
+            © {new Date().getFullYear()} RepShield. All rights reserved. Professional reputation management services.
           </p>
           <div className="flex space-x-6 text-sm text-gray-400 mt-4 md:mt-0">
             <Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>

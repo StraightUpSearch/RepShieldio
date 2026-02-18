@@ -59,7 +59,7 @@ export default function Header() {
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" className="ml-2 flex items-center gap-2">
                         <User className="h-4 w-4" />
-                        {(user as any)?.email === 'jamie@straightupsearch.com' ? (
+                        {(user as any)?.role === 'admin' ? (
                           <span className="text-blue-600 font-semibold">Admin</span>
                         ) : (
                           <span>{(user as any)?.firstName || (user as any)?.email?.split('@')[0] || 'User'}</span>
@@ -73,7 +73,7 @@ export default function Header() {
                           My Account
                         </Link>
                       </DropdownMenuItem>
-                      {(user as any)?.email === 'jamie@straightupsearch.com' && (
+                      {(user as any)?.role === 'admin' && (
                         <>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem asChild>

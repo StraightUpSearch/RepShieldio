@@ -11,8 +11,8 @@ if (apiKey) {
   console.log(`📧 SendGrid not configured for ${envMsg} - emails will be logged only`);
 }
 
-// Use environment variable for sender email or fallback to verified default
-const ADMIN_EMAIL = process.env.SENDER_EMAIL || 'jamie@straightupsearch.com';
+// Use environment variables for email addresses
+const ADMIN_EMAIL = process.env.SENDER_EMAIL || process.env.ADMIN_EMAIL || 'contact@repshield.io';
 const FROM_EMAIL = process.env.FROM_EMAIL || ADMIN_EMAIL;
 
 export async function sendQuoteNotification(data: {

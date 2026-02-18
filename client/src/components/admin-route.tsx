@@ -19,8 +19,8 @@ export function AdminRoute({ children }: AdminRouteProps) {
         return;
       }
       
-      if (!user || (user as any)?.email !== "jamie@straightupsearch.com") {
-        // Not the admin user - redirect to home
+      if (!user || (user as any)?.role !== "admin") {
+        // Not an admin user - redirect to home
         setLocation("/");
         return;
       }
@@ -38,7 +38,7 @@ export function AdminRoute({ children }: AdminRouteProps) {
   }
 
   // Not admin user
-  if (!user || (user as any)?.email !== "jamie@straightupsearch.com") {
+  if (!user || (user as any)?.role !== "admin") {
     return <LoadingSpinner size="lg" text="Access denied. Redirecting..." />;
   }
 

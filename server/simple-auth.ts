@@ -137,8 +137,9 @@ export async function setupSimpleAuth(app: Express) {
       // Hash password
       const hashedPassword = await hashPassword(validatedData.password);
       
-      // Set role based on email
-      const role = validatedData.email === "jamie@straightupsearch.com" ? "admin" : "user";
+      // Set role based on admin email list (env var or default)
+      const adminEmails = (process.env.ADMIN_EMAILS || 'jamie@straightupsearch.com').split(',').map(e => e.trim().toLowerCase());
+      const role = adminEmails.includes(validatedData.email.toLowerCase()) ? "admin" : "user";
       
       // Create user
       const user = await storage.upsertUser({
@@ -219,27 +220,10 @@ export async function setupSimpleAuth(app: Express) {
     });
   });
 
-  // Get current user
-  app.get("/api/auth/user", (req, res) => {
-    console.log("Auth user check:", { 
-      isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false,
-      hasUser: !!req.user,
-      sessionID: req.sessionID,
-      session: req.session ? Object.keys(req.session) : 'no session'
-    });
-    
-    if (!req.isAuthenticated() || !req.user) {
-      return res.status(401).json({ 
-        authenticated: false,
-        message: "Unauthorized - no active session" 
-      });
-    }
-    
-    res.json({ 
-      authenticated: true,
-      user: req.user 
-    });
-  });
+  // Get current user - lightweight check, full user data in routes.ts
+  // NOTE: The richer /api/auth/user with tickets is registered in routes.ts
+  // and will override this one since it's registered later.
+  // This serves as a fallback only.
 }
 
 export const isAdmin = async (req: any, res: any, next: any) => {

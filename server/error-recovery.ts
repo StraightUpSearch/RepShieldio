@@ -90,36 +90,16 @@ class ErrorRecoverySystem {
   }
 
   private generateRedditFallback(): any {
-    // Generate realistic fallback data based on typical Reddit patterns
-    const sampleMentions = [
-      {
-        subreddit: 'technology',
-        timeAgo: '2 days ago',
-        sentiment: 'neutral' as const,
-        previewText: 'Discussion about brand reputation management and online presence strategies for modern businesses...',
-        url: 'https://reddit.com/r/technology/comments/*****/******',
-        score: 45,
-        platform: 'Reddit'
-      },
-      {
-        subreddit: 'business',
-        timeAgo: '5 days ago', 
-        sentiment: 'positive' as const,
-        previewText: 'Looking for recommendations on reputation management services. Has anyone used professional services...',
-        url: 'https://reddit.com/r/business/comments/*****/******',
-        score: 23,
-        platform: 'Reddit'
-      }
-    ];
-
     return {
-      totalMentions: 2,
-      posts: 1,
-      comments: 1,
-      riskLevel: 'low',
-      sentiment: 'neutral',
-      previewMentions: sampleMentions,
-      fallbackNotice: true
+      totalMentions: 0,
+      posts: 0,
+      comments: 0,
+      riskLevel: 'unknown',
+      sentiment: 'unknown',
+      previewMentions: [],
+      fallbackNotice: true,
+      unavailable: true,
+      message: 'Scan temporarily unavailable. Please try again shortly.'
     };
   }
 

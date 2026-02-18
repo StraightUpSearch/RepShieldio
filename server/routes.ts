@@ -41,10 +41,36 @@ async function sendBrandScanNotification(data: any) {
   console.log('Brand scan notification:', data);
 }
 
+// Auto-wrap async route handlers to forward errors to Express error handler
+function wrapAsync(app: Express): Express {
+  const methods = ['get', 'post', 'put', 'delete', 'patch'] as const;
+  for (const method of methods) {
+    const original = app[method].bind(app);
+    (app as any)[method] = (path: string, ...handlers: any[]) => {
+      const wrapped = handlers.map((handler: any) => {
+        if (typeof handler === 'function' && handler.length <= 3) {
+          return (req: any, res: any, next: any) => {
+            const result = handler(req, res, next);
+            if (result && typeof result.catch === 'function') {
+              result.catch(next);
+            }
+          };
+        }
+        return handler;
+      });
+      return original(path, ...wrapped);
+    };
+  }
+  return app;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Auto-wrap all async route handlers for proper error forwarding
+  wrapAsync(app);
+
   // Initialize database tables on startup
   await initializeDatabase();
-  
+
   // Setup authentication middleware
   await setupSimpleAuth(app);
 
@@ -524,7 +550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const scanRequest = {
         brandName: brandName.trim(),
-        userEmail: userEmail || 'anonymous@comprehensive.com',
+        userEmail: userEmail || 'unregistered@repshield.io',
         priority: 'comprehensive' as const,
         platforms
       };

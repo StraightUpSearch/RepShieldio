@@ -294,7 +294,7 @@ class LiveScannerService {
     
     const ticket = await storage.createBrandScanTicket({
       brandName: request.brandName,
-      userEmail: request.userEmail || 'anonymous@scanner.com',
+      userEmail: request.userEmail || 'unregistered@repshield.io',
       userName: 'Brand Scanner User',
       scanResults: JSON.stringify(result),
       priority: result.riskLevel === 'high' ? 'urgent' : 'normal',
