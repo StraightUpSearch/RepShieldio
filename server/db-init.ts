@@ -1,5 +1,6 @@
 import { getDatabaseConfig } from './config/database';
 import Database from 'better-sqlite3';
+import postgres from 'postgres';
 
 const config = getDatabaseConfig();
 const isPostgres = config.type === 'postgresql';
@@ -12,8 +13,9 @@ export async function initializeDatabase(): Promise<void> {
   console.log('🔧 Initializing database tables...');
 
   try {
-    // Only create tables for SQLite - PostgreSQL should use proper migrations
-    if (!isPostgres) {
+    if (isPostgres) {
+      await initializePostgresql();
+    } else {
       const dbPath = config.url.replace('sqlite://', '');
       const sqlite = new Database(dbPath);
 
@@ -200,14 +202,184 @@ export async function initializeDatabase(): Promise<void> {
       `);
 
       sqlite.close();
-    } else {
-      console.log('ℹ️  PostgreSQL detected - skipping table creation (use migrations)');
     }
 
     console.log('✅ Database initialization complete');
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     // Don't throw - let the application start even if this fails
+  }
+}
+
+/**
+ * Initialize PostgreSQL tables using CREATE TABLE IF NOT EXISTS
+ * Matches the Drizzle schema in shared/schema.ts
+ */
+async function initializePostgresql(): Promise<void> {
+  const sql = postgres(config.url);
+
+  try {
+    // Order matters: parent tables first, then tables with foreign keys
+    await sql.unsafe(`
+      CREATE TABLE IF NOT EXISTS users (
+        id VARCHAR PRIMARY KEY NOT NULL,
+        email VARCHAR UNIQUE NOT NULL,
+        first_name VARCHAR,
+        last_name VARCHAR,
+        profile_image_url VARCHAR,
+        password VARCHAR,
+        role VARCHAR DEFAULT 'user' NOT NULL,
+        account_balance VARCHAR DEFAULT '0.00',
+        credits_remaining INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS tickets (
+        id SERIAL PRIMARY KEY,
+        user_id VARCHAR NOT NULL REFERENCES users(id),
+        type VARCHAR NOT NULL,
+        status VARCHAR DEFAULT 'pending' NOT NULL,
+        priority VARCHAR DEFAULT 'standard' NOT NULL,
+        assigned_to VARCHAR,
+        title TEXT NOT NULL,
+        description TEXT,
+        reddit_url TEXT,
+        amount VARCHAR,
+        progress INTEGER DEFAULT 0,
+        request_data JSONB,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS transactions (
+        id SERIAL PRIMARY KEY,
+        user_id VARCHAR NOT NULL REFERENCES users(id),
+        ticket_id INTEGER REFERENCES tickets(id),
+        type VARCHAR NOT NULL,
+        amount VARCHAR NOT NULL,
+        description TEXT,
+        status VARCHAR DEFAULT 'completed' NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS password_reset_tokens (
+        id SERIAL PRIMARY KEY,
+        user_id VARCHAR NOT NULL REFERENCES users(id),
+        token VARCHAR NOT NULL UNIQUE,
+        expires_at TIMESTAMP NOT NULL,
+        used BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS audit_requests (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        company TEXT NOT NULL,
+        website TEXT,
+        message TEXT,
+        processed BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS quote_requests (
+        id SERIAL PRIMARY KEY,
+        reddit_url TEXT NOT NULL,
+        email TEXT NOT NULL,
+        processed BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS brand_scan_tickets (
+        id SERIAL PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        company TEXT NOT NULL,
+        brand_name TEXT NOT NULL,
+        processed BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS scan_results (
+        id SERIAL PRIMARY KEY,
+        user_id VARCHAR REFERENCES users(id),
+        brand_name VARCHAR NOT NULL,
+        scan_type VARCHAR NOT NULL,
+        total_mentions INTEGER DEFAULT 0,
+        risk_level VARCHAR,
+        risk_score INTEGER DEFAULT 0,
+        platform_data JSONB,
+        processing_time INTEGER,
+        scan_id VARCHAR NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id SERIAL PRIMARY KEY,
+        user_id VARCHAR NOT NULL REFERENCES users(id),
+        plan_id VARCHAR NOT NULL,
+        status VARCHAR DEFAULT 'active' NOT NULL,
+        stripe_subscription_id VARCHAR,
+        stripe_customer_id VARCHAR,
+        current_period_start TIMESTAMP,
+        current_period_end TIMESTAMP,
+        cancelled_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS funnel_events (
+        id SERIAL PRIMARY KEY,
+        event_type VARCHAR NOT NULL,
+        user_id VARCHAR,
+        session_id VARCHAR,
+        metadata JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS blog_posts (
+        id INTEGER PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
+        title VARCHAR(255) NOT NULL,
+        slug VARCHAR(255) NOT NULL UNIQUE,
+        excerpt TEXT,
+        content TEXT NOT NULL,
+        meta_title VARCHAR(60),
+        meta_description VARCHAR(160),
+        keywords TEXT,
+        featured_image VARCHAR,
+        author VARCHAR NOT NULL,
+        status VARCHAR DEFAULT 'draft',
+        category VARCHAR,
+        tags TEXT[],
+        reading_time INTEGER,
+        published_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS blog_categories (
+        id INTEGER PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
+        name VARCHAR(100) NOT NULL,
+        slug VARCHAR(100) NOT NULL UNIQUE,
+        description TEXT,
+        meta_title VARCHAR(60),
+        meta_description VARCHAR(160),
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    // Create index on session expire (connect-pg-simple creates the session table itself)
+    await sql.unsafe(`
+      CREATE INDEX IF NOT EXISTS idx_session_expire ON session (expire);
+    `).catch(() => {
+      // Ignore - session table may not exist yet (connect-pg-simple creates it on first request)
+    });
+
+    console.log('✅ PostgreSQL tables initialized');
+  } finally {
+    await sql.end();
   }
 }
 
