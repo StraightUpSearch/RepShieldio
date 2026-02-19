@@ -10,3 +10,11 @@ vite.config.ts.*
 .env.local
 .env.development
 .env.production
+
+# Runtime databases
+*.db
+
+# Test artifacts
+test-results/
+playwright-report/
+results/
