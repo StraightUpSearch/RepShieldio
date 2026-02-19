@@ -71,14 +71,6 @@ export async function setupSimpleAuth(app: Express) {
     console.log(`✅ Using SQLite session store (${sessionDbPath}) for ${dbConfig.environment}`);
   }
   
-  console.log("Setting up session store with:", {
-    dbType: dbConfig.type,
-    dbUrl: dbConfig.url.replace(/\/\/.*@/, '//***:***@'), // Mask credentials in logs
-    hasSessionSecret: !!process.env.SESSION_SECRET,
-    nodeEnv: process.env.NODE_ENV,
-    isSecure: process.env.NODE_ENV === "production"
-  });
-  
   app.set("trust proxy", 1);
   app.use(session({
     secret: process.env.SESSION_SECRET || 'dev-session-secret-key-for-testing-32chars-long-minimum',
@@ -124,15 +116,12 @@ export async function setupSimpleAuth(app: Express) {
   // Register endpoint
   app.post("/api/register", strictLimiter, handleAsyncErrors(async (req, res) => {
     try {
-      console.log("Registration attempt:", { email: req.body.email, hasPassword: !!req.body.password });
-      
       // Validate input
       const validatedData = validateInput(registerSchema, req.body);
       
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(validatedData.email);
       if (existingUser) {
-        console.log("Registration failed: User already exists", validatedData.email);
         throw new AppError("An account with this email already exists", 400);
       }
 
@@ -156,15 +145,12 @@ export async function setupSimpleAuth(app: Express) {
         creditsRemaining: role === "admin" ? 1000 : 0,
       });
 
-      console.log("User created successfully:", { id: user.id, email: user.email, role: user.role });
-
       // Auto-login after registration
       req.login(user, (err) => {
         if (err) {
           console.error("Auto-login failed after registration:", err);
           throw new AppError("Registration successful but login failed", 500);
         }
-        console.log("Auto-login successful after registration");
         res.status(201).json({ user, message: "Registration successful" });
       });
     } catch (error) {
@@ -175,13 +161,10 @@ export async function setupSimpleAuth(app: Express) {
 
   // Login endpoint - Fix path to match frontend expectations
   app.post("/api/auth/login", strictLimiter, (req, res, next) => {
-    console.log("Login attempt:", { email: req.body.email, hasPassword: !!req.body.password });
-    
     // Validate input first
     try {
       validateInput(loginSchema, req.body);
     } catch (error) {
-      console.log("Login validation failed:", error.message);
       return res.status(400).json({ message: error.message });
     }
 
@@ -191,7 +174,6 @@ export async function setupSimpleAuth(app: Express) {
         return res.status(500).json({ message: "Login failed" });
       }
       if (!user) {
-        console.log("Login failed: Invalid credentials for", req.body.email);
         return res.status(401).json({ message: "Invalid email or password" });
       }
       
@@ -200,7 +182,6 @@ export async function setupSimpleAuth(app: Express) {
           console.error("Login session creation failed:", err);
           return res.status(500).json({ message: "Login failed" });
         }
-        console.log("Login successful:", { id: user.id, email: user.email });
         res.json({ user, message: "Login successful" });
       });
     })(req, res, next);
@@ -208,7 +189,6 @@ export async function setupSimpleAuth(app: Express) {
 
   // Keep legacy login endpoint for backwards compatibility
   app.post("/api/login", (req, res, next) => {
-    console.log("Legacy login endpoint used - redirecting to /api/auth/login");
     // Forward to the new endpoint
     req.url = "/api/auth/login";
     return app._router.handle(req, res, next);
@@ -240,28 +220,12 @@ export const isAdmin = async (req: any, res: any, next: any) => {
 };
 
 export const isAuthenticated = (req: any, res: any, next: any) => {
-  console.log("Auth check:", { 
-    hasUser: !!req.user, 
-    sessionID: req.sessionID,
-    isAuthenticated: req.isAuthenticated ? req.isAuthenticated() : false 
-  });
-  
-  // Check if user is authenticated using Passport's built-in method
   if (req.isAuthenticated && req.isAuthenticated()) {
     return next();
   }
-  
-  // Log unauthorized access attempts for debugging
-  console.log("Unauthorized access attempt:", {
-    url: req.url,
-    method: req.method,
-    headers: req.headers.authorization ? 'present' : 'missing',
-    sessionExists: !!req.session,
-    sessionData: req.session ? Object.keys(req.session) : 'no session'
-  });
-  
-  return res.status(401).json({ 
+
+  return res.status(401).json({
     authenticated: false,
-    message: "Authentication required. Please login to access this resource." 
+    message: "Authentication required. Please login to access this resource."
   });
 };

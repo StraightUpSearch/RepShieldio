@@ -1755,7 +1755,6 @@ Disallow: /`;
         userName: user.firstName || undefined
       });
       
-      console.log(`Password reset email sent to: ${email}`);
       res.json({ message: "If an account with this email exists, you will receive a password reset link." });
     } catch (error) {
       console.error("Forgot password error:", error);
@@ -1767,33 +1766,25 @@ Disallow: /`;
     try {
       const { token, newPassword } = req.body;
       
-      console.log(`Password reset attempt with token: ${token ? token.substring(0, 8) + '...' : 'missing'}`);
-      
       if (!token || !newPassword) {
-        console.log("Password reset failed: Missing token or password");
         return res.status(400).json({ message: "Token and new password are required" });
       }
       
       if (newPassword.length < 8) {
-        console.log("Password reset failed: Password too short");
         return res.status(400).json({ message: "Password must be at least 8 characters long" });
       }
       
       // Find and validate the reset token
       const validToken = await storage.getValidPasswordResetToken(token);
       if (!validToken) {
-        console.log(`Password reset failed: Invalid or expired token for ${token.substring(0, 8)}...`);
         return res.status(400).json({ message: "Invalid or expired reset token" });
       }
       
       // Get the user
       const targetUser = await storage.getUser(validToken.userId);
       if (!targetUser) {
-        console.log(`Password reset failed: User not found for ID ${validToken.userId}`);
         return res.status(400).json({ message: "Invalid or expired reset token" });
       }
-      
-      console.log(`Password reset proceeding for user: ${targetUser.email}`);
       
       // Hash new password (import required functions from simple-auth)
       const { hashPassword } = await import('./simple-auth');
@@ -1809,7 +1800,6 @@ Disallow: /`;
       // Delete the used reset token
       await storage.deletePasswordResetToken(targetUser.id, token);
       
-      console.log(`Password reset successful for user: ${targetUser.email}`);
       res.json({ message: "Password reset successful. You can now log in with your new password." });
     } catch (error) {
       console.error("Reset password error:", error);
