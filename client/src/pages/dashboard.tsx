@@ -296,9 +296,10 @@ export default function Dashboard() {
                         {case_.specialist && (
                           <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
                             <div className="flex items-start gap-3">
-                              <img 
-                                src={case_.specialist.avatar} 
+                              <img
+                                src={case_.specialist.avatar}
                                 alt={case_.specialist.name}
+                                loading="lazy"
                                 className="w-12 h-12 rounded-full object-cover border-2 border-blue-300"
                               />
                               <div className="flex-1">

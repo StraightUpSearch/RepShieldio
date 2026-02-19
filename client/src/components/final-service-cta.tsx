@@ -7,8 +7,10 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 export default function FinalServiceCTA() {
+  const sectionRef = useScrollReveal();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [redditUrl, setRedditUrl] = useState("");
@@ -69,7 +71,7 @@ export default function FinalServiceCTA() {
   };
 
   return (
-    <section className="py-20 bg-gray-900 text-white relative overflow-hidden">
+    <section ref={sectionRef} className="py-20 bg-gray-900 text-white relative overflow-hidden">
       {/* Accent Line */}
       <div className="absolute top-0 left-0 w-full h-1 bg-orange-500"></div>
       

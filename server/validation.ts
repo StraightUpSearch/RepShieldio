@@ -40,6 +40,57 @@ export const ticketSchema = z.object({
   urls: z.array(z.string().url()).optional(),
 });
 
+// Password reset validation
+export const passwordResetSchema = z.object({
+  token: z.string().min(1, "Reset token is required"),
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+// Chatbot validation
+export const chatbotSchema = z.object({
+  message: z.string().min(1, "Message is required").max(2000, "Message too long"),
+  conversationHistory: z.array(z.object({
+    role: z.enum(["user", "assistant"]),
+    content: z.string(),
+  })).optional().default([]),
+});
+
+// Emergency ticket validation
+export const emergencyTicketSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100),
+  email: z.string().email("Please enter a valid email address"),
+  phone: z.string().max(20).optional(),
+  description: z.string().min(1, "Description is required").max(2000),
+  errorDetails: z.record(z.unknown()).optional(),
+});
+
+// Data admin user creation
+export const dataAdminUserSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  firstName: z.string().max(50).optional(),
+  lastName: z.string().max(50).optional(),
+  role: z.enum(["user", "admin"]).default("user"),
+  accountBalance: z.string().optional(),
+  creditsRemaining: z.number().optional(),
+});
+
+// Data admin order creation
+export const dataAdminOrderSchema = z.object({
+  userId: z.string().min(1, "User ID is required"),
+  type: z.string().min(1, "Type is required"),
+  status: z.string().min(1, "Status is required"),
+  title: z.string().min(1, "Title is required").max(200),
+  redditUrl: z.string().url().optional().nullable(),
+  amount: z.string().optional().nullable(),
+  progress: z.number().min(0).max(100).optional(),
+});
+
+// Scan brand validation
+export const scanBrandRequestSchema = z.object({
+  brandName: z.string().min(1, "Brand name is required").max(100),
+  includePlatforms: z.array(z.string()).optional().default(["reddit", "reviews", "social", "news"]),
+});
+
 export function validateInput<T>(schema: z.ZodSchema<T>, data: unknown): T {
   try {
     return schema.parse(data);

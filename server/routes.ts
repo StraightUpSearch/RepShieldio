@@ -6,7 +6,7 @@ import { storage } from "./storage";
 import { setupSimpleAuth, isAuthenticated } from "./simple-auth";
 import { insertAuditRequestSchema, insertQuoteRequestSchema, insertBrandScanTicketSchema } from "@shared/schema";
 import { globalErrorHandler, handleAsyncErrors, AppError } from "./error-handler";
-import { validateInput, brandScanSchema, contactSchema } from "./validation";
+import { validateInput, brandScanSchema, contactSchema, chatbotSchema, emergencyTicketSchema, dataAdminUserSchema, dataAdminOrderSchema, scanBrandRequestSchema, ticketSchema } from "./validation";
 import { strictLimiter, moderateLimiter, generalLimiter } from "./rate-limiter";
 import { ticketLifecycle } from './ticket-lifecycle';
 import { trackEvent, FUNNEL_EVENTS } from './analytics';
@@ -136,6 +136,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/tickets', async (req, res) => {
     try {
       const { subject, description, priority, category, userEmail, userName } = req.body;
+
+      if (!subject || !description) {
+        return res.status(400).json({ success: false, message: "Subject and description are required" });
+      }
       
       const ticket = await storage.createTicket({
         userId: 'anonymous',
@@ -309,16 +313,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/data-admin/users', isAdmin, async (req: any, res) => {
     try {
-      const { email, firstName, lastName, role, accountBalance, creditsRemaining } = req.body;
-      
+      const validated = validateInput(dataAdminUserSchema, req.body);
+
       const userData = {
         id: `manual_${Date.now()}`,
-        email,
-        firstName,
-        lastName,
-        role,
-        accountBalance,
-        creditsRemaining
+        email: validated.email,
+        firstName: validated.firstName,
+        lastName: validated.lastName,
+        role: validated.role,
+        accountBalance: validated.accountBalance,
+        creditsRemaining: validated.creditsRemaining,
       };
 
       const user = await storage.upsertUser(userData);
@@ -331,18 +335,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/data-admin/orders', isAdmin, async (req: any, res) => {
     try {
-      const { userId, type, status, title, redditUrl, amount, progress } = req.body;
-      
+      const validated = validateInput(dataAdminOrderSchema, req.body);
+
       const orderData = {
-        userId,
-        type,
-        status,
+        userId: validated.userId,
+        type: validated.type,
+        status: validated.status,
         priority: 'medium',
-        title,
+        title: validated.title,
         description: `Manual order created via data admin`,
-        redditUrl,
-        amount,
-        progress: progress || 0,
+        redditUrl: validated.redditUrl,
+        amount: validated.amount,
+        progress: validated.progress || 0,
         requestData: JSON.stringify({ source: 'data-admin', createdAt: new Date().toISOString() })
       };
 
@@ -441,11 +445,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI Chatbot endpoint
   app.post("/api/chatbot", async (req, res) => {
     try {
-      const { message, conversationHistory = [] } = req.body;
-      
-      if (!message) {
-        return res.status(400).json({ message: "Message is required" });
-      }
+      const validated = validateInput(chatbotSchema, req.body);
+      const { message, conversationHistory } = validated;
 
       const response = await getChatbotResponse(message, conversationHistory);
       
@@ -601,10 +602,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Comprehensive brand scanning with multi-platform web scraping
   app.post("/api/scan-brand", async (req, res) => {
     try {
-      const { brandName, includePlatforms = ['reddit', 'reviews', 'social', 'news'] } = req.body;
-      if (!brandName) {
-        return res.status(400).json({ message: "Brand name is required" });
-      }
+      const validated = validateInput(scanBrandRequestSchema, req.body);
+      const { brandName, includePlatforms } = validated;
 
       const allResults = {
         totalMentions: 0,
@@ -1594,7 +1593,8 @@ Date: ${new Date().toISOString()}
 
   // Emergency ticket endpoint for fallback support
   app.post("/api/emergency-ticket", handleAsyncErrors(async (req, res) => {
-    const { name, email, phone, description, errorDetails } = req.body;
+    const validated = validateInput(emergencyTicketSchema, req.body);
+    const { name, email, phone, description, errorDetails } = validated;
     
     // Create emergency support ticket
     const ticket = await storage.createTicket({
@@ -1774,9 +1774,9 @@ Disallow: /`;
         return res.status(400).json({ message: "Token and new password are required" });
       }
       
-      if (newPassword.length < 6) {
+      if (newPassword.length < 8) {
         console.log("Password reset failed: Password too short");
-        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+        return res.status(400).json({ message: "Password must be at least 8 characters long" });
       }
       
       // Find and validate the reset token

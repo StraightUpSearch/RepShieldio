@@ -1,8 +1,10 @@
 import { Search, BarChart3, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { useScrollReveal } from "@/hooks/useScrollReveal";
 
 export default function ServiceFlow() {
+  const sectionRef = useScrollReveal();
   const steps = [
     {
       icon: Search,
@@ -35,7 +37,7 @@ export default function ServiceFlow() {
   ];
 
   return (
-    <section className="py-20 bg-white">
+    <section ref={sectionRef} className="py-20 bg-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">

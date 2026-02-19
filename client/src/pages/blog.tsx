@@ -93,9 +93,10 @@ export default function Blog() {
                   {featuredPosts.map((post) => (
                     <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                       {post.featuredImage && (
-                        <img 
-                          src={post.featuredImage} 
+                        <img
+                          src={post.featuredImage}
                           alt={post.title}
+                          loading="lazy"
                           className="w-full h-48 object-cover"
                         />
                       )}
@@ -178,9 +179,10 @@ export default function Blog() {
                   {recentPosts.map((post) => (
                     <Card key={post.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                       {post.featuredImage && (
-                        <img 
-                          src={post.featuredImage} 
+                        <img
+                          src={post.featuredImage}
                           alt={post.title}
+                          loading="lazy"
                           className="w-full h-48 object-cover"
                         />
                       )}

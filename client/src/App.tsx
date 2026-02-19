@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SchemaOrg } from "@/components/schema-org";
 import SEOHead from "@/components/seo-head";
 import AdvancedSEO from "@/components/advanced-seo";
+import { ErrorBoundary } from "@/components/error-boundary";
 import Home from "@/pages/home";
 import HomeRedesigned from "@/pages/home-redesigned";
 import HomeServiceFirst from "@/pages/home-service-first";
@@ -25,6 +26,7 @@ import Contact from "@/pages/contact";
 import Blog from "@/pages/blog";
 import Monitoring from "@/pages/monitoring";
 import ResetPassword from "@/pages/reset-password";
+import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
@@ -50,14 +52,7 @@ function Router() {
       <Route path="/blog/:slug" component={Blog} />
       <Route path="/monitoring" component={Monitoring} />
       <Route path="/reset-password" component={ResetPassword} />
-      <Route>
-        <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">404 - Page Not Found</h1>
-            <p className="text-gray-600">The page you're looking for doesn't exist.</p>
-          </div>
-        </div>
-      </Route>
+      <Route component={NotFound} />
     </Switch>
   );
 }
@@ -70,7 +65,9 @@ function App() {
         <SEOHead />
         <AdvancedSEO />
         <Toaster />
-        <Router />
+        <ErrorBoundary>
+          <Router />
+        </ErrorBoundary>
       </TooltipProvider>
     </QueryClientProvider>
   );

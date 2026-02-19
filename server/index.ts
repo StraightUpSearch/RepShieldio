@@ -119,4 +119,21 @@ const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
   server.listen(port, host, () => {
     log(`serving on port ${port} (${host})`);
   });
+
+  // Graceful shutdown
+  const shutdown = (signal: string) => {
+    console.log(`\n${signal} received. Shutting down gracefully...`);
+    server.close(() => {
+      console.log('HTTP server closed.');
+      process.exit(0);
+    });
+    // Force exit after 10s if connections don't close
+    setTimeout(() => {
+      console.error('Forced shutdown after timeout.');
+      process.exit(1);
+    }, 10000);
+  };
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 })();

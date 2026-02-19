@@ -10,6 +10,7 @@ import connectSqlite3 from "connect-sqlite3";
 import { validateInput, registerSchema, loginSchema } from "./validation";
 import { handleAsyncErrors, AppError } from "./error-handler";
 import { getDatabaseConfig } from './config/database';
+import { strictLimiter } from "./rate-limiter";
 
 const scryptAsync = promisify(scrypt);
 
@@ -87,6 +88,7 @@ export async function setupSimpleAuth(app: Express) {
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: sessionTtl,
     },
   }));
@@ -120,7 +122,7 @@ export async function setupSimpleAuth(app: Express) {
   });
 
   // Register endpoint
-  app.post("/api/register", handleAsyncErrors(async (req, res) => {
+  app.post("/api/register", strictLimiter, handleAsyncErrors(async (req, res) => {
     try {
       console.log("Registration attempt:", { email: req.body.email, hasPassword: !!req.body.password });
       
@@ -172,7 +174,7 @@ export async function setupSimpleAuth(app: Express) {
   }));
 
   // Login endpoint - Fix path to match frontend expectations
-  app.post("/api/auth/login", (req, res, next) => {
+  app.post("/api/auth/login", strictLimiter, (req, res, next) => {
     console.log("Login attempt:", { email: req.body.email, hasPassword: !!req.body.password });
     
     // Validate input first
