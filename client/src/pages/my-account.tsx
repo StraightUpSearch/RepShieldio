@@ -465,21 +465,13 @@ export default function MyAccount() {
               <CardHeader>
                 <CardTitle>Notifications</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium">Email Notifications</p>
                     <p className="text-sm text-gray-600">You'll receive email updates for all ticket status changes</p>
                   </div>
                   <Badge className="bg-green-100 text-green-800">Active</Badge>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">SMS Notifications</p>
-                    <p className="text-sm text-gray-600">Get instant updates via text</p>
-                  </div>
-                  <Badge className="bg-gray-100 text-gray-600">Coming Soon</Badge>
                 </div>
               </CardContent>
             </Card>
@@ -488,14 +480,10 @@ export default function MyAccount() {
               <CardHeader>
                 <CardTitle>Security</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 <Button variant="outline" className="w-full justify-start" onClick={() => window.location.href = '/reset-password'}>
                   Change Password
                 </Button>
-                <div className="flex items-center justify-between w-full p-3 border rounded-lg">
-                  <span className="text-sm">Two-Factor Authentication</span>
-                  <Badge className="bg-gray-100 text-gray-600">Coming Soon</Badge>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>

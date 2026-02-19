@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AdminRoute } from "@/components/admin-route";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -120,6 +121,7 @@ export default function AdminPanel() {
   }
 
   return (
+    <AdminRoute>
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
@@ -299,6 +301,7 @@ export default function AdminPanel() {
         </Card>
       </div>
     </div>
+    </AdminRoute>
   );
 }
 

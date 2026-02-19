@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AdminRoute } from "@/components/admin-route";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -124,6 +125,7 @@ export default function DataAdmin() {
   );
 
   return (
+    <AdminRoute>
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
@@ -437,5 +439,6 @@ export default function DataAdmin() {
         </Tabs>
       </div>
     </div>
+    </AdminRoute>
   );
 }

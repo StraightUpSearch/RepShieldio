@@ -128,20 +128,61 @@ export default function Header() {
         {isMenuOpen && (
           <div className="md:hidden absolute top-16 left-0 right-0 bg-white border-b border-gray-100 shadow-lg">
             <nav className="flex flex-col space-y-4 p-4">
-              <Link href="/scan" className="text-gray-700 hover:text-navy-deep transition-colors flex items-center gap-2">
+              <Link href="/scan" className="text-gray-700 hover:text-navy-deep transition-colors flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
                 <Search className="h-4 w-4" />
                 Live Scanner
               </Link>
-              <Link href="/ticket-status" className="text-gray-700 hover:text-navy-deep transition-colors flex items-center gap-2">
+              <Link href="/ticket-status" className="text-gray-700 hover:text-navy-deep transition-colors flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
                 <Ticket className="h-4 w-4" />
                 Check Status
               </Link>
-              <Button 
+              <Button
                 asChild
                 className="bg-reddit-orange text-white hover:bg-red-600 transition-colors font-medium w-full"
               >
-                <Link href="/contact">Free Audit</Link>
+                <Link href="/contact" onClick={() => setIsMenuOpen(false)}>Free Audit</Link>
               </Button>
+
+              {!isLoading && (
+                <>
+                  {isAuthenticated ? (
+                    <div className="border-t border-gray-100 pt-4 space-y-3">
+                      <Link href="/my-account" className="text-gray-700 hover:text-navy-deep transition-colors flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
+                        <User className="h-4 w-4" />
+                        My Account
+                      </Link>
+                      {(user as any)?.role === 'admin' && (
+                        <Link href="/admin-dashboard" className="text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
+                          <Settings className="h-4 w-4" />
+                          Admin Dashboard
+                        </Link>
+                      )}
+                      <button
+                        onClick={async () => {
+                          setIsMenuOpen(false);
+                          try {
+                            await apiRequest("POST", "/api/logout");
+                            window.location.href = "/";
+                          } catch (error) {
+                            console.error("Logout error:", error);
+                            window.location.href = "/";
+                          }
+                        }}
+                        className="text-red-600 hover:text-red-800 transition-colors flex items-center gap-2 w-full"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="border-t border-gray-100 pt-4">
+                      <Button asChild variant="outline" className="w-full">
+                        <Link href="/login" onClick={() => setIsMenuOpen(false)}>Login</Link>
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
             </nav>
           </div>
         )}
