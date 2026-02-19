@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
+import { useLocation } from "wouter";
 import {
   User,
   CreditCard,
@@ -193,37 +194,47 @@ function WalletTab({ stats }: { stats: AccountStats }) {
 export default function MyAccount() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [, setLocation] = useLocation();
+
+  // Fetch real user stats — must be called before any conditional returns (React hooks rules)
+  const { data: statsResponse, isLoading: statsLoading } = useQuery({
+    queryKey: ['/api/user/stats'],
+    enabled: !!user,
+    queryFn: async () => {
+      try {
+        const res = await apiRequest("GET", "/api/user/stats");
+        return await res.json();
+      } catch {
+        return null;
+      }
+    },
+  });
 
   // Redirect to login if not authenticated
-  if (!isLoading && !isAuthenticated) {
-    window.location.href = '/login';
-    return null;
-  }
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      setLocation("/login");
+    }
+  }, [isLoading, isAuthenticated, setLocation]);
+
+  // Get tickets from user data (if available)
+  const tickets = (user as any)?.tickets || [];
+
+  const stats: AccountStats = statsResponse?.data || {
+    totalOrders: tickets.length,
+    successfulRemovals: tickets.filter((t: any) => t.status === 'completed').length,
+    accountBalance: 0,
+    creditsRemaining: 0
+  };
 
   // Show loading while checking authentication
-  if (isLoading) {
+  if (isLoading || (!isAuthenticated && !user)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
   }
-
-  // Get tickets from user data (if available)
-  const tickets = user?.tickets || [];
-
-  // Fetch real user stats
-  const { data: statsResponse, isLoading: statsLoading } = useQuery({
-    queryKey: ['/api/user/stats'],
-    enabled: !!user,
-  });
-
-  const stats: AccountStats = statsResponse?.data || {
-    totalOrders: tickets.length,
-    successfulRemovals: tickets.filter(t => t.status === 'completed').length,
-    accountBalance: 0,
-    creditsRemaining: 0
-  };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -244,14 +255,6 @@ export default function MyAccount() {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
-
-  if (isLoading || statsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
 
   return (
     <>
@@ -481,7 +484,7 @@ export default function MyAccount() {
                 <CardTitle>Security</CardTitle>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" className="w-full justify-start" onClick={() => window.location.href = '/reset-password'}>
+                <Button variant="outline" className="w-full justify-start" onClick={() => setLocation('/reset-password')}>
                   Change Password
                 </Button>
               </CardContent>

@@ -10,6 +10,7 @@ interface User {
   accountBalance: string;
   creditsRemaining: number;
   createdAt: string;
+  tickets?: any[];
 }
 
 export function useAuth() {
@@ -18,7 +19,9 @@ export function useAuth() {
     queryFn: async () => {
       try {
         const response = await apiRequest("GET", "/api/auth/user");
-        return await response.json();
+        const data = await response.json();
+        // API returns { authenticated, user } — extract the user object
+        return data.user || data;
       } catch (error: any) {
         if (error.message?.includes('401')) {
           return null;

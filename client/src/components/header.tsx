@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Search, User, LogOut, Settings, Ticket } from "lucide-react";
 import { SiReddit } from "react-icons/si";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +16,20 @@ import {
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isAuthenticated, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  const handleLogout = async () => {
+    setIsMenuOpen(false);
+    try {
+      await apiRequest("POST", "/api/logout");
+      queryClient.clear();
+      setLocation("/");
+    } catch (error) {
+      console.error("Logout error:", error);
+      queryClient.clear();
+      setLocation("/");
+    }
+  };
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
@@ -85,15 +99,7 @@ export default function Header() {
                         </>
                       )}
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={async () => {
-                        try {
-                          await apiRequest("POST", "/api/logout");
-                          window.location.href = "/";
-                        } catch (error) {
-                          console.error("Logout error:", error);
-                          window.location.href = "/";
-                        }
-                      }} className="flex items-center gap-2">
+                      <DropdownMenuItem onClick={handleLogout} className="flex items-center gap-2">
                         <LogOut className="h-4 w-4" />
                         Logout
                       </DropdownMenuItem>
@@ -158,16 +164,7 @@ export default function Header() {
                         </Link>
                       )}
                       <button
-                        onClick={async () => {
-                          setIsMenuOpen(false);
-                          try {
-                            await apiRequest("POST", "/api/logout");
-                            window.location.href = "/";
-                          } catch (error) {
-                            console.error("Logout error:", error);
-                            window.location.href = "/";
-                          }
-                        }}
+                        onClick={handleLogout}
                         className="text-red-600 hover:text-red-800 transition-colors flex items-center gap-2 w-full"
                       >
                         <LogOut className="h-4 w-4" />

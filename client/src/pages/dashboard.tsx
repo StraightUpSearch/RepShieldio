@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Clock, CheckCircle, AlertCircle, FileText, Calendar, DollarSign, CreditCard, ExternalLink } from "lucide-react";
@@ -46,7 +46,7 @@ interface CaseUpdate {
 }
 
 export default function Dashboard() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const urlParams = new URLSearchParams(location.split('?')[1] || '');
   const caseId = urlParams.get('case');
   const [checkoutCase, setCheckoutCase] = useState<RemovalCase | null>(null);
@@ -151,12 +151,13 @@ export default function Dashboard() {
   };
 
   // Redirect to login if not authenticated
-  if (!isLoading && !user) {
-    window.location.href = '/login';
-    return null;
-  }
+  useEffect(() => {
+    if (!isLoading && !user) {
+      setLocation('/login');
+    }
+  }, [isLoading, user, setLocation]);
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
