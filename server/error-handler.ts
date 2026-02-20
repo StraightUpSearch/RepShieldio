@@ -21,37 +21,38 @@ export const handleAsyncErrors = (fn: any) => {
 
 export const globalErrorHandler = (
   err: any,
-  req: Request,
+  _req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
-  err.statusCode = err.statusCode || 500;
-  err.status = err.status || 'error';
-
-  if (process.env.NODE_ENV === 'development') {
-    console.error('Error:', err);
+  // Always log the full error for server-side debugging, regardless of environment
+  console.error(`[globalErrorHandler] ${err.message || 'Unknown error'}`);
+  if (err.stack) {
+    console.error(err.stack);
   }
+
+  const statusCode = err.statusCode || err.status || 500;
 
   // Handle specific error types
-  if (err.name === 'ValidationError') {
-    err.statusCode = 400;
-    err.message = 'Invalid input data';
+  let userMessage = 'Internal server error';
+  if (err.name === 'ValidationError' || err.isOperational) {
+    userMessage = err.message || 'Invalid input data';
+  } else if (err.code === 'ECONNREFUSED') {
+    userMessage = 'Service temporarily unavailable';
   }
 
-  if (err.code === 'ECONNREFUSED') {
-    err.statusCode = 503;
-    err.message = 'Service temporarily unavailable';
-  }
-
-  // Don't expose stack traces in production
-  const response: any = {
-    success: false,
-    message: err.message,
+  // Build response - never leak stack traces in production
+  const response: Record<string, any> = {
+    error: userMessage,
   };
 
   if (process.env.NODE_ENV === 'development') {
+    response.message = err.message;
     response.stack = err.stack;
   }
 
-  res.status(err.statusCode).json(response);
+  // Don't attempt to send if headers already sent
+  if (!res.headersSent) {
+    res.status(typeof statusCode === 'number' ? statusCode : 500).json(response);
+  }
 };

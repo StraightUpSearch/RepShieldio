@@ -25,14 +25,18 @@ import { initializeDatabase } from "./db-init";
 
 // Admin middleware
 const isAdmin = async (req: any, res: any, next: any) => {
-  if (!req.isAuthenticated || !req.isAuthenticated()) {
-    return res.status(401).json({ message: "Authentication required" });
+  try {
+    if (!req.isAuthenticated || !req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    const user = await storage.getUser(req.user.id);
+    if (user?.role !== 'admin') {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    next();
+  } catch (err) {
+    next(err);
   }
-  const user = await storage.getUser(req.user.id);
-  if (user?.role !== 'admin') {
-    return res.status(403).json({ message: "Admin access required" });
-  }
-  next();
 };
 
 // Brand scanning with real Reddit data
@@ -41,18 +45,39 @@ async function sendBrandScanNotification(data: any) {
   console.log('Brand scan notification:', data);
 }
 
-// Auto-wrap async route handlers to forward errors to Express error handler
+// Auto-wrap async route handlers to forward errors to Express error handler.
+// This ensures that any unhandled promise rejections inside async route handlers
+// or middleware are caught and forwarded to Express's error-handling pipeline
+// via next(err), rather than causing an unhandled rejection crash.
 function wrapAsync(app: Express): Express {
   const methods = ['get', 'post', 'put', 'delete', 'patch'] as const;
   for (const method of methods) {
     const original = app[method].bind(app);
     (app as any)[method] = (path: string, ...handlers: any[]) => {
       const wrapped = handlers.map((handler: any) => {
+        // Only wrap functions with <= 3 params (req, res, next).
+        // Express error handlers have 4 params (err, req, res, next) and must not be wrapped.
         if (typeof handler === 'function' && handler.length <= 3) {
           return (req: any, res: any, next: any) => {
-            const result = handler(req, res, next);
-            if (result && typeof result.catch === 'function') {
-              result.catch(next);
+            try {
+              const result = handler(req, res, next);
+              if (result && typeof result.catch === 'function') {
+                result.catch((err: any) => {
+                  // Only forward if headers haven't been sent (avoids double-response)
+                  if (!res.headersSent) {
+                    next(err);
+                  } else {
+                    console.error('[wrapAsync] Error after headers sent:', err.message || err);
+                  }
+                });
+              }
+            } catch (err) {
+              // Catch synchronous throws as well
+              if (!res.headersSent) {
+                next(err);
+              } else {
+                console.error('[wrapAsync] Sync error after headers sent:', (err as Error).message || err);
+              }
             }
           };
         }
@@ -1657,9 +1682,14 @@ ${JSON.stringify(errorDetails, null, 2)}
     const pages = [
       { url: '/', priority: '1.0', changefreq: 'weekly' },
       { url: '/scan', priority: '0.9', changefreq: 'weekly' },
-      { url: '/dashboard', priority: '0.8', changefreq: 'daily' },
       { url: '/about', priority: '0.7', changefreq: 'monthly' },
-      { url: '/auth', priority: '0.6', changefreq: 'monthly' }
+      { url: '/contact', priority: '0.7', changefreq: 'monthly' },
+      { url: '/blog', priority: '0.8', changefreq: 'weekly' },
+      { url: '/monitoring', priority: '0.8', changefreq: 'monthly' },
+      { url: '/privacy-policy', priority: '0.3', changefreq: 'yearly' },
+      { url: '/terms-of-service', priority: '0.3', changefreq: 'yearly' },
+      { url: '/legal-compliance', priority: '0.3', changefreq: 'yearly' },
+      { url: '/login', priority: '0.5', changefreq: 'monthly' },
     ];
 
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>

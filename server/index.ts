@@ -1,44 +1,33 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import helmet from "helmet";
-
 const app = express();
-
-// Security configuration for production SSL
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://js.stripe.com"],
-      scriptSrcElem: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://js.stripe.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https:"],
-      frameSrc: ["https://js.stripe.com"],
-      objectSrc: ["'none'"],
-    },
-  },
-  crossOriginEmbedderPolicy: false, // Allow iframe embedding for demos
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true
-  }
-}));
 
 // Trust proxy for SSL termination
 app.set('trust proxy', 1);
 
-// Additional security headers
+// Production-grade HTTP security headers (no helmet dependency)
 app.use((req, res, next) => {
-  res.setHeader('X-Powered-By', 'RepShield Security Platform');
-  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  // Content-Security-Policy: allow self, inline styles (Tailwind), Google Fonts, and Stripe.js
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.stripe.com; frame-src https://js.stripe.com;"
+  );
+
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+  // HSTS only in production — avoid locking localhost to HTTPS during development
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+
+  // Hide default Express X-Powered-By
+  res.removeHeader('X-Powered-By');
+
   next();
 });
 
@@ -82,11 +71,28 @@ app.use((req, res, next) => {
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
+    // Always log the full error stack for server-side debugging
+    console.error(`[ERROR] ${err.message || 'Unknown error'}`);
+    if (err.stack) {
+      console.error(err.stack);
+    }
 
-    res.status(status).json({ message });
-    throw err;
+    const status = err.status || err.statusCode || 500;
+
+    // Build safe response - never leak stack traces in production
+    const response: Record<string, any> = {
+      error: "Internal server error",
+    };
+
+    if (process.env.NODE_ENV === "development") {
+      response.message = err.message;
+      response.stack = err.stack;
+    }
+
+    // Don't attempt to send if headers already sent
+    if (!res.headersSent) {
+      res.status(status).json(response);
+    }
   });
 
   // importantly only setup vite in development and after
@@ -136,4 +142,17 @@ const port = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
+
+  // Catch unhandled promise rejections so they don't crash the process silently
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('[FATAL] Unhandled Promise Rejection:', reason);
+  });
+
+  // Catch uncaught synchronous exceptions
+  process.on('uncaughtException', (err) => {
+    console.error('[FATAL] Uncaught Exception:', err.message);
+    console.error(err.stack);
+    // Give time to flush logs, then exit
+    setTimeout(() => process.exit(1), 1000);
+  });
 })();
