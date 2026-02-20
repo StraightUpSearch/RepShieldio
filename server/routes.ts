@@ -1660,19 +1660,46 @@ ${JSON.stringify(errorDetails, null, 2)}
   }));
 
   // Health check endpoint
-  app.get("/api/health", (req, res) => {
+  app.get("/api/health", async (req, res) => {
+    // Database connectivity check with timeout
+    let dbStatus: "connected" | "disconnected" = "disconnected";
+    try {
+      await Promise.race([
+        storage.getUser("__health_check__"),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("DB timeout")), 2000)),
+      ]);
+      dbStatus = "connected";
+    } catch {
+      dbStatus = "disconnected";
+    }
+
+    // Read version from package.json (works with both CJS and ESM)
+    let version = "unknown";
+    try {
+      const { readFileSync } = await import("fs");
+      const { resolve } = await import("path");
+      const pkg = JSON.parse(
+        readFileSync(resolve(import.meta.dirname, "..", "package.json"), "utf-8"),
+      );
+      version = pkg.version;
+    } catch {
+      // Fallback if file read fails
+    }
+
     res.json({
       status: "healthy",
-      timestamp: new Date().toISOString(),
       uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || "development",
+      version,
+      database: dbStatus,
       services: {
-        database: 'connected',
-        stripe: isStripeConfigured() ? 'configured' : 'not configured',
-        openai: isOpenAIConfigured() ? 'configured' : 'not configured',
-        email: process.env.SENDGRID_API_KEY ? 'configured' : 'not configured',
+        stripe: isStripeConfigured() ? "configured" : "not configured",
+        openai: isOpenAIConfigured() ? "configured" : "not configured",
+        email: process.env.SENDGRID_API_KEY ? "configured" : "not configured",
         scrapingBee: process.env.SCRAPINGBEE_API_KEY ? "configured" : "missing",
-        authentication: "active"
-      }
+        authentication: "active",
+      },
     });
   });
 
@@ -1836,6 +1863,12 @@ Disallow: /`;
       res.status(500).json({ message: "Failed to reset password. Please try again or contact support." });
     }
   }));
+
+  // Catch-all for unknown /api/* routes — returns JSON 404 instead of the
+  // SPA's index.html, so typo'd API URLs get a proper error response.
+  app.all('/api/*', (_req, res) => {
+    res.status(404).json({ error: 'Endpoint not found' });
+  });
 
   // Add global error handler
   app.use(globalErrorHandler);
