@@ -13,6 +13,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// Route prefetch helpers — trigger lazy chunk loads on hover
+const prefetchScan = () => { import("@/pages/scan"); };
+const prefetchDashboard = () => { import("@/pages/dashboard"); };
+const prefetchMyAccount = () => { import("@/pages/my-account"); };
+const prefetchBlog = () => { import("@/pages/blog"); };
+
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -102,7 +108,7 @@ export default function Header() {
           </Link>
           
           <nav aria-label="Main navigation" className="hidden md:flex items-center space-x-8">
-            <Link href="/scan" className="text-gray-700 hover:text-navy-deep transition-colors flex items-center gap-2">
+            <Link href="/scan" className="text-gray-700 hover:text-navy-deep transition-colors flex items-center gap-2" onMouseEnter={prefetchScan}>
               <Search className="h-4 w-4" />
               Live Scanner
             </Link>
@@ -122,7 +128,7 @@ export default function Header() {
                 {isAuthenticated ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" className="ml-2 flex items-center gap-2">
+                      <Button variant="outline" className="ml-2 flex items-center gap-2" onMouseEnter={prefetchMyAccount}>
                         <User className="h-4 w-4" />
                         {(user as any)?.role === 'admin' ? (
                           <span className="text-blue-600 font-semibold">Admin</span>
@@ -189,7 +195,7 @@ export default function Header() {
         {isMenuOpen && (
           <div ref={mobileMenuRef} id="mobile-menu" role="dialog" aria-label="Navigation menu" className="md:hidden absolute top-16 left-0 right-0 bg-white border-b border-gray-100 shadow-lg">
             <nav aria-label="Mobile navigation" className="flex flex-col space-y-4 p-4">
-              <Link href="/scan" className="text-gray-700 hover:text-navy-deep transition-colors flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
+              <Link href="/scan" className="text-gray-700 hover:text-navy-deep transition-colors flex items-center gap-2" onMouseEnter={prefetchScan} onClick={() => setIsMenuOpen(false)}>
                 <Search className="h-4 w-4" />
                 Live Scanner
               </Link>
@@ -208,7 +214,7 @@ export default function Header() {
                 <>
                   {isAuthenticated ? (
                     <div className="border-t border-gray-100 pt-4 space-y-3">
-                      <Link href="/my-account" className="text-gray-700 hover:text-navy-deep transition-colors flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
+                      <Link href="/my-account" className="text-gray-700 hover:text-navy-deep transition-colors flex items-center gap-2" onMouseEnter={prefetchMyAccount} onClick={() => setIsMenuOpen(false)}>
                         <User className="h-4 w-4" />
                         My Account
                       </Link>

@@ -201,6 +201,37 @@ export async function initializeDatabase(): Promise<void> {
         )
       `);
 
+      // Create indexes for common query patterns (SQLite)
+      console.log('📋 Creating database indexes...');
+      sqlite.exec(`
+        -- User lookups
+        CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+        -- Ticket queries
+        CREATE INDEX IF NOT EXISTS idx_tickets_user_id ON tickets(user_id);
+        CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status);
+        CREATE INDEX IF NOT EXISTS idx_tickets_created_at ON tickets(created_at);
+
+        -- Admin queue filtering
+        CREATE INDEX IF NOT EXISTS idx_audit_requests_processed ON audit_requests(processed);
+        CREATE INDEX IF NOT EXISTS idx_quote_requests_processed ON quote_requests(processed);
+        CREATE INDEX IF NOT EXISTS idx_brand_scan_tickets_processed ON brand_scan_tickets(processed);
+        CREATE INDEX IF NOT EXISTS idx_brand_scan_tickets_email ON brand_scan_tickets(email);
+
+        -- Funnel analytics
+        CREATE INDEX IF NOT EXISTS idx_funnel_events_event_type ON funnel_events(event_type);
+        CREATE INDEX IF NOT EXISTS idx_funnel_events_created_at ON funnel_events(created_at);
+
+        -- Blog post lookups
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_blog_posts_slug ON blog_posts(slug);
+        CREATE INDEX IF NOT EXISTS idx_blog_posts_status ON blog_posts(status);
+
+        -- Password reset token lookups
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
+        CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
+      `);
+      console.log('✅ Database indexes created');
+
       sqlite.close();
     }
 
@@ -368,6 +399,35 @@ async function initializePostgresql(): Promise<void> {
         meta_description VARCHAR(160),
         created_at TIMESTAMP DEFAULT NOW()
       );
+    `);
+
+    // Create indexes for common query patterns
+    await sql.unsafe(`
+      -- User lookups
+      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+      -- Ticket queries
+      CREATE INDEX IF NOT EXISTS idx_tickets_user_id ON tickets(user_id);
+      CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status);
+      CREATE INDEX IF NOT EXISTS idx_tickets_created_at ON tickets(created_at);
+
+      -- Admin queue filtering
+      CREATE INDEX IF NOT EXISTS idx_audit_requests_processed ON audit_requests(processed);
+      CREATE INDEX IF NOT EXISTS idx_quote_requests_processed ON quote_requests(processed);
+      CREATE INDEX IF NOT EXISTS idx_brand_scan_tickets_processed ON brand_scan_tickets(processed);
+      CREATE INDEX IF NOT EXISTS idx_brand_scan_tickets_email ON brand_scan_tickets(email);
+
+      -- Funnel analytics
+      CREATE INDEX IF NOT EXISTS idx_funnel_events_event_type ON funnel_events(event_type);
+      CREATE INDEX IF NOT EXISTS idx_funnel_events_created_at ON funnel_events(created_at);
+
+      -- Blog post lookups
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_blog_posts_slug ON blog_posts(slug);
+      CREATE INDEX IF NOT EXISTS idx_blog_posts_status ON blog_posts(status);
+
+      -- Password reset token lookups
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
+      CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
     `);
 
     // Create index on session expire (connect-pg-simple creates the session table itself)
