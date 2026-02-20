@@ -161,14 +161,16 @@ export default function DataAdmin() {
                   <div className="flex items-center space-x-2">
                     <div className="relative">
                       <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <label htmlFor="search-users" className="sr-only">Search users</label>
                       <Input
+                        id="search-users"
                         placeholder="Search users..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10 w-64"
                       />
                     </div>
-                    <Button onClick={() => refetchUsers()} variant="outline" size="icon">
+                    <Button onClick={() => refetchUsers()} variant="outline" size="icon" aria-label="Refresh users">
                       <RefreshCw className="w-4 h-4" />
                     </Button>
                   </div>
@@ -215,14 +217,16 @@ export default function DataAdmin() {
                   <div className="flex items-center space-x-2">
                     <div className="relative">
                       <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <label htmlFor="search-orders" className="sr-only">Search orders</label>
                       <Input
+                        id="search-orders"
                         placeholder="Search orders..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10 w-64"
                       />
                     </div>
-                    <Button onClick={() => refetchOrders()} variant="outline" size="icon">
+                    <Button onClick={() => refetchOrders()} variant="outline" size="icon" aria-label="Refresh orders">
                       <RefreshCw className="w-4 h-4" />
                     </Button>
                   </div>

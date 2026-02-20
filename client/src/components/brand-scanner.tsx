@@ -3,8 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Search, AlertTriangle, CheckCircle, Clock, User, ArrowRight, Shield, Eye, Phone, Mail, HelpCircle, Globe, ExternalLink } from "lucide-react";
+import { Search, AlertTriangle, CheckCircle, Clock, User, ArrowRight, Shield, Eye, Phone, Mail, ExternalLink } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -302,7 +301,9 @@ export default function BrandScanner() {
       </div>
       
       <form onSubmit={handleInitialScan} className="space-y-4">
+        <label htmlFor="brand-scan-input" className="sr-only">Brand or company name</label>
         <Input
+          id="brand-scan-input"
           type="text"
           placeholder="Enter your brand or company name"
           value={brandName}
@@ -499,70 +500,98 @@ export default function BrandScanner() {
           // Premium lead form (business email required)
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="ticket-name" className="sr-only">Your full name</label>
+                <Input
+                  id="ticket-name"
+                  type="text"
+                  placeholder="Your Full Name *"
+                  value={ticketForm.name}
+                  onChange={(e) => setTicketForm(prev => ({ ...prev, name: e.target.value }))}
+                  required
+                  className="focus:ring-2 focus:ring-reddit-orange focus:border-reddit-orange h-12"
+                />
+              </div>
+              <div>
+                <label htmlFor="ticket-email" className="sr-only">Business email</label>
+                <Input
+                  id="ticket-email"
+                  type="email"
+                  placeholder="Business Email *"
+                  value={ticketForm.email}
+                  onChange={(e) => setTicketForm(prev => ({ ...prev, email: e.target.value }))}
+                  required
+                  className="focus:ring-2 focus:ring-reddit-orange focus:border-reddit-orange h-12"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="ticket-company" className="sr-only">Company name</label>
               <Input
+                id="ticket-company"
                 type="text"
-                placeholder="Your Full Name *"
-                value={ticketForm.name}
-                onChange={(e) => setTicketForm(prev => ({ ...prev, name: e.target.value }))}
-                required
-                className="focus:ring-2 focus:ring-reddit-orange focus:border-reddit-orange h-12"
-              />
-              <Input
-                type="email"
-                placeholder="Business Email *"
-                value={ticketForm.email}
-                onChange={(e) => setTicketForm(prev => ({ ...prev, email: e.target.value }))}
+                placeholder="Company Name *"
+                value={ticketForm.company}
+                onChange={(e) => setTicketForm(prev => ({ ...prev, company: e.target.value }))}
                 required
                 className="focus:ring-2 focus:ring-reddit-orange focus:border-reddit-orange h-12"
               />
             </div>
-            
-            <Input
-              type="text"
-              placeholder="Company Name *"
-              value={ticketForm.company}
-              onChange={(e) => setTicketForm(prev => ({ ...prev, company: e.target.value }))}
-              required
-              className="focus:ring-2 focus:ring-reddit-orange focus:border-reddit-orange h-12"
-            />
           </>
         ) : (
           // Standard lead form (phone or email, more flexible)
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                type="text"
-                placeholder="Your Name *"
-                value={ticketForm.name}
-                onChange={(e) => setTicketForm(prev => ({ ...prev, name: e.target.value }))}
-                required
-                className="focus:ring-2 focus:ring-reddit-orange focus:border-reddit-orange h-12"
-              />
-              <Input
-                type="tel"
-                placeholder="Phone Number *"
-                value={ticketForm.phone || ''}
-                onChange={(e) => setTicketForm(prev => ({ ...prev, phone: e.target.value }))}
-                required
-                className="focus:ring-2 focus:ring-reddit-orange focus:border-reddit-orange h-12"
-              />
+              <div>
+                <label htmlFor="ticket-name-std" className="sr-only">Your name</label>
+                <Input
+                  id="ticket-name-std"
+                  type="text"
+                  placeholder="Your Name *"
+                  value={ticketForm.name}
+                  onChange={(e) => setTicketForm(prev => ({ ...prev, name: e.target.value }))}
+                  required
+                  className="focus:ring-2 focus:ring-reddit-orange focus:border-reddit-orange h-12"
+                />
+              </div>
+              <div>
+                <label htmlFor="ticket-phone" className="sr-only">Phone number</label>
+                <Input
+                  id="ticket-phone"
+                  type="tel"
+                  placeholder="Phone Number *"
+                  value={ticketForm.phone || ''}
+                  onChange={(e) => setTicketForm(prev => ({ ...prev, phone: e.target.value }))}
+                  required
+                  className="focus:ring-2 focus:ring-reddit-orange focus:border-reddit-orange h-12"
+                />
+              </div>
             </div>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Input
-                type="email"
-                placeholder="Email (optional)"
-                value={ticketForm.email}
-                onChange={(e) => setTicketForm(prev => ({ ...prev, email: e.target.value }))}
-                className="focus:ring-2 focus:ring-reddit-orange focus:border-reddit-orange h-12"
-              />
-              <Input
-                type="text"
-                placeholder="Company/Brand Name"
-                value={ticketForm.company}
-                onChange={(e) => setTicketForm(prev => ({ ...prev, company: e.target.value }))}
-                className="focus:ring-2 focus:ring-reddit-orange focus:border-reddit-orange h-12"
-              />
+              <div>
+                <label htmlFor="ticket-email-std" className="sr-only">Email (optional)</label>
+                <Input
+                  id="ticket-email-std"
+                  type="email"
+                  placeholder="Email (optional)"
+                  value={ticketForm.email}
+                  onChange={(e) => setTicketForm(prev => ({ ...prev, email: e.target.value }))}
+                  className="focus:ring-2 focus:ring-reddit-orange focus:border-reddit-orange h-12"
+                />
+              </div>
+              <div>
+                <label htmlFor="ticket-company-std" className="sr-only">Company or brand name</label>
+                <Input
+                  id="ticket-company-std"
+                  type="text"
+                  placeholder="Company/Brand Name"
+                  value={ticketForm.company}
+                  onChange={(e) => setTicketForm(prev => ({ ...prev, company: e.target.value }))}
+                  className="focus:ring-2 focus:ring-reddit-orange focus:border-reddit-orange h-12"
+                />
+              </div>
             </div>
           </>
         )}

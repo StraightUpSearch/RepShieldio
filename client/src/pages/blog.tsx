@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Calendar, Clock, ArrowRight, Tag } from "lucide-react";
@@ -41,7 +42,11 @@ export default function Blog() {
     "publisher": {
       "@type": "Organization",
       "name": "RepShield",
-      "url": "https://repshield.io"
+      "url": "https://repshield.io",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://repshield.io/favicon.svg"
+      }
     },
     "blogPost": posts?.map(post => ({
       "@type": "BlogPosting",
@@ -52,9 +57,40 @@ export default function Blog() {
         "@type": "Person",
         "name": post.author
       },
-      "description": post.excerpt
+      "description": post.excerpt,
+      "image": post.featuredImage || undefined,
+      "publisher": {
+        "@type": "Organization",
+        "name": "RepShield",
+        "url": "https://repshield.io"
+      },
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": `https://repshield.io/blog/${post.slug}`
+      }
     })) || []
   };
+
+  // Inject blog structured data into document head
+  useEffect(() => {
+    if (!posts || posts.length === 0) return;
+
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.setAttribute('data-schema', 'blog');
+    script.textContent = JSON.stringify(blogStructuredData);
+
+    // Remove any existing blog schema first
+    const existing = document.querySelector('script[data-schema="blog"]');
+    if (existing) existing.remove();
+
+    document.head.appendChild(script);
+
+    return () => {
+      const el = document.querySelector('script[data-schema="blog"]');
+      if (el) el.remove();
+    };
+  }, [posts]);
 
   return (
     <>

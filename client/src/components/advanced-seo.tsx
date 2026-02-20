@@ -30,26 +30,50 @@ const generateFAQSchema = () => ({
   "mainEntity": [
     {
       "@type": "Question",
-      "name": "What is Reddit reputation management?",
+      "name": "Is this service legal and ethical?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Reddit reputation management involves monitoring, analyzing, and addressing content on Reddit that affects your business reputation. This includes identifying harmful posts, managing brand mentions, and ethically removing false or defamatory content."
-      }
-    },
-    {
-      "@type": "Question", 
-      "name": "How quickly can defamatory content be removed from Reddit?",
-      "acceptedAnswer": {
-        "@type": "Answer",
-        "text": "Removal timeframes vary depending on the content type and subreddit policies. Our team typically achieves results within 5-14 business days for qualifying content that violates Reddit's terms of service."
+        "text": "Absolutely. We only remove content that violates Reddit's terms of service or applicable laws. This includes defamatory, false, or harassing content. We never remove legitimate criticism or valid negative feedback."
       }
     },
     {
       "@type": "Question",
-      "name": "Is Reddit content removal ethical and legal?",
+      "name": "How do you determine if content can be removed?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes, our services focus exclusively on content that violates Reddit's terms of service or contains false, defamatory information. We use ethical approaches and work within platform guidelines to protect legitimate business interests."
+        "text": "Our legal team reviews each case against Reddit's content policy, terms of service, and applicable laws. We only proceed with removal requests for content that clearly violates these guidelines, such as false statements, harassment, or copyright infringement."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What's your success rate for content removal?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "We maintain a 98.2% success rate for eligible content removal. This high rate comes from our thorough vetting process - we only take on cases where clear violations exist. If we can't remove content, you don't pay."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How long does the removal process take?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Most removals are completed within 24-72 hours. Timeline depends on the severity of violations, subreddit moderation responsiveness, and whether escalation to Reddit administrators is required. We provide regular updates throughout the process."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do you work with all types of businesses?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "We work with legitimate businesses facing false or defamatory content. This includes SMBs, SaaS companies, e-commerce stores, and service providers. We do not work with businesses involved in illegal activities or those trying to suppress legitimate criticism."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What happens if the content gets reposted?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Our monitoring service tracks for reposts and similar content. Professional and Enterprise plans include ongoing protection, automatically detecting and addressing new violations. We also work to identify patterns and prevent future attacks."
       }
     }
   ]
@@ -58,13 +82,44 @@ const generateFAQSchema = () => ({
 const generateServiceSchema = () => ({
   "@context": "https://schema.org",
   "@type": "ProfessionalService",
-  "name": "Reddit Reputation Management",
+  "name": "RepShield",
+  "description": "Professional Reddit content removal service. We ethically remove false, defamatory, and harmful Reddit posts and comments that damage your business reputation.",
+  "url": "https://repshield.io",
   "serviceType": "Online Reputation Management",
+  "priceRange": "$$",
+  "areaServed": "Worldwide",
   "provider": {
     "@type": "Organization",
-    "name": "RepShield"
+    "name": "RepShield",
+    "url": "https://repshield.io"
   },
-  "areaServed": "Global",
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.9",
+    "bestRating": "5",
+    "worstRating": "1",
+    "ratingCount": "153"
+  },
+  "offers": [
+    {
+      "@type": "Offer",
+      "name": "Reddit Post Removal",
+      "description": "Professional removal of defamatory or false Reddit posts that damage your business reputation",
+      "price": "899",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock",
+      "url": "https://repshield.io"
+    },
+    {
+      "@type": "Offer",
+      "name": "Reddit Comment Removal",
+      "description": "Professional removal of harmful or false Reddit comments targeting your brand",
+      "price": "199",
+      "priceCurrency": "USD",
+      "availability": "https://schema.org/InStock",
+      "url": "https://repshield.io"
+    }
+  ],
   "hasOfferCatalog": {
     "@type": "OfferCatalog",
     "name": "Reputation Management Services",
@@ -78,7 +133,7 @@ const generateServiceSchema = () => ({
         }
       },
       {
-        "@type": "Offer", 
+        "@type": "Offer",
         "itemOffered": {
           "@type": "Service",
           "name": "Content Removal Service",

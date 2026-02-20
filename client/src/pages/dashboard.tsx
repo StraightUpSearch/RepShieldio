@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Clock, CheckCircle, AlertCircle, FileText, Calendar, DollarSign, CreditCard, ExternalLink } from "lucide-react";
+import { Clock, CheckCircle, AlertCircle, FileText, CreditCard, ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

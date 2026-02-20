@@ -10,8 +10,6 @@ import AdvancedSEO from "@/components/advanced-seo";
 import { ErrorBoundary } from "@/components/error-boundary";
 
 // Static imports - lightweight pages needed on first paint
-import Home from "@/pages/home";
-import HomeRedesigned from "@/pages/home-redesigned";
 import HomeServiceFirst from "@/pages/home-service-first";
 import AuthPage from "@/pages/auth-page";
 import About from "@/pages/about";
@@ -45,8 +43,6 @@ function Router() {
       <Switch>
         {/* Static routes - no code splitting needed */}
         <Route path="/" component={HomeServiceFirst} />
-        <Route path="/old" component={Home} />
-        <Route path="/redesign" component={HomeRedesigned} />
         <Route path="/about" component={About} />
         <Route path="/login" component={AuthPage} />
         <Route path="/auth" component={AuthPage} />
@@ -84,7 +80,9 @@ function App() {
         <AdvancedSEO />
         <Toaster />
         <ErrorBoundary>
-          <Router />
+          <main id="main-content">
+            <Router />
+          </main>
         </ErrorBoundary>
       </TooltipProvider>
     </QueryClientProvider>

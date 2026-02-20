@@ -48,6 +48,40 @@ const pageSEO: Record<string, SEOProps> = {
     description: "Sign in to your RepShield account to manage your reputation cases, track progress, and access professional Reddit content removal services.",
     keywords: "repshield login, sign in, client access, reputation account, case management login",
     ogType: "website"
+  },
+  '/login': {
+    title: "Sign In - Access Your RepShield Account",
+    description: "Sign in to your RepShield account to manage your reputation cases and track removal progress.",
+    keywords: "repshield login, sign in, client portal",
+    ogType: "website"
+  },
+  '/contact': {
+    title: "Contact RepShield - Get Expert Reputation Help",
+    description: "Contact our reputation management specialists for a free consultation. We help businesses remove harmful Reddit content quickly and ethically.",
+    keywords: "contact repshield, reputation help, free consultation, reddit removal quote",
+    ogType: "website"
+  },
+  '/blog': {
+    title: "Reputation Management Blog - Tips & Insights | RepShield",
+    description: "Expert insights on online reputation management, Reddit content removal strategies, and brand protection tips for businesses.",
+    keywords: "reputation management blog, online reputation tips, reddit content strategy, brand protection",
+    ogType: "website"
+  },
+  '/monitoring': {
+    title: "Reddit Brand Monitoring - Real-Time Alerts | RepShield",
+    description: "Monitor your brand mentions on Reddit in real-time. Get instant alerts for new posts and comments mentioning your business.",
+    keywords: "reddit monitoring, brand mentions, real-time alerts, reputation monitoring, brand tracking",
+    ogType: "website"
+  },
+  '/privacy-policy': {
+    title: "Privacy Policy | RepShield",
+    description: "RepShield's privacy policy. Learn how we collect, use, and protect your personal information.",
+    ogType: "website"
+  },
+  '/terms-of-service': {
+    title: "Terms of Service | RepShield",
+    description: "RepShield's terms of service. Read our terms and conditions for using our reputation management platform.",
+    ogType: "website"
   }
 };
 

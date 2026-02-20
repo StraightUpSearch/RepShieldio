@@ -162,6 +162,7 @@ export default function Chatbot() {
             <Button
               onClick={() => setIsOpen(true)}
               className="h-16 w-16 rounded-full bg-reddit-orange hover:bg-red-600 shadow-2xl transition-all duration-300 hover:scale-110"
+              aria-label="Open chat assistant"
             >
               <MessageCircle className="h-8 w-8 text-white" />
             </Button>
@@ -197,6 +198,7 @@ export default function Chatbot() {
               size="icon"
               onClick={() => setIsOpen(false)}
               className="text-white hover:bg-white/20 h-8 w-8"
+              aria-label="Close chat assistant"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -293,7 +295,9 @@ export default function Chatbot() {
           {/* Input */}
           <div className="p-4 border-t border-gray-200">
             <div className="flex space-x-2">
+              <label htmlFor="chatbot-message-input" className="sr-only">Chat message</label>
               <Input
+                id="chatbot-message-input"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Type your message..."
@@ -304,6 +308,7 @@ export default function Chatbot() {
                 onClick={handleSendMessage}
                 size="icon"
                 className="bg-reddit-orange hover:bg-red-600"
+                aria-label="Send message"
               >
                 <Send className="h-4 w-4" />
               </Button>
