@@ -1,4 +1,4 @@
-import { drizzle as drizzlePg } from 'drizzle-orm/postgres-js';
+import { drizzle as drizzlePg, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import { drizzle as drizzleSqlite } from 'drizzle-orm/better-sqlite3';
 import postgres from 'postgres';
 import Database from 'better-sqlite3';
@@ -81,5 +81,6 @@ function initializeDatabase() {
 }
 
 // Export configured database instance
-export const db = initializeDatabase();
-export { getDatabaseConfig }; 
+// Cast to PG type for consistent TypeScript types (runtime uses correct dialect)
+export const db = initializeDatabase() as PostgresJsDatabase<typeof schema>;
+export { getDatabaseConfig };

@@ -62,7 +62,6 @@ export default function Blog() {
         title="RepShield Blog - Reddit Reputation Management Tips & Insights"
         description="Expert advice on Reddit content removal, reputation management strategies, and brand protection. Learn how to protect your online reputation with professional insights."
         keywords="reddit reputation management, content removal tips, brand protection, online reputation, reddit removal guide"
-        structuredData={blogStructuredData}
       />
       
       <div className="min-h-screen bg-white">

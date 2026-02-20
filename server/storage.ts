@@ -169,13 +169,13 @@ export class DatabaseStorage implements IStorage {
       
       const [user] = await db
         .insert(users)
-        .values(dbUserData)
+        .values(dbUserData as any)
         .onConflictDoUpdate({
           target: users.id,
           set: {
             ...dbUserData,
             updatedAt: toDbTimestamp(new Date()),
-          },
+          } as any,
         })
         .returning();
       return convertUserFromDb(user);
@@ -214,7 +214,7 @@ export class DatabaseStorage implements IStorage {
       
       const [ticket] = await db
         .insert(tickets)
-        .values(completeTicketData)
+        .values(completeTicketData as any)
         .returning();
       return convertTicketFromDb(ticket);
     } catch (error) {
@@ -284,10 +284,10 @@ export class DatabaseStorage implements IStorage {
     try {
       const [ticket] = await db
         .update(tickets)
-        .set({ 
-          notes, 
-          updatedAt: toDbTimestamp(new Date()) 
-        })
+        .set({
+          notes,
+          updatedAt: toDbTimestamp(new Date())
+        } as any)
         .where(eq(tickets.id, id))
         .returning();
       return ticket ? convertTicketFromDb(ticket) : undefined;
@@ -341,7 +341,7 @@ export class DatabaseStorage implements IStorage {
       
       const [request] = await db
         .insert(auditRequests)
-        .values(requestData)
+        .values(requestData as any)
         .returning();
       return request;
     } catch (error) {
@@ -374,7 +374,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [request] = await db
         .update(auditRequests)
-        .set({ processed })
+        .set({ processed } as any)
         .where(eq(auditRequests.id, id))
         .returning();
       return request;
@@ -394,7 +394,7 @@ export class DatabaseStorage implements IStorage {
       
       const [request] = await db
         .insert(quoteRequests)
-        .values(requestData)
+        .values(requestData as any)
         .returning();
       return request;
     } catch (error) {
@@ -426,7 +426,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [request] = await db
         .update(quoteRequests)
-        .set({ processed })
+        .set({ processed } as any)
         .where(eq(quoteRequests.id, id))
         .returning();
       return request;
@@ -446,7 +446,7 @@ export class DatabaseStorage implements IStorage {
       
       const [request] = await db
         .insert(brandScanTickets)
-        .values(requestData)
+        .values(requestData as any)
         .returning();
       return request;
     } catch (error) {
@@ -478,7 +478,7 @@ export class DatabaseStorage implements IStorage {
     try {
       const [request] = await db
         .update(brandScanTickets)
-        .set({ processed })
+        .set({ processed } as any)
         .where(eq(brandScanTickets.id, id))
         .returning();
       return request;
@@ -494,7 +494,7 @@ export class DatabaseStorage implements IStorage {
       const results = await db.select().from(blogPosts).orderBy(desc(blogPosts.createdAt));
       return results.map(p => ({
         ...p,
-        tags: p.tags ? (isPostgres ? p.tags : JSON.parse(p.tags as string)) : [],
+        tags: p.tags ? (isPostgres ? p.tags : JSON.parse(p.tags as any)) : [],
         createdAt: fromDbTimestamp(p.createdAt),
         updatedAt: fromDbTimestamp(p.updatedAt),
         publishedAt: p.publishedAt ? fromDbTimestamp(p.publishedAt) : null,
@@ -524,7 +524,7 @@ export class DatabaseStorage implements IStorage {
       if (!post) return undefined;
       return {
         ...post,
-        tags: post.tags ? (isPostgres ? post.tags : JSON.parse(post.tags as string)) : [],
+        tags: post.tags ? (isPostgres ? post.tags : JSON.parse(post.tags as any)) : [],
         createdAt: fromDbTimestamp(post.createdAt),
         updatedAt: fromDbTimestamp(post.updatedAt),
         publishedAt: post.publishedAt ? fromDbTimestamp(post.publishedAt) : null,
@@ -554,7 +554,7 @@ export class DatabaseStorage implements IStorage {
         publishedAt: data.status === 'published' ? toDbTimestamp() : null,
         createdAt: toDbTimestamp(),
         updatedAt: toDbTimestamp(),
-      }).returning();
+      } as any).returning();
       return post;
     } catch (error) {
       console.error("Error creating blog post:", error);
@@ -571,7 +571,7 @@ export class DatabaseStorage implements IStorage {
       if (data.status === 'published' && !data.publishedAt) {
         updateData.publishedAt = toDbTimestamp();
       }
-      const [post] = await db.update(blogPosts).set(updateData).where(eq(blogPosts.id, id)).returning();
+      const [post] = await db.update(blogPosts).set(updateData as any).where(eq(blogPosts.id, id)).returning();
       return post || null;
     } catch (error) {
       console.error("Error updating blog post:", error);
@@ -618,7 +618,7 @@ export class DatabaseStorage implements IStorage {
       
       const [ticket] = await db
         .update(tickets)
-        .set(updateData)
+        .set(updateData as any)
         .where(eq(tickets.id, id))
         .returning();
       return ticket;
@@ -639,7 +639,7 @@ export class DatabaseStorage implements IStorage {
           expiresAt: toDbTimestamp(expiresAt),
           used: isPostgres ? false : 0,
           createdAt: toDbTimestamp()
-        })
+        } as any)
         .onConflictDoNothing();
       console.log(`Password reset token created for user: ${userId}`);
     } catch (error) {
@@ -661,8 +661,8 @@ export class DatabaseStorage implements IStorage {
         .from(passwordResetTokens)
         .where(and(
           eq(passwordResetTokens.token, token),
-          gt(passwordResetTokens.expiresAt, now),
-          eq(passwordResetTokens.used, isPostgres ? false : 0)
+          gt(passwordResetTokens.expiresAt, now as any),
+          eq(passwordResetTokens.used, (isPostgres ? false : 0) as any)
         ));
 
       if (resetToken) {
@@ -726,7 +726,7 @@ export class DatabaseStorage implements IStorage {
       await db.update(users).set({
         creditsRemaining: newCredits,
         updatedAt: toDbTimestamp(new Date()),
-      }).where(eq(users.id, userId));
+      } as any).where(eq(users.id, userId));
 
       await this.createTransaction({
         userId,
@@ -751,7 +751,7 @@ export class DatabaseStorage implements IStorage {
       await db.update(users).set({
         creditsRemaining: newCredits,
         updatedAt: toDbTimestamp(new Date()),
-      }).where(eq(users.id, userId));
+      } as any).where(eq(users.id, userId));
 
       await this.createTransaction({
         userId,
@@ -776,7 +776,7 @@ export class DatabaseStorage implements IStorage {
         ticketId: data.ticketId || null,
         status: data.status || 'completed',
         createdAt: toDbTimestamp(),
-      }).returning();
+      } as any).returning();
       return txn;
     } catch (error) {
       console.error("Error creating transaction:", error);
@@ -811,7 +811,7 @@ export class DatabaseStorage implements IStorage {
         processingTime: data.processingTime || null,
         scanId: data.scanId,
         createdAt: toDbTimestamp(),
-      }).returning();
+      } as any).returning();
       return result;
     } catch (error) {
       console.error("Error saving scan result:", error);
@@ -882,7 +882,7 @@ export class DatabaseStorage implements IStorage {
         currentPeriodEnd: data.currentPeriodEnd ? toDbTimestamp(new Date(data.currentPeriodEnd * 1000)) : toDbTimestamp(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
         createdAt: toDbTimestamp(),
         updatedAt: toDbTimestamp(),
-      }).returning();
+      } as any).returning();
       return sub;
     } catch (error) {
       console.error("Error creating subscription:", error);
@@ -906,7 +906,7 @@ export class DatabaseStorage implements IStorage {
       const [sub] = await db.update(subscriptions).set({
         ...data,
         updatedAt: toDbTimestamp(new Date()),
-      }).where(eq(subscriptions.id, id)).returning();
+      } as any).where(eq(subscriptions.id, id)).returning();
       return sub;
     } catch (error) {
       console.error("Error updating subscription:", error);
@@ -920,7 +920,7 @@ export class DatabaseStorage implements IStorage {
         status: 'cancelled',
         cancelledAt: toDbTimestamp(new Date()),
         updatedAt: toDbTimestamp(new Date()),
-      }).where(eq(subscriptions.id, id)).returning();
+      } as any).where(eq(subscriptions.id, id)).returning();
       return sub;
     } catch (error) {
       console.error("Error cancelling subscription:", error);
@@ -938,7 +938,7 @@ export class DatabaseStorage implements IStorage {
         sessionId: data.sessionId || null,
         metadata: data.metadata ? (isPostgres ? data.metadata : JSON.stringify(data.metadata)) : null,
         createdAt: toDbTimestamp(),
-      });
+      } as any);
     } catch (error) {
       console.error("Error tracking funnel event:", error);
     }
@@ -946,7 +946,7 @@ export class DatabaseStorage implements IStorage {
 
   async getFunnelEvents(eventType?: string, limit = 1000): Promise<any[]> {
     try {
-      let query = db.select().from(funnelEvents).orderBy(desc(funnelEvents.createdAt)).limit(limit);
+      let query: any = db.select().from(funnelEvents).orderBy(desc(funnelEvents.createdAt)).limit(limit);
       if (eventType) {
         query = db.select().from(funnelEvents)
           .where(eq(funnelEvents.eventType, eventType))
@@ -1061,6 +1061,9 @@ export class MemStorage implements IStorage {
       assignedTo: ticketData.assignedTo || null,
       title: ticketData.title,
       description: ticketData.description || null,
+      redditUrl: ticketData.redditUrl || null,
+      amount: ticketData.amount || null,
+      progress: ticketData.progress || 0,
       requestData: ticketData.requestData || null,
       notes: ticketData.notes || null,
       createdAt: new Date(),

@@ -83,13 +83,13 @@ export default function BrandScanner() {
       }
 
       // Use optimized live scanner for quick initial scan
-      const response = await apiRequest("POST", "/api/live-scan", { 
+      const response = await apiRequest("POST", "/api/live-scan", {
         brandName,
         platforms: ['reddit'],
         recaptchaToken: recaptchaToken || null
       });
-      
-      return response.data;
+
+      return await response.json();
     },
     onSuccess: (response: any) => {
       setScanResults({
@@ -150,8 +150,9 @@ export default function BrandScanner() {
         recaptchaToken: recaptchaToken || null
       });
     },
-    onSuccess: (response) => {
-      setCreatedTicket(response.data); // Store the actual ticket response
+    onSuccess: async (response) => {
+      const responseData = await response.json();
+      setCreatedTicket(responseData); // Store the actual ticket response
       setCurrentStep('confirmed');
       toast({
         title: "Account Created Successfully!",
@@ -257,18 +258,20 @@ export default function BrandScanner() {
         userEmail: data.userEmail,
         platforms: ['reddit', 'web']
       });
-      
+      const scanData = await response.json();
+
       // Also submit the ticket with comprehensive scan results
       const ticketResponse = await apiRequest("POST", "/api/brand-scan-ticket", {
         brandName: data.brandName,
         userEmail: data.userEmail,
         userName: data.userName,
         company: data.company,
-        scanResults: JSON.stringify(response.data),
+        scanResults: JSON.stringify(scanData),
         leadType: 'premium'
       });
-      
-      return { scan: response.data, ticket: ticketResponse };
+      const ticketData = await ticketResponse.json();
+
+      return { scan: scanData, ticket: ticketData };
     },
     onSuccess: (data) => {
       setCurrentStep('confirmed');

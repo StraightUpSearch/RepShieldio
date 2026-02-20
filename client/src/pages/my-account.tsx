@@ -48,9 +48,9 @@ interface AccountStats {
 }
 
 function WalletTab({ stats }: { stats: AccountStats }) {
-  const { data: paymentStatus } = useQuery({ queryKey: ['/api/payments/status'] });
-  const { data: txnResponse } = useQuery({ queryKey: ['/api/user/transactions'] });
-  const { data: scanHistory } = useQuery({ queryKey: ['/api/user/scan-history'] });
+  const { data: paymentStatus } = useQuery<any>({ queryKey: ['/api/payments/status'] });
+  const { data: txnResponse } = useQuery<any>({ queryKey: ['/api/user/transactions'] });
+  const { data: scanHistory } = useQuery<any>({ queryKey: ['/api/user/scan-history'] });
 
   const transactions = txnResponse?.data || [];
   const creditPackages = paymentStatus?.creditPackages || [];
@@ -59,7 +59,7 @@ function WalletTab({ stats }: { stats: AccountStats }) {
   const purchaseCredits = useMutation({
     mutationFn: async (packageId: string) => {
       const res = await apiRequest('POST', '/api/payments/create-credit-purchase', { packageId });
-      return res.data;
+      return await res.json();
     },
     onSuccess: (data: any) => {
       if (data.url) window.location.href = data.url;
@@ -197,7 +197,7 @@ export default function MyAccount() {
   const [, setLocation] = useLocation();
 
   // Fetch real user stats — must be called before any conditional returns (React hooks rules)
-  const { data: statsResponse, isLoading: statsLoading } = useQuery({
+  const { data: statsResponse, isLoading: statsLoading } = useQuery<any>({
     queryKey: ['/api/user/stats'],
     enabled: !!user,
     queryFn: async () => {

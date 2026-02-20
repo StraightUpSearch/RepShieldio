@@ -173,7 +173,7 @@ export default function BlogAdmin() {
           <div className="grid md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Status</label>
-              <Select value={formData.status} onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}>
+              <Select value={formData.status} onValueChange={(value: string) => setFormData(prev => ({ ...prev, status: value as 'draft' | 'published' | 'archived' }))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

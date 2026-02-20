@@ -71,12 +71,12 @@ export default function DataAdmin() {
   const queryClient = useQueryClient();
 
   // Fetch all users with direct database access
-  const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useQuery({
+  const { data: usersData, isLoading: usersLoading, refetch: refetchUsers } = useQuery<any>({
     queryKey: ['/api/data-admin/users'],
   });
 
   // Fetch all orders with direct database access
-  const { data: ordersData, isLoading: ordersLoading, refetch: refetchOrders } = useQuery({
+  const { data: ordersData, isLoading: ordersLoading, refetch: refetchOrders } = useQuery<any>({
     queryKey: ['/api/data-admin/orders'],
   });
 

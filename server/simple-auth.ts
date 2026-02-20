@@ -66,8 +66,7 @@ export async function setupSimpleAuth(app: Express) {
     sessionStore = new SQLiteStore({
       db: sessionDbPath,
       dir: '.',
-      ttl: sessionTtl
-    });
+    } as any);
     console.log(`✅ Using SQLite session store (${sessionDbPath}) for ${dbConfig.environment}`);
   }
   

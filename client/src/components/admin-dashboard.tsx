@@ -167,6 +167,184 @@ export const AdminDashboard: React.FC = () => {
     return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
+  // Extracted ticket card renderer - reused across all tabs
+  const renderTicketCard = (ticket: AdminTicket) => {
+    return (
+            <Card key={ticket.id}>
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-lg">
+                      Ticket #{ticket.id} - {ticket.title}
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      {formatTicketType(ticket.type)} • Created {formatDate(ticket.createdAt)}
+                      {ticket.requestData?.email && (
+                        <> • Client: {ticket.requestData.email}</>
+                      )}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={`${getStatusColor(ticket.status)} flex items-center gap-1`}>
+                      {getStatusIcon(ticket.status)}
+                      {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
+                    </Badge>
+                    {editingTicket === ticket.id ? (
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          onClick={() => handleSaveTicket(ticket.id)}
+                          className="h-8"
+                        >
+                          <Save className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditingTicket(null)}
+                          className="h-8"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEditTicket(ticket)}
+                        className="h-8"
+                      >
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {editingTicket === ticket.id ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="status">Status</Label>
+                      <Select value={editForm.status} onValueChange={(value) =>
+                        setEditForm(prev => ({ ...prev, status: value }))
+                      }>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="processing">Processing</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="failed">Failed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="assignedTo">Assigned To</Label>
+                      <Input
+                        value={editForm.assignedTo}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, assignedTo: e.target.value }))}
+                        placeholder="Admin username"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="progress">Progress (%)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="100"
+                        value={editForm.progress}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, progress: parseInt(e.target.value) || 0 }))}
+                      />
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <Label htmlFor="notes">Internal Notes</Label>
+                      <Textarea
+                        value={editForm.notes}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))}
+                        placeholder="Add internal notes about this ticket..."
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {ticket.progress > 0 && (
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Progress</span>
+                          <span>{ticket.progress}%</span>
+                        </div>
+                        <Progress value={ticket.progress} className="h-2" />
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {ticket.redditUrl && (
+                        <div>
+                          <Label className="text-xs text-gray-500">Reddit URL</Label>
+                          <p className="text-sm break-all">
+                            <a
+                              href={ticket.redditUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline flex items-center gap-1"
+                            >
+                              View Reddit Post
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </p>
+                        </div>
+                      )}
+
+                      {ticket.amount && (
+                        <div>
+                          <Label className="text-xs text-gray-500">Amount</Label>
+                          <p className="text-sm font-medium">${ticket.amount}</p>
+                        </div>
+                      )}
+
+                      <div>
+                        <Label className="text-xs text-gray-500">Priority</Label>
+                        <p className="text-sm capitalize">{ticket.priority}</p>
+                      </div>
+
+                      {ticket.assignedTo && (
+                        <div>
+                          <Label className="text-xs text-gray-500">Assigned To</Label>
+                          <p className="text-sm">{ticket.assignedTo}</p>
+                        </div>
+                      )}
+
+                      <div>
+                        <Label className="text-xs text-gray-500">Last Updated</Label>
+                        <p className="text-sm">{formatDate(ticket.updatedAt)}</p>
+                      </div>
+                    </div>
+
+                    {ticket.description && (
+                      <div>
+                        <Label className="text-xs text-gray-500">Description</Label>
+                        <p className="text-sm whitespace-pre-wrap">{ticket.description}</p>
+                      </div>
+                    )}
+
+                    {ticket.notes && (
+                      <div>
+                        <Label className="text-xs text-gray-500">Internal Notes</Label>
+                        <p className="text-sm whitespace-pre-wrap bg-gray-50 p-2 rounded">{ticket.notes}</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          );
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -307,181 +485,3 @@ export const AdminDashboard: React.FC = () => {
     </div>
   );
 };
-
-  // Extracted ticket card renderer - reused across all tabs
-  function renderTicketCard(ticket: any) {
-    return (
-            <Card key={ticket.id}>
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg">
-                      Ticket #{ticket.id} - {ticket.title}
-                    </CardTitle>
-                    <CardDescription className="mt-1">
-                      {formatTicketType(ticket.type)} • Created {formatDate(ticket.createdAt)}
-                      {ticket.requestData?.email && (
-                        <> • Client: {ticket.requestData.email}</>
-                      )}
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className={`${getStatusColor(ticket.status)} flex items-center gap-1`}>
-                      {getStatusIcon(ticket.status)}
-                      {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
-                    </Badge>
-                    {editingTicket === ticket.id ? (
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          onClick={() => handleSaveTicket(ticket.id)}
-                          className="h-8"
-                        >
-                          <Save className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEditingTicket(null)}
-                          className="h-8"
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEditTicket(ticket)}
-                        className="h-8"
-                      >
-                        <Edit className="w-3 h-3" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {editingTicket === ticket.id ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="status">Status</Label>
-                      <Select value={editForm.status} onValueChange={(value) => 
-                        setEditForm(prev => ({ ...prev, status: value }))
-                      }>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="processing">Processing</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                          <SelectItem value="failed">Failed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="assignedTo">Assigned To</Label>
-                      <Input
-                        value={editForm.assignedTo}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, assignedTo: e.target.value }))}
-                        placeholder="Admin username"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="progress">Progress (%)</Label>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="100"
-                        value={editForm.progress}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, progress: parseInt(e.target.value) || 0 }))}
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <Label htmlFor="notes">Internal Notes</Label>
-                      <Textarea
-                        value={editForm.notes}
-                        onChange={(e) => setEditForm(prev => ({ ...prev, notes: e.target.value }))}
-                        placeholder="Add internal notes about this ticket..."
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {ticket.progress > 0 && (
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Progress</span>
-                          <span>{ticket.progress}%</span>
-                        </div>
-                        <Progress value={ticket.progress} className="h-2" />
-                      </div>
-                    )}
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {ticket.redditUrl && (
-                        <div>
-                          <Label className="text-xs text-gray-500">Reddit URL</Label>
-                          <p className="text-sm break-all">
-                            <a
-                              href={ticket.redditUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:underline flex items-center gap-1"
-                            >
-                              View Reddit Post
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                          </p>
-                        </div>
-                      )}
-                      
-                      {ticket.amount && (
-                        <div>
-                          <Label className="text-xs text-gray-500">Amount</Label>
-                          <p className="text-sm font-medium">${ticket.amount}</p>
-                        </div>
-                      )}
-                      
-                      <div>
-                        <Label className="text-xs text-gray-500">Priority</Label>
-                        <p className="text-sm capitalize">{ticket.priority}</p>
-                      </div>
-                      
-                      {ticket.assignedTo && (
-                        <div>
-                          <Label className="text-xs text-gray-500">Assigned To</Label>
-                          <p className="text-sm">{ticket.assignedTo}</p>
-                        </div>
-                      )}
-                      
-                      <div>
-                        <Label className="text-xs text-gray-500">Last Updated</Label>
-                        <p className="text-sm">{formatDate(ticket.updatedAt)}</p>
-                      </div>
-                    </div>
-
-                    {ticket.description && (
-                      <div>
-                        <Label className="text-xs text-gray-500">Description</Label>
-                        <p className="text-sm whitespace-pre-wrap">{ticket.description}</p>
-                      </div>
-                    )}
-
-                    {ticket.notes && (
-                      <div>
-                        <Label className="text-xs text-gray-500">Internal Notes</Label>
-                        <p className="text-sm whitespace-pre-wrap bg-gray-50 p-2 rounded">{ticket.notes}</p>
-                      </div>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          );
-  } 

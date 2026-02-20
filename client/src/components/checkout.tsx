@@ -18,7 +18,7 @@ export default function Checkout({ caseId, amount, description, onSuccess, onCan
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Check if Stripe is available
-  const { data: paymentStatus } = useQuery({
+  const { data: paymentStatus } = useQuery<any>({
     queryKey: ['/api/payments/status'],
   });
 
@@ -27,7 +27,7 @@ export default function Checkout({ caseId, amount, description, onSuccess, onCan
   const createCheckout = useMutation({
     mutationFn: async () => {
       const response = await apiRequest('POST', '/api/payments/create-checkout', { ticketId: caseId });
-      return response.data;
+      return await response.json();
     },
     onSuccess: (data: any) => {
       if (data.url) {

@@ -14,7 +14,7 @@ export function isOpenAIConfigured(): boolean {
   return !!openai;
 }
 
-export async function getChatbotResponse(userMessage: string, conversationHistory: string[] = []): Promise<string> {
+export async function getChatbotResponse(userMessage: string, conversationHistory: { role: string; content: string }[] = []): Promise<string> {
   if (!openai) return getFallbackResponse(userMessage);
 
   try {
@@ -30,9 +30,9 @@ Be helpful, professional, and direct. Key facts:
 - Monitoring plans starting at $49/mo
 Keep responses concise (2-3 sentences max). Always guide toward action.`,
       },
-      ...conversationHistory.map((msg, i) => ({
-        role: i % 2 === 0 ? 'user' : 'assistant',
-        content: msg,
+      ...conversationHistory.map(msg => ({
+        role: msg.role,
+        content: msg.content,
       })),
       { role: 'user', content: userMessage },
     ];

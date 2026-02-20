@@ -33,7 +33,7 @@ export default function AdminPanel() {
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const { data: tickets, isLoading } = useQuery({
+  const { data: tickets, isLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/tickets"],
     retry: false,
   });

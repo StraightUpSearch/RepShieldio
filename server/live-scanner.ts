@@ -1,6 +1,6 @@
 import { redditAPI } from './reddit.js';
 import { scrapingBeeAPI } from './scrapingbee.js';
-import { db } from './db.js';
+import { storage } from './storage.js';
 import { notificationManager } from './notification-manager.js';
 
 interface ScanRequest {
@@ -289,16 +289,15 @@ class LiveScannerService {
   }
   
   private async createSpecialistTicket(result: ScanResult, request: ScanRequest): Promise<number> {
-    const storage = await db();
+    const store = storage;
     
-    const ticket = await storage.createBrandScanTicket({
+    const ticket = await store.createBrandScanTicket({
       brandName: request.brandName,
-      userEmail: request.userEmail || 'unregistered@repshield.io',
-      userName: 'Brand Scanner User',
-      scanResults: JSON.stringify(result),
-      priority: result.riskLevel === 'high' ? 'urgent' : 'normal',
+      email: request.userEmail || 'unregistered@repshield.io',
+      name: 'Brand Scanner User',
+      company: request.brandName,
       processed: false
-    });
+    } as any);
     
     console.log(`🎫 Created specialist ticket #${ticket.id} for ${request.brandName}`);
     return ticket.id;

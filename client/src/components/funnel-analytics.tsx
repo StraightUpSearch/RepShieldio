@@ -24,7 +24,7 @@ const FUNNEL_STEPS = [
 ];
 
 export default function FunnelAnalytics() {
-  const { data: analyticsResponse, isLoading } = useQuery({
+  const { data: analyticsResponse, isLoading } = useQuery<any>({
     queryKey: ['/api/admin/analytics'],
   });
 

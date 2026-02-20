@@ -86,14 +86,15 @@ export default function Scan() {
         brandName: brand,
         platforms: ['reddit']
       });
-      return response.data;
+      return await response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       setResults({
         totalFound: data.totalMentions,
         riskScore: data.riskScore,
         posts: data.previewMentions.filter((m: any) => m.platform === 'Reddit'),
-        comments: data.platforms.reddit.comments || 0
+        comments: data.platforms.reddit.comments || 0,
+        sentiment: data.sentiment || 'neutral'
       });
       toast({
         title: "✅ Live Scan Complete",

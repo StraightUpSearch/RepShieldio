@@ -448,7 +448,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validated = validateInput(chatbotSchema, req.body);
       const { message, conversationHistory } = validated;
 
-      const response = await getChatbotResponse(message, conversationHistory);
+      const response = await getChatbotResponse(message, conversationHistory as any);
       
       res.json({
         success: true,
@@ -711,8 +711,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Audit request submission endpoint
   app.post("/api/audit-request", async (req, res) => {
     try {
-      const validatedData = insertAuditRequestSchema.parse(req.body);
-      
+      const validatedData: any = insertAuditRequestSchema.parse(req.body);
+
       const auditRequest = await storage.createAuditRequest(validatedData);
       
       // Send email notification
@@ -943,11 +943,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Specialist reply endpoint for adding report and quote to ticket
-  app.post("/api/tickets/:ticketId/reply", isAuthenticated, async (req, res) => {
+  app.post("/api/tickets/:ticketId/reply", isAuthenticated, async (req: any, res) => {
     try {
       const ticketId = parseInt(req.params.ticketId);
       const { report, quote, estimatedTime } = req.body;
-      
+
       // Verify user is admin/specialist
       const user = await storage.getUser(req.user.id);
       if (!user || user.role !== 'admin') {
@@ -987,7 +987,7 @@ Date: ${new Date().toISOString()}
 
       // Use ticket lifecycle to transition and send notifications
       await ticketLifecycle.transitionTicket({
-        ticketId: parseInt(ticketId),
+        ticketId,
         newStatus: 'quoted',
         notes: specialistReply,
         amount: quote,
@@ -1145,7 +1145,7 @@ Date: ${new Date().toISOString()}
   app.post("/api/brand-scan-ticket", async (req, res) => {
     try {
       const { scanResults, recaptchaToken, ...ticketData } = req.body;
-      const validatedData = insertBrandScanTicketSchema.parse(ticketData);
+      const validatedData: any = insertBrandScanTicketSchema.parse(ticketData);
       
       // Create user account from lead data
       const userId = validatedData.email.replace('@', '_').replace(/\./g, '_');
@@ -1613,7 +1613,7 @@ ${JSON.stringify(errorDetails, null, 2)}
       `,
       priority: "high",
       status: "pending",
-      urls: errorDetails?.url ? [errorDetails.url] : undefined
+      redditUrl: (errorDetails?.url as string) || null,
     });
 
     // Send immediate notification to admin
