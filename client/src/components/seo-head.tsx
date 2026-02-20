@@ -15,7 +15,7 @@ const defaultSEO = {
   description: "Professional Reddit reputation management for SMBs, SaaS companies, and eCommerce brands. We ethically remove false, defamatory content that damages your business reputation.",
   keywords: "reddit reputation management, online reputation, content removal, business reputation, defamatory content removal, SMB reputation, SaaS reputation, ecommerce reputation",
   ogType: "website",
-  ogImage: "https://repshield.io/og-image.jpg"
+  ogImage: "https://repshield.io/og-image.svg"
 };
 
 const pageSEO: Record<string, SEOProps> = {
