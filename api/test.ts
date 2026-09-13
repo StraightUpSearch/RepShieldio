@@ -1,21 +1,26 @@
-// Progressively import modules to find the crash
+// Test project-level imports to find the crash
 export default async function handler(req: any, res: any) {
   const loaded: string[] = [];
   try {
-    // Test basic imports
-    await import("express"); loaded.push("express");
-    await import("compression"); loaded.push("compression");
-    await import("passport"); loaded.push("passport");
-    await import("passport-local"); loaded.push("passport-local");
-    await import("express-session"); loaded.push("express-session");
-    await import("connect-pg-simple"); loaded.push("connect-pg-simple");
-    await import("postgres"); loaded.push("postgres");
-    await import("stripe"); loaded.push("stripe");
-    await import("drizzle-orm"); loaded.push("drizzle-orm");
-    await import("drizzle-orm/postgres-js"); loaded.push("drizzle-orm/postgres-js");
-    await import("openai"); loaded.push("openai");
-    await import("zod"); loaded.push("zod");
-
+    await import("../shared/schema"); loaded.push("shared/schema");
+    await import("../server/config/database"); loaded.push("server/config/database");
+    await import("../server/db"); loaded.push("server/db");
+    await import("../server/validation"); loaded.push("server/validation");
+    await import("../server/error-handler"); loaded.push("server/error-handler");
+    await import("../server/rate-limiter"); loaded.push("server/rate-limiter");
+    await import("../server/stripe"); loaded.push("server/stripe");
+    await import("../server/email"); loaded.push("server/email");
+    await import("../server/storage"); loaded.push("server/storage");
+    await import("../server/simple-auth"); loaded.push("server/simple-auth");
+    await import("../server/analytics"); loaded.push("server/analytics");
+    await import("../server/openai"); loaded.push("server/openai");
+    await import("../server/reddit"); loaded.push("server/reddit");
+    await import("../server/scrapingbee"); loaded.push("server/scrapingbee");
+    await import("../server/telegram"); loaded.push("server/telegram");
+    await import("../server/webscraping"); loaded.push("server/webscraping");
+    await import("../server/ticket-lifecycle"); loaded.push("server/ticket-lifecycle");
+    await import("../server/db-init"); loaded.push("server/db-init");
+    await import("../server/routes"); loaded.push("server/routes");
     res.status(200).json({ ok: true, loaded });
   } catch (err: any) {
     res.status(500).json({
