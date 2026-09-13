@@ -399,7 +399,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch('/api/admin/tickets/:id', isAdmin, async (req: any, res) => {
     try {
       const { id } = req.params;
-      const { status, assignedTo, notes, amount } = req.body;
+      const { status, assignedTo, notes, amount, progress } = req.body;
 
       let ticket;
       if (status || assignedTo) {
@@ -410,6 +410,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (amount !== undefined) {
         ticket = await storage.updateTicket(parseInt(id), { amount: String(amount) });
+      }
+      if (progress !== undefined) {
+        const progressNum = Math.min(100, Math.max(0, parseInt(progress) || 0));
+        ticket = await storage.updateTicket(parseInt(id), { progress: progressNum });
       }
 
       // If we haven't fetched the ticket yet, fetch it
