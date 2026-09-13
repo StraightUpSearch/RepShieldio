@@ -371,3 +371,42 @@ export async function sendTicketCompletedEmail(data: { email: string; ticketId: 
     console.error('Error sending completion email:', error);
   }
 }
+
+export async function sendCustomerMessageNotification(data: {
+  customerEmail: string;
+  ticketId: number;
+  message: string;
+}) {
+  const ticketNumber = `REP-${data.ticketId.toString().padStart(4, '0')}`;
+  const trackUrl = `${RESET_URL_BASE}/ticket-status?email=${encodeURIComponent(data.customerEmail)}`;
+
+  const msg = {
+    to: data.customerEmail,
+    from: FROM_EMAIL,
+    subject: `New message on your case ${ticketNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #111827;">You have a new message</h2>
+        <p>The RepShield team has replied to your case <strong>${ticketNumber}</strong>.</p>
+        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0; white-space: pre-wrap;">${data.message}</p>
+        </div>
+        <a href="${trackUrl}" style="display: inline-block; background: #111827; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 10px;">View your case →</a>
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
+        <p style="color: #666; font-size: 14px;">The RepShield Team</p>
+      </div>
+    `,
+  };
+
+  try {
+    if (apiKey) {
+      await sgMail.send(msg);
+      console.log('Customer message notification sent to:', data.customerEmail);
+    } else {
+      console.log('📧 DEV MODE - Would send customer message email to:', data.customerEmail, 'for ticket:', ticketNumber);
+    }
+  } catch (error) {
+    console.error('Error sending customer message notification:', error);
+    // Don't throw — email failure shouldn't block message creation
+  }
+}

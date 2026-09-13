@@ -12,7 +12,7 @@ import { ticketLifecycle } from './ticket-lifecycle';
 import { trackEvent, FUNNEL_EVENTS } from './analytics';
 import { isOpenAIConfigured, generateSpecialistReport, getChatbotResponse } from './openai';
 import { sendWelcomeEmail } from './email';
-import { sendQuoteNotification, sendContactNotification, sendPasswordResetEmail } from "./email";
+import { sendQuoteNotification, sendContactNotification, sendPasswordResetEmail, sendCustomerMessageNotification } from "./email";
 import { redditAPI } from "./reddit";
 import { scrapingBeeAPI } from "./scrapingbee";
 import { telegramBot } from "./telegram";
@@ -448,6 +448,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         message: message.trim(),
         isInternal: !!isInternal,
       });
+
+      // Email customer when admin sends a non-internal message
+      if (!isInternal) {
+        try {
+          const ticket = await storage.getTicket(ticketId);
+          const customerEmail = ticket?.requestData?.email || null;
+          if (customerEmail) {
+            await sendCustomerMessageNotification({ customerEmail, ticketId, message: message.trim() });
+          }
+        } catch (emailErr) {
+          console.error('Failed to send customer message notification:', emailErr);
+        }
+      }
       res.status(201).json(msg);
     } catch (error) {
       console.error("Error creating ticket message:", error);
