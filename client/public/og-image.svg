@@ -1,0 +1,36 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3a5f;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)" />
+
+  <!-- Shield icon centered above text -->
+  <g transform="translate(552, 120)">
+    <path d="M48 4 L88 20 L88 52 C88 80 68 104 48 112 C28 104 8 80 8 52 L8 20 Z"
+          fill="none" stroke="white" stroke-width="4" stroke-linejoin="round" />
+    <path d="M48 16 L78 28 L78 52 C78 72 64 92 48 100 C32 92 18 72 18 52 L18 28 Z"
+          fill="white" fill-opacity="0.15" />
+    <path d="M36 56 L44 64 L62 44"
+          fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- RepShield text -->
+  <text x="600" y="320" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="bold"
+        text-anchor="middle" fill="white" letter-spacing="2">RepShield</text>
+
+  <!-- Tagline -->
+  <text x="600" y="380" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="normal"
+        text-anchor="middle" fill="white" fill-opacity="0.85">Reddit Reputation Management</text>
+
+  <!-- Subtle bottom accent line -->
+  <rect x="450" y="420" width="300" height="2" rx="1" fill="white" fill-opacity="0.3" />
+
+  <!-- Domain -->
+  <text x="600" y="560" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="normal"
+        text-anchor="middle" fill="white" fill-opacity="0.6">repshield.io</text>
+</svg>

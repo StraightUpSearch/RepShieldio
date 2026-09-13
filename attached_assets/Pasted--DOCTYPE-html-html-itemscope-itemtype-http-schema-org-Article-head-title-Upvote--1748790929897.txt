@@ -1,0 +1,55 @@
+
+<!DOCTYPE html>
+<html itemscope itemtype="http://schema.org/Article">
+<head>
+    <title>Upvote Shop</title>
+    <link rel="shortcut icon" href="/upvote-shop-icon.png" type="image/x-icon">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta property="og:type" content="website">
+    <link href="/assets/css/style.css" rel="stylesheet" type="text/css"/>
+    <link href="/css/corporate.css" rel="stylesheet" type="text/css"/>
+    <link href="/css/cooltipz.css" rel="stylesheet" type="text/css"/>
+
+    <!-- Theme CSS -->
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+        'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-MJ6NVSN');</script>
+    <!-- End Google Tag Manager -->
+
+</head>
+<body>
+<section id="wrapper">
+
+</section>
+
+<script type="text/javascript">window.$crisp=[];window.CRISP_WEBSITE_ID="361e451b-0cae-4a11-bf4e-577a31485e3b";(function(){d=document;s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);})();</script>
+
+<script
+        src="https://code.jquery.com/jquery-3.3.1.min.js"
+        integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+        crossorigin="anonymous">
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js" integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4" crossorigin="anonymous"></script>
+<script src="/assets/js/bundle.js">
+</script>
+
+
+<!-- Google Tag Manager (noscript) -->
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MJ6NVSN"
+                  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+<!-- End Google Tag Manager (noscript) -->
+
+
+<script>
+    window.jsPDF = window.jspdf.jsPDF;
+</script>
+</body>
+
+
+</html>
+
+

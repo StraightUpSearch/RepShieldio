@@ -1,0 +1,65 @@
+import { SiReddit, SiLinkedin } from "react-icons/si";
+import { Mail } from "lucide-react";
+import { Link } from "wouter";
+
+export default function Footer() {
+  return (
+    <footer className="bg-gray-900 text-white py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-2">
+            <div className="flex items-center space-x-2 mb-4">
+              <div className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center">
+                <SiReddit className="text-orange-400 text-xl" />
+              </div>
+              <span className="font-satoshi text-xl font-black tracking-[-0.03em]">RepShield</span>
+            </div>
+            <p className="text-gray-400 mb-6 max-w-md">
+              Professional Reddit reputation management for businesses. We ethically remove false, 
+              defamatory content that damages your brand reputation.
+            </p>
+            <div className="flex space-x-4">
+              <a href="https://www.linkedin.com/company/repshield-io/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
+                <SiLinkedin className="w-6 h-6" />
+              </a>
+              <a href="mailto:contact@repshield.io" className="text-gray-400 hover:text-white transition-colors">
+                <Mail className="w-6 h-6" />
+              </a>
+            </div>
+          </div>
+          
+          <div>
+            <h4 className="font-semibold mb-4">Services</h4>
+            <ul className="space-y-2 text-gray-400">
+              <li><Link href="/scan" className="hover:text-white transition-colors">Live Scanner</Link></li>
+              <li><Link href="/monitoring" className="hover:text-white transition-colors">Brand Monitoring</Link></li>
+              <li><Link href="/ticket-status" className="hover:text-white transition-colors">Check Status</Link></li>
+              <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-semibold mb-4">Company</h4>
+            <ul className="space-y-2 text-gray-400">
+              <li><Link href="/about" className="hover:text-white transition-colors">About Us</Link></li>
+              <li><Link href="/contact" className="hover:text-white transition-colors">Contact</Link></li>
+              <li><Link href="/my-account" className="hover:text-white transition-colors">My Account</Link></li>
+              <li><Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link></li>
+            </ul>
+          </div>
+        </div>
+        
+        <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+          <p className="text-gray-400 text-sm">
+            © {new Date().getFullYear()} RepShield. All rights reserved. Professional reputation management services.
+          </p>
+          <div className="flex space-x-6 text-sm text-gray-400 mt-4 md:mt-0">
+            <Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link>
+            <Link href="/legal-compliance" className="hover:text-white transition-colors">Legal Compliance</Link>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}

@@ -1,0 +1,65 @@
+/* RepShield.io Simplified Design System */
+/* Based on UX Design Brief: Max 3 colors + neutral */
+
+:root {
+  /* SIMPLIFIED PALETTE - Maximum 3 Brand Colors */
+  
+  /* Primary: Navy Deep - For headers, text, and primary elements */
+  --brand-primary: 215 25% 27%;    /* Deep slate navy */
+  
+  /* Accent: Orange - For CTAs, highlights, and interactive elements */
+  --brand-accent: 22 100% 52%;     /* Professional orange */
+  
+  /* Secondary: Light Gray - For backgrounds and subtle elements */
+  --brand-secondary: 220 13% 91%;  /* Light gray */
+  
+  /* Neutral: Pure White - For clean backgrounds */
+  --brand-neutral: 0 0% 100%;      /* White */
+  
+  /* Semantic Colors (minimal) */
+  --success: 142 76% 36%;          /* Green for success states */
+  --warning: 43 96% 56%;           /* Amber for warnings */
+  --error: 0 84% 60%;              /* Red for errors */
+  
+  /* Typography Scale */
+  --text-primary: 215 25% 27%;     /* Dark navy for headers */
+  --text-secondary: 215 16% 47%;   /* Medium gray for body */
+  --text-muted: 215 13% 65%;       /* Light gray for secondary text */
+}
+
+/* Utility Classes for Simplified Palette */
+.bg-brand-primary { background-color: hsl(var(--brand-primary)); }
+.bg-brand-accent { background-color: hsl(var(--brand-accent)); }
+.bg-brand-secondary { background-color: hsl(var(--brand-secondary)); }
+.bg-brand-neutral { background-color: hsl(var(--brand-neutral)); }
+
+.text-brand-primary { color: hsl(var(--brand-primary)); }
+.text-brand-accent { color: hsl(var(--brand-accent)); }
+.text-brand-secondary { color: hsl(var(--brand-secondary)); }
+
+.border-brand-primary { border-color: hsl(var(--brand-primary)); }
+.border-brand-accent { border-color: hsl(var(--brand-accent)); }
+.border-brand-secondary { border-color: hsl(var(--brand-secondary)); }
+
+/* Component-Specific Styles */
+.btn-primary {
+  background-color: hsl(var(--brand-accent));
+  color: white;
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: hsl(var(--brand-accent) / 0.9);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  color: hsl(var(--brand-accent));
+  border: 2px solid hsl(var(--brand-accent) / 0.3);
+}
+
+.btn-secondary:hover {
+  background-color: hsl(var(--brand-accent));
+  color: white;
+  border-color: hsl(var(--brand-accent));
+} 

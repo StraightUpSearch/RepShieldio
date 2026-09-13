@@ -1,0 +1,20 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+
+# Environment files (contain sensitive API keys)
+.env
+.env.local
+.env.development
+.env.production
+
+# Runtime databases
+*.db
+
+# Test artifacts
+test-results/
+playwright-report/
+results/
