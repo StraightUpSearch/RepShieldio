@@ -5,7 +5,7 @@ import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // Determine database type from environment
-const isPostgres = !!process.env.DATABASE_URL;
+const isPostgres = !!(process.env.PROD_DATABASE_URL || process.env.DATABASE_URL);
 
 // ============ PostgreSQL Table Definitions ============
 
