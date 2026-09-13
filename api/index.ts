@@ -63,6 +63,13 @@ function initialize(): Promise<void> {
 
 // Default export — Vercel calls this for every request
 export default async function handler(req: Request, res: Response) {
-  await initialize();
-  return app(req, res);
+  try {
+    await initialize();
+    return app(req, res);
+  } catch (err: any) {
+    console.error("Handler error:", err?.message, err?.stack);
+    if (!res.headersSent) {
+      res.status(500).json({ error: err?.message || "Function init failed" });
+    }
+  }
 }
