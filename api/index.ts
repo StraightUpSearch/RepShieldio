@@ -2,11 +2,10 @@
  * Vercel serverless entry point.
  * Exports the Express app as a handler — no listen() needed.
  * Local dev uses server/index.ts (which does call listen()).
- *
- * All heavy imports are deferred to initialize() so module loading
- * doesn't crash the function before the handler can catch errors.
  */
 import express, { type Request, Response, NextFunction } from "express";
+import compression from "compression";
+import { registerRoutes } from "../server/routes";
 
 const app = express();
 
@@ -28,6 +27,8 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
+app.use(compression());
+
 // Raw body for Stripe webhook signature verification
 app.use("/api/webhooks/stripe", express.raw({ type: "application/json" }));
 app.use(express.json());
@@ -45,19 +46,17 @@ app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
 // Initialize routes once — cached across warm Lambda invocations
 let initPromise: Promise<void> | null = null;
 
-async function initialize(): Promise<void> {
+function initialize(): Promise<void> {
   if (!initPromise) {
-    initPromise = (async () => {
-      const { default: compression } = await import("compression");
-      app.use(compression());
-      const { registerRoutes } = await import("../server/routes");
-      await registerRoutes(app);
-      console.log("RepShield API initialised on Vercel");
-    })().catch((err) => {
-      console.error("Init error:", err);
-      initPromise = null; // allow retry
-      throw err;
-    });
+    initPromise = registerRoutes(app)
+      .then(() => {
+        console.log("RepShield API initialised on Vercel");
+      })
+      .catch((err) => {
+        console.error("Init error:", err);
+        initPromise = null; // allow retry
+        throw err;
+      });
   }
   return initPromise;
 }
