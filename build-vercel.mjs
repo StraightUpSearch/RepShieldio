@@ -1,8 +1,9 @@
 /**
- * Custom Vercel build script using the Build Output API.
+ * Custom Vercel build script using the Build Output API (v2).
  * Bypasses Vercel's default ncc bundler (which crashes on this project)
  * by pre-bundling the API with esbuild into a self-contained function.
  */
+console.log("build-vercel.mjs starting...");
 import { execSync } from "child_process";
 import { mkdirSync, writeFileSync, cpSync } from "fs";
 import { join } from "path";
