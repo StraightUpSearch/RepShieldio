@@ -1,6 +1,10 @@
 import { drizzle as drizzlePg, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from '@shared/schema';
+import { createRequire } from 'module';
+
+// createRequire needed because this package is type:module but sqlite deps use CJS
+const require = createRequire(import.meta.url);
 
 interface DatabaseConfig {
   url: string;

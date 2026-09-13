@@ -1,5 +1,8 @@
 import { getDatabaseConfig } from './config/database';
 import postgres from 'postgres';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 const config = getDatabaseConfig();
 const isPostgres = config.type === 'postgresql';
