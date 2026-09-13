@@ -29,19 +29,19 @@ app.use((_req: Request, res: Response, next: NextFunction) => {
 
 app.use(compression());
 
+// Vercel pre-parses request bodies. Tell body-parser to skip re-parsing
+// to avoid "Unexpected end of JSON input" from reading an already-consumed stream.
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  if (req.body !== undefined && req.body !== null) {
+    (req as any)._body = true;
+  }
+  next();
+});
+
 // Raw body for Stripe webhook signature verification
 app.use("/api/webhooks/stripe", express.raw({ type: "application/json" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-// Error handler
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error(`[ERROR] ${err.message || "Unknown error"}`);
-  const status = err.status || err.statusCode || 500;
-  if (!res.headersSent) {
-    res.status(status).json({ error: "Internal server error" });
-  }
-});
 
 // Initialize routes once — cached across warm Lambda invocations
 let initPromise: Promise<void> | null = null;
