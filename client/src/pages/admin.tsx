@@ -27,6 +27,7 @@ interface Ticket {
   notes: string | null;
   redditUrl: string | null;
   amount: string | null;
+  progress: number;
   requestData: any;
   createdAt: string;
   updatedAt: string;
@@ -250,6 +251,7 @@ function TicketDetail({ ticket, onBack }: { ticket: Ticket; onBack: () => void }
   const [status, setStatus] = useState(ticket.status);
   const [amount, setAmount] = useState(ticket.amount || "");
   const [assignedTo, setAssignedTo] = useState(ticket.assignedTo || "");
+  const [progress, setProgress] = useState(String(ticket.progress ?? 0));
   const [replyText, setReplyText] = useState("");
   const [isInternal, setIsInternal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -259,6 +261,7 @@ function TicketDetail({ ticket, onBack }: { ticket: Ticket; onBack: () => void }
     setStatus(ticket.status);
     setAmount(ticket.amount || "");
     setAssignedTo(ticket.assignedTo || "");
+    setProgress(String(ticket.progress ?? 0));
     setReplyText("");
   }, [ticket.id]);
 
@@ -300,6 +303,8 @@ function TicketDetail({ ticket, onBack }: { ticket: Ticket; onBack: () => void }
     if (status !== ticket.status) updates.status = status;
     if (amount !== (ticket.amount || "")) updates.amount = amount;
     if (assignedTo !== (ticket.assignedTo || "")) updates.assignedTo = assignedTo;
+    const progressNum = Math.min(100, Math.max(0, parseInt(progress) || 0));
+    if (progressNum !== (ticket.progress ?? 0)) updates.progress = progressNum;
     if (Object.keys(updates).length) updateTicket.mutate(updates);
   };
 
@@ -496,6 +501,19 @@ function TicketDetail({ ticket, onBack }: { ticket: Ticket; onBack: () => void }
                 onChange={(e) => setAssignedTo(e.target.value)}
                 placeholder="Agent name"
                 className="mt-1 h-9 text-sm"
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs text-gray-500">Progress ({progress}%)</Label>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value={progress}
+                onChange={(e) => setProgress(e.target.value)}
+                className="mt-1 w-full h-2 accent-gray-900 cursor-pointer"
               />
             </div>
 
