@@ -1,3 +1,4 @@
+import { AdminRoute } from '@/components/admin-route';
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit, Trash2, Eye, Save, X } from "lucide-react";
@@ -218,6 +219,7 @@ export default function BlogAdmin() {
   };
 
   return (
+    <AdminRoute>
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold">Blog Management</h1>
@@ -306,5 +308,6 @@ export default function BlogAdmin() {
         )}
       </div>
     </div>
+    </AdminRoute>
   );
 }

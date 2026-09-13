@@ -28,6 +28,7 @@ const PrivacyPolicy = lazy(() => import("@/pages/privacy-policy"));
 const TermsOfService = lazy(() => import("@/pages/terms-of-service"));
 const LegalCompliance = lazy(() => import("@/pages/legal-compliance"));
 const Blog = lazy(() => import("@/pages/blog"));
+const BlogAdmin = lazy(() => import("@/pages/admin/blog"));
 const Monitoring = lazy(() => import("@/pages/monitoring"));
 const ResetPassword = lazy(() => import("@/pages/reset-password"));
 
@@ -72,6 +73,7 @@ function Router() {
         <Route path="/privacy-policy" component={PrivacyPolicy} />
         <Route path="/terms-of-service" component={TermsOfService} />
         <Route path="/legal-compliance" component={LegalCompliance} />
+        <Route path="/admin/blog" component={BlogAdmin} />
         <Route path="/blog" component={Blog} />
         <Route path="/blog/:slug" component={Blog} />
         <Route path="/monitoring" component={Monitoring} />

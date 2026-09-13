@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import {
   Download, Users, FileText, Clock, CheckCircle, AlertTriangle,
-  RefreshCw, Send, Lock, ArrowLeft, ExternalLink, Search,
+  RefreshCw, Send, Lock, ArrowLeft, ExternalLink, Search, BookOpen,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -126,10 +126,18 @@ export default function AdminPanel() {
             <h1 className="text-lg font-semibold text-gray-900">Case Management</h1>
             <p className="text-sm text-gray-500">{stats.total} total cases</p>
           </div>
-          <Button variant="outline" size="sm" onClick={exportToCSV}>
-            <Download className="w-4 h-4 mr-2" />
-            Export CSV
-          </Button>
+          <div className="flex items-center gap-2">
+            <a href="/admin/blog">
+              <Button variant="outline" size="sm">
+                <BookOpen className="w-4 h-4 mr-2" />
+                Blog
+              </Button>
+            </a>
+            <Button variant="outline" size="sm" onClick={exportToCSV}>
+              <Download className="w-4 h-4 mr-2" />
+              Export CSV
+            </Button>
+          </div>
         </header>
 
         {/* Stats row */}
