@@ -121,29 +121,41 @@ export async function setupSimpleAuth(app: Express) {
       
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(validatedData.email);
-      if (existingUser) {
-        throw new AppError("An account with this email already exists", 400);
-      }
 
-      // Hash password
-      const hashedPassword = await hashPassword(validatedData.password);
-      
-      // Set role based on admin email list (env var or default)
       const adminEmails = (process.env.ADMIN_EMAILS || 'jamie@straightupsearch.com').split(',').map(e => e.trim().toLowerCase());
       const role = adminEmails.includes(validatedData.email.toLowerCase()) ? "admin" : "user";
-      
-      // Create user
-      const user = await storage.upsertUser({
-        id: `user_${Date.now()}`,
-        email: validatedData.email,
-        firstName: validatedData.firstName || null,
-        lastName: validatedData.lastName || null,
-        profileImageUrl: null,
-        role,
-        password: hashedPassword,
-        accountBalance: "0.00",
-        creditsRemaining: role === "admin" ? 1000 : 0,
-      });
+      const hashedPassword = await hashPassword(validatedData.password);
+
+      let user;
+      if (existingUser) {
+        // If existing account has a password, it's a real account — block duplicate
+        if (existingUser.password) {
+          throw new AppError("An account with this email already exists", 400);
+        }
+        // Passwordless account (created via quote form) — upgrade it with credentials,
+        // preserving their existing tickets
+        user = await storage.upsertUser({
+          ...existingUser,
+          id: existingUser.id,
+          firstName: validatedData.firstName || existingUser.firstName,
+          lastName: validatedData.lastName || existingUser.lastName,
+          role,
+          password: hashedPassword,
+          creditsRemaining: role === "admin" ? 1000 : (existingUser.creditsRemaining ?? 0),
+        });
+      } else {
+        user = await storage.upsertUser({
+          id: `user_${Date.now()}`,
+          email: validatedData.email,
+          firstName: validatedData.firstName || null,
+          lastName: validatedData.lastName || null,
+          profileImageUrl: null,
+          role,
+          password: hashedPassword,
+          accountBalance: "0.00",
+          creditsRemaining: role === "admin" ? 1000 : 0,
+        });
+      }
 
       // Auto-login after registration
       req.login(user, (err) => {
