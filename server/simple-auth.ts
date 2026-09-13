@@ -13,6 +13,13 @@ import { strictLimiter } from "./rate-limiter";
 
 const scryptAsync = promisify(scrypt);
 
+/** Strip password hash from user object before sending to client */
+export function sanitizeUser(user: any) {
+  if (!user) return user;
+  const { password, ...safe } = user;
+  return safe;
+}
+
 export async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
@@ -144,7 +151,7 @@ export async function setupSimpleAuth(app: Express) {
           console.error("Auto-login failed after registration:", err);
           throw new AppError("Registration successful but login failed", 500);
         }
-        res.status(201).json({ user, message: "Registration successful" });
+        res.status(201).json({ user: sanitizeUser(user), message: "Registration successful" });
       });
     } catch (error) {
       console.error("Registration error:", error);
@@ -175,7 +182,7 @@ export async function setupSimpleAuth(app: Express) {
           console.error("Login session creation failed:", err);
           return res.status(500).json({ message: "Login failed" });
         }
-        res.json({ user, message: "Login successful" });
+        res.json({ user: sanitizeUser(user), message: "Login successful" });
       });
     })(req, res, next);
   });

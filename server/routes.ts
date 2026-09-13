@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { z } from "zod";
 import { isStripeConfigured, createTicketCheckoutSession, createCreditPurchaseSession, createSubscriptionCheckoutSession, cancelStripeSubscription, constructWebhookEvent, CREDIT_PACKAGES } from './stripe';
 import { storage } from "./storage";
-import { setupSimpleAuth, isAuthenticated } from "./simple-auth";
+import { setupSimpleAuth, isAuthenticated, sanitizeUser } from "./simple-auth";
 import { insertAuditRequestSchema, insertQuoteRequestSchema, insertBrandScanTicketSchema } from "@shared/schema";
 import { globalErrorHandler, handleAsyncErrors, AppError } from "./error-handler";
 import { validateInput, brandScanSchema, contactSchema, chatbotSchema, emergencyTicketSchema, dataAdminUserSchema, dataAdminOrderSchema, scanBrandRequestSchema, ticketSchema } from "./validation";
@@ -134,10 +134,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       }));
 
-      res.json({ 
-        authenticated: true, 
+      res.json({
+        authenticated: true,
         user: {
-          ...req.user,
+          ...sanitizeUser(req.user),
           tickets: formattedTickets
         }
       });
@@ -274,7 +274,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const users = await storage.getAllUsers();
-      res.json({ success: true, data: users });
+      res.json({ success: true, data: users.map(sanitizeUser) });
     } catch (error) {
       console.error("Error fetching admin users:", error);
       res.status(500).json({ success: false, message: "Failed to fetch users" });
@@ -321,7 +321,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/data-admin/users', isAdmin, async (req: any, res) => {
     try {
       const users = await storage.getAllUsers();
-      res.json({ success: true, data: users });
+      res.json({ success: true, data: users.map(sanitizeUser) });
     } catch (error) {
       console.error("Error fetching users for data admin:", error);
       res.status(500).json({ success: false, message: "Failed to fetch users" });
@@ -353,7 +353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
 
       const user = await storage.upsertUser(userData);
-      res.json({ success: true, data: user });
+      res.json({ success: true, data: sanitizeUser(user) });
     } catch (error) {
       console.error("Error creating user:", error);
       res.status(500).json({ success: false, message: "Failed to create user" });
