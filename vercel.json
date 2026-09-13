@@ -3,12 +3,6 @@
   "installCommand": "npm install --ignore-scripts",
   "buildCommand": "node build-vercel.mjs",
   "outputDirectory": "dist/public",
-  "functions": {
-    "api/index.js": {
-      "maxDuration": 30,
-      "includeFiles": "api/**"
-    }
-  },
   "rewrites": [
     {
       "source": "/api/(.*)",
