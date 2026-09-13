@@ -1,5 +1,5 @@
 {
   "version": 2,
-  "installCommand": "npm install --ignore-scripts",
+  "installCommand": "npm install --ignore-scripts && rm -rf .vercel/output",
   "buildCommand": "node build-vercel.mjs"
 }
