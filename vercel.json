@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "installCommand": "npm install --ignore-scripts",
   "buildCommand": "vite build",
   "outputDirectory": "dist/public",
   "functions": {
