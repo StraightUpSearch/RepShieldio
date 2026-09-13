@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import {
   User,
@@ -311,6 +311,8 @@ export default function MyAccount() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [, setLocation] = useLocation();
   const [payingTicket, setPayingTicket] = useState<number | null>(null);
+  const searchString = useSearch();
+  const paymentParam = new URLSearchParams(searchString).get("payment");
 
   const handleTicketPayment = async (ticketId: number) => {
     if (!user?.email) return;
@@ -408,6 +410,26 @@ export default function MyAccount() {
           </h1>
           <p className="text-gray-500 mt-1">Manage your Reddit removal cases and account settings</p>
         </div>
+
+        {/* Payment result banners */}
+        {paymentParam === 'success' && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-xl px-5 py-4 flex items-center gap-3">
+            <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+            <div>
+              <p className="font-semibold text-green-800 text-sm">Payment confirmed — your case is now active.</p>
+              <p className="text-sm text-green-700">We'll update the progress here as work proceeds.</p>
+            </div>
+          </div>
+        )}
+        {paymentParam === 'cancelled' && (
+          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl px-5 py-4 flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0" />
+            <div>
+              <p className="font-semibold text-yellow-800 text-sm">Payment not completed.</p>
+              <p className="text-sm text-yellow-700">Your quote is still available — use Pay Now on your ticket when ready.</p>
+            </div>
+          </div>
+        )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
