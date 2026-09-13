@@ -138,6 +138,7 @@ export interface IStorage {
   // Ticket messages
   createTicketMessage(data: InsertTicketMessage): Promise<TicketMessage>;
   getTicketMessages(ticketId: number, includeInternal?: boolean): Promise<TicketMessage[]>;
+  getLatestCustomerMessagePerTicket(): Promise<{ ticketId: number; latestAt: Date | string }[]>;
 
   // Funnel analytics
   trackFunnelEvent(data: { eventType: string; userId?: string; sessionId?: string; metadata?: any }): Promise<void>;
@@ -997,6 +998,27 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async getLatestCustomerMessagePerTicket(): Promise<{ ticketId: number; latestAt: Date | string }[]> {
+    try {
+      const results = await db
+        .select({
+          ticketId: ticketMessages.ticketId,
+          latestAt: sql<number | string>`MAX(${ticketMessages.createdAt})`.as('latestAt'),
+        })
+        .from(ticketMessages)
+        .where(eq(ticketMessages.senderRole, 'user'))
+        .groupBy(ticketMessages.ticketId);
+
+      return results.map(r => ({
+        ticketId: r.ticketId,
+        latestAt: fromDbTimestamp(r.latestAt),
+      }));
+    } catch (error) {
+      console.error("Error getting latest customer messages:", error);
+      return [];
+    }
+  }
+
   // ============ FUNNEL ANALYTICS ============
 
   async trackFunnelEvent(data: { eventType: string; userId?: string; sessionId?: string; metadata?: any }): Promise<void> {
@@ -1523,6 +1545,17 @@ export class MemStorage implements IStorage {
     return this.ticketMessagesList.filter(m =>
       m.ticketId === ticketId && (includeInternal || !m.isInternal)
     );
+  }
+
+  async getLatestCustomerMessagePerTicket(): Promise<{ ticketId: number; latestAt: Date | string }[]> {
+    const customerMessages = this.ticketMessagesList.filter(m => m.senderRole === 'user');
+    const latestMap = new Map<number, Date>();
+    for (const m of customerMessages) {
+      const existing = latestMap.get(m.ticketId);
+      const d = m.createdAt instanceof Date ? m.createdAt : new Date(m.createdAt);
+      if (!existing || d > existing) latestMap.set(m.ticketId, d);
+    }
+    return Array.from(latestMap.entries()).map(([ticketId, latestAt]) => ({ ticketId, latestAt }));
   }
 
   async trackFunnelEvent(data: any): Promise<void> { /* no-op in memory */ }

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { AdminRoute } from "@/components/admin-route";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -58,10 +58,35 @@ export default function AdminPanel() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
 
+  const [readVersion, setReadVersion] = useState(0);
+
   const { data: tickets = [], isLoading } = useQuery<Ticket[]>({
     queryKey: ["/api/admin/tickets"],
     retry: false,
   });
+
+  const { data: messagesSummary = [] } = useQuery<{ ticketId: number; latestAt: string }[]>({
+    queryKey: ["/api/admin/messages-summary"],
+    refetchInterval: 30000,
+  });
+
+  const unreadTicketIds = useMemo(() => {
+    const set = new Set<number>();
+    for (const { ticketId, latestAt } of messagesSummary) {
+      if (ticketId === selectedTicketId) continue; // currently viewing
+      const lastRead = localStorage.getItem(`admin_last_read_${ticketId}`);
+      const hasNew = lastRead ? new Date(latestAt) > new Date(lastRead) : true;
+      if (hasNew) set.add(ticketId);
+    }
+    return set;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messagesSummary, selectedTicketId, readVersion]);
+
+  const handleSelectTicket = (id: number) => {
+    setSelectedTicketId(id);
+    localStorage.setItem(`admin_last_read_${id}`, new Date().toISOString());
+    setReadVersion(v => v + 1);
+  };
 
   const filteredTickets = tickets.filter((ticket) => {
     const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
@@ -196,16 +221,21 @@ export default function AdminPanel() {
                   return (
                     <button
                       key={ticket.id}
-                      onClick={() => setSelectedTicketId(ticket.id)}
+                      onClick={() => handleSelectTicket(ticket.id)}
                       className={`w-full text-left px-4 py-3 border-b transition-colors ${
                         isSelected ? "bg-gray-100" : "hover:bg-gray-50"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {ticket.title}
-                          </p>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {ticket.title}
+                            </p>
+                            {unreadTicketIds.has(ticket.id) && (
+                              <span className="w-2 h-2 bg-blue-500 rounded-full shrink-0" title="Customer replied" />
+                            )}
+                          </div>
                           <p className="text-xs text-gray-500 mt-0.5">
                             #{ticket.id} &middot; {ticket.requestData?.email || ticket.requestData?.name || "Unknown"}
                           </p>

@@ -290,17 +290,22 @@ export const TicketStatus: React.FC = () => {
             </>
           )}
 
-          {/* Create account CTA */}
-          <div className="bg-gray-950 text-white rounded-2xl p-6 flex items-center justify-between gap-6">
+          {/* Account CTA */}
+          <div className="bg-gray-950 text-white rounded-2xl p-6 space-y-4">
             <div>
               <p className="font-semibold text-white mb-1">Get real-time updates</p>
               <p className="text-sm text-white/50">Create a free account to receive notifications and manage all your cases in one place.</p>
             </div>
-            <a href="/login" className="flex-shrink-0">
-              <Button className="h-10 px-5 bg-white text-gray-950 hover:bg-gray-100 font-semibold text-sm">
-                Create account
-              </Button>
-            </a>
+            <div className="flex flex-wrap items-center gap-4">
+              <a href="/login?register=1" className="flex-shrink-0">
+                <Button className="h-10 px-5 bg-white text-gray-950 hover:bg-gray-100 font-semibold text-sm">
+                  Create account
+                </Button>
+              </a>
+              <a href="/login" className="text-sm text-white/60 hover:text-white transition-colors">
+                Already have an account? Log in →
+              </a>
+            </div>
           </div>
         </div>
       )}

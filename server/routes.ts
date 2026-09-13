@@ -386,6 +386,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin endpoints for ticket management
+
+  // Returns latest customer-reply timestamp per ticket — used for unread indicators in admin UI
+  app.get('/api/admin/messages-summary', isAdmin, async (_req: any, res) => {
+    try {
+      const summary = await storage.getLatestCustomerMessagePerTicket();
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching messages summary:", error);
+      res.status(500).json({ message: "Failed to fetch messages summary" });
+    }
+  });
+
   app.get('/api/admin/tickets', isAdmin, async (req: any, res) => {
     try {
       const tickets = await storage.getTickets();

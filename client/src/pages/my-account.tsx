@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueries, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,14 +27,16 @@ import {
   ShoppingCart,
   MessageCircle,
   Send,
+  ChevronRight,
+  ArrowLeft,
 } from "lucide-react";
 
 interface Order {
-  id: string;
+  id: number;
   ticketId: string;
   redditUrl: string;
   clientEmail: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed' | 'approved';
   specialistReply: string;
   timestamp: string;
   type?: string;
@@ -76,6 +78,13 @@ function TicketThread({ ticketId }: { ticketId: number }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
 
+  // Mark as read whenever messages load
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem(`rs_last_read_${ticketId}`, new Date().toISOString());
+    }
+  }, [ticketId, messages.length]);
+
   const sendMessage = useMutation({
     mutationFn: async () => {
       return await apiRequest("POST", `/api/tickets/${ticketId}/messages`, {
@@ -95,7 +104,7 @@ function TicketThread({ ticketId }: { ticketId: number }) {
     <div className="space-y-3 pt-2">
       <p className="text-sm font-medium flex items-center gap-2 text-gray-700">
         <MessageCircle className="w-4 h-4" />
-        Messages from our team
+        Messages
         {messages.length > 0 && (
           <span className="text-xs bg-gray-100 text-gray-500 rounded-full px-2 py-0.5">{messages.length}</span>
         )}
@@ -118,7 +127,7 @@ function TicketThread({ ticketId }: { ticketId: number }) {
                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">RepShield Team</p>
                   )}
                   <p className="leading-relaxed">{msg.message}</p>
-                  <p className={`text-[10px] mt-1 ${isAdmin ? "text-gray-400" : "text-gray-400"}`}>
+                  <p className="text-[10px] mt-1 text-gray-400">
                     {new Date(msg.createdAt).toLocaleString("en-GB", {
                       day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
                     })}
@@ -133,7 +142,7 @@ function TicketThread({ ticketId }: { ticketId: number }) {
 
       <div className="flex gap-2">
         <Textarea
-          placeholder="Reply to our team..."
+          placeholder="Reply to our team…"
           value={replyText}
           onChange={(e) => setReplyText(e.target.value)}
           rows={2}
@@ -311,6 +320,9 @@ export default function MyAccount() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [, setLocation] = useLocation();
   const [payingTicket, setPayingTicket] = useState<number | null>(null);
+  const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
+  const [showMobileDetail, setShowMobileDetail] = useState(false);
+  const [readVersion, setReadVersion] = useState(0);
   const searchString = useSearch();
   const paymentParam = new URLSearchParams(searchString).get("payment");
 
@@ -336,8 +348,23 @@ export default function MyAccount() {
     }
   };
 
+  const handleSelectTicket = useCallback((id: number) => {
+    setSelectedTicketId(id);
+    setShowMobileDetail(true);
+    localStorage.setItem(`rs_last_read_${id}`, new Date().toISOString());
+    setReadVersion(v => v + 1);
+  }, []);
+
+  const handleTabChange = useCallback((tab: string) => {
+    setActiveTab(tab);
+    if (tab === 'orders' && selectedTicketId) {
+      localStorage.setItem(`rs_last_read_${selectedTicketId}`, new Date().toISOString());
+      setReadVersion(v => v + 1);
+    }
+  }, [selectedTicketId]);
+
   // Fetch real user stats — must be called before any conditional returns (React hooks rules)
-  const { data: statsResponse, isLoading: statsLoading } = useQuery<any>({
+  const { data: statsResponse } = useQuery<any>({
     queryKey: ['/api/user/stats'],
     enabled: !!user,
     queryFn: async () => {
@@ -357,15 +384,54 @@ export default function MyAccount() {
     }
   }, [isLoading, isAuthenticated, setLocation]);
 
-  // Get tickets from user data (if available)
-  const tickets = (user as any)?.tickets || [];
+  // Get tickets from user data
+  const tickets: Order[] = (user as any)?.tickets || [];
 
   const stats: AccountStats = statsResponse?.data || {
     totalOrders: tickets.length,
-    successfulRemovals: tickets.filter((t: any) => t.status === 'completed').length,
+    successfulRemovals: tickets.filter((t) => t.status === 'completed').length,
     accountBalance: 0,
     creditsRemaining: 0
   };
+
+  // Parallel message fetches for all tickets (for unread badge computation)
+  const ticketIds = useMemo(() => tickets.map((t) => t.id), [tickets]);
+
+  const messageQueries = useQueries({
+    queries: ticketIds.map((id) => ({
+      queryKey: [`/api/tickets/${id}/messages`],
+      enabled: !!user && ticketIds.length > 0,
+      refetchInterval: 20000,
+    })),
+  });
+
+  // Compute which tickets have unread admin messages
+  const unreadTicketIds = useMemo(() => {
+    const set = new Set<number>();
+    ticketIds.forEach((id, i) => {
+      // Don't count the currently-viewed ticket as unread
+      if (id === selectedTicketId && activeTab === 'orders') return;
+      const messages = (messageQueries[i]?.data as TicketMessage[]) ?? [];
+      const lastRead = localStorage.getItem(`rs_last_read_${id}`);
+      const adminMessages = messages.filter((m) => m.senderRole === 'admin' && !m.isInternal);
+      if (adminMessages.length === 0) return;
+      const hasNew = lastRead
+        ? adminMessages.some((m) => new Date(m.createdAt) > new Date(lastRead))
+        : true;
+      if (hasNew) set.add(id);
+    });
+    return set;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messageQueries, ticketIds, selectedTicketId, activeTab, readVersion]);
+
+  const unreadCount = unreadTicketIds.size;
+
+  // Auto-select first ticket when tickets load
+  useEffect(() => {
+    if (tickets.length > 0 && selectedTicketId === null) {
+      setSelectedTicketId(tickets[0].id);
+    }
+  }, [tickets, selectedTicketId]);
 
   // Show loading while checking authentication
   if (isLoading || (!isAuthenticated && !user)) {
@@ -398,274 +464,418 @@ export default function MyAccount() {
     }
   };
 
+  const selectedTicket = tickets.find((t) => t.id === selectedTicketId) ?? null;
+
   return (
     <>
       <Header />
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="font-satoshi text-3xl font-black text-gray-950 tracking-[-0.03em]">
-            {user?.firstName ? `Welcome back, ${user.firstName}` : 'My Account'}
-          </h1>
-          <p className="text-gray-500 mt-1">Manage your Reddit removal cases and account settings</p>
-        </div>
-
-        {/* Payment result banners */}
-        {paymentParam === 'success' && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-xl px-5 py-4 flex items-center gap-3">
-            <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
-            <div>
-              <p className="font-semibold text-green-800 text-sm">Payment confirmed — your case is now active.</p>
-              <p className="text-sm text-green-700">We'll update the progress here as work proceeds.</p>
-            </div>
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="font-satoshi text-3xl font-black text-gray-950 tracking-[-0.03em]">
+              {user?.firstName ? `Welcome back, ${user.firstName}` : 'My Account'}
+            </h1>
+            <p className="text-gray-500 mt-1">Manage your Reddit removal cases and account settings</p>
           </div>
-        )}
-        {paymentParam === 'cancelled' && (
-          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl px-5 py-4 flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0" />
-            <div>
-              <p className="font-semibold text-yellow-800 text-sm">Payment not completed.</p>
-              <p className="text-sm text-yellow-700">Your quote is still available — use Pay Now on your ticket when ready.</p>
+
+          {/* Payment result banners */}
+          {paymentParam === 'success' && (
+            <div className="mb-6 bg-green-50 border border-green-200 rounded-xl px-5 py-4 flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+              <div>
+                <p className="font-semibold text-green-800 text-sm">Payment confirmed — your case is now active.</p>
+                <p className="text-sm text-green-700">We'll update the progress here as work proceeds.</p>
+              </div>
             </div>
-          </div>
-        )}
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
-            <TabsTrigger value="dashboard" className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              Dashboard
-            </TabsTrigger>
-            <TabsTrigger value="orders" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              My Tickets
-            </TabsTrigger>
-            <TabsTrigger value="wallet" className="flex items-center gap-2">
-              <CreditCard className="w-4 h-4" />
-              Wallet
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              Settings
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Dashboard Tab */}
-          <TabsContent value="dashboard" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.totalOrders}</div>
-                  <p className="text-xs text-muted-foreground">All time orders</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Successful Removals</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.successfulRemovals}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.totalOrders > 0 ? Math.round((stats.successfulRemovals / stats.totalOrders) * 100) : 0}% success rate
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Account Balance</CardTitle>
-                  <DollarSign className="h-4 w-4 text-green-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">${stats.accountBalance}</div>
-                  <p className="text-xs text-muted-foreground">Available funds</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Credits</CardTitle>
-                  <CreditCard className="h-4 w-4 text-blue-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.creditsRemaining}</div>
-                  <p className="text-xs text-muted-foreground">Credits remaining</p>
-                </CardContent>
-              </Card>
+          )}
+          {paymentParam === 'cancelled' && (
+            <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-xl px-5 py-4 flex items-center gap-3">
+              <AlertCircle className="w-5 h-5 text-yellow-600 shrink-0" />
+              <div>
+                <p className="font-semibold text-yellow-800 text-sm">Payment not completed.</p>
+                <p className="text-sm text-yellow-700">Your quote is still available — use Pay Now on your ticket when ready.</p>
+              </div>
             </div>
+          )}
 
-            {/* Recent Orders */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Tickets</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {tickets.length === 0 ? (
-                    <div className="text-center py-4">
-                      <p className="text-gray-500">No tickets yet. Submit a quote request to get started.</p>
-                    </div>
-                  ) : (
-                    tickets.slice(0, 3).map((ticket) => (
-                      <div key={ticket.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          {getStatusIcon(ticket.status)}
-                          <div>
-                            <p className="font-medium">Ticket {ticket.ticketId}</p>
-                            <p className="text-sm text-gray-500">{ticket.timestamp}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-4">
-                          <Badge className={getStatusColor(ticket.status)}>
-                            {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-                {tickets.length > 0 && (
-                  <div className="mt-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => setActiveTab("orders")}
-                      className="w-full"
-                    >
-                      View All Tickets
-                    </Button>
-                  </div>
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-flex">
+              <TabsTrigger value="dashboard" className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                Dashboard
+              </TabsTrigger>
+              <TabsTrigger value="orders" className="flex items-center gap-2 relative">
+                <FileText className="w-4 h-4" />
+                My Tickets
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                    {unreadCount}
+                  </span>
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </TabsTrigger>
+              <TabsTrigger value="wallet" className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4" />
+                Wallet
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                Settings
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Orders Tab */}
-          <TabsContent value="orders" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>My Tickets</CardTitle>
-                <p className="text-sm text-gray-600">Track all your Reddit removal requests</p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+            {/* Dashboard Tab */}
+            <TabsContent value="dashboard" className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+                    <FileText className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.totalOrders}</div>
+                    <p className="text-xs text-muted-foreground">All time orders</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Successful Removals</CardTitle>
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.successfulRemovals}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {stats.totalOrders > 0 ? Math.round((stats.successfulRemovals / stats.totalOrders) * 100) : 0}% success rate
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Account Balance</CardTitle>
+                    <DollarSign className="h-4 w-4 text-green-500" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">${stats.accountBalance}</div>
+                    <p className="text-xs text-muted-foreground">Available funds</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Credits</CardTitle>
+                    <CreditCard className="h-4 w-4 text-blue-500" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.creditsRemaining}</div>
+                    <p className="text-xs text-muted-foreground">Credits remaining</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Recent Tickets */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Tickets</CardTitle>
+                </CardHeader>
+                <CardContent>
                   {tickets.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-gray-500">No tickets found. Submit a quote request to get started.</p>
+                    <div className="text-center py-10 space-y-4">
+                      <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+                        <FileText className="w-6 h-6 text-gray-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-700">No cases yet</p>
+                        <p className="text-sm text-gray-500 mt-1">Submit a quote request and we'll review your Reddit content for removal.</p>
+                      </div>
+                      <Button
+                        onClick={() => setLocation('/get-quote')}
+                        className="bg-gray-950 hover:bg-gray-800 text-white"
+                      >
+                        Get a Free Quote
+                      </Button>
                     </div>
                   ) : (
-                    tickets.map((ticket) => (
-                      <div key={ticket.id} className="border rounded-lg p-6 space-y-4">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              {getStatusIcon(ticket.status)}
-                              <h3 className="font-semibold">Ticket {ticket.ticketId}</h3>
-                              <Badge className={getStatusColor(ticket.status)}>
-                                {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
-                              </Badge>
+                    <div className="space-y-3">
+                      {tickets.slice(0, 3).map((ticket) => (
+                        <div key={ticket.id} className="flex items-center justify-between p-4 border rounded-lg">
+                          <div className="flex items-center space-x-3 min-w-0">
+                            {getStatusIcon(ticket.status)}
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">Ticket {ticket.ticketId}</p>
+                              <p className="text-sm text-gray-500">{ticket.timestamp}</p>
                             </div>
-                            <p className="text-sm text-gray-500">Submitted {ticket.timestamp}</p>
                           </div>
-                          <div className="text-right space-y-2">
-                            {ticket.redditUrl && (
-                              <Button variant="outline" size="sm" className="mt-2" onClick={() => window.open(ticket.redditUrl, '_blank')}>
-                                <Eye className="w-4 h-4 mr-2" />
-                                View on Reddit
-                              </Button>
-                            )}
-                            {ticket.status === 'approved' && (ticket as any).amount && (
+                          <div className="flex items-center gap-3 shrink-0 ml-3">
+                            <Badge className={getStatusColor(ticket.status)}>
+                              {ticket.status.charAt(0).toUpperCase() + ticket.status.slice(1)}
+                            </Badge>
+                            {ticket.status === 'approved' && ticket.amount && (
                               <Button
                                 size="sm"
-                                className="bg-gray-950 hover:bg-gray-800 text-white w-full mt-2"
+                                className="bg-gray-950 hover:bg-gray-800 text-white"
                                 onClick={() => handleTicketPayment(ticket.id)}
                                 disabled={payingTicket === ticket.id}
                               >
                                 {payingTicket === ticket.id ? (
+                                  <RefreshCw className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <><CreditCard className="w-3 h-3 mr-1" />Pay ${ticket.amount}</>
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                      <Button
+                        variant="outline"
+                        onClick={() => handleTabChange("orders")}
+                        className="w-full mt-2"
+                      >
+                        View All Tickets
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* My Tickets Tab — two-panel layout */}
+            <TabsContent value="orders" className="space-y-0">
+              {tickets.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-16 space-y-4">
+                    <div className="w-14 h-14 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+                      <FileText className="w-7 h-7 text-gray-400" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-800 text-lg">No tickets yet</p>
+                      <p className="text-sm text-gray-500 mt-1 max-w-sm mx-auto">
+                        Once you submit a quote request, your cases will appear here so you can track progress and communicate with our team.
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => setLocation('/get-quote')}
+                      className="bg-gray-950 hover:bg-gray-800 text-white"
+                    >
+                      Get a Free Quote
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="flex flex-col md:flex-row border rounded-xl overflow-hidden bg-white" style={{ minHeight: '560px' }}>
+                  {/* Left panel: ticket list */}
+                  <div className={`md:w-72 border-b md:border-b-0 md:border-r flex flex-col shrink-0 ${showMobileDetail ? 'hidden md:flex' : 'flex'}`}>
+                    <div className="px-4 py-3 border-b bg-gray-50">
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                        {tickets.length} Case{tickets.length !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <div className="overflow-y-auto flex-1">
+                      {tickets.map((ticket) => {
+                        const isSelected = ticket.id === selectedTicketId;
+                        const hasUnread = unreadTicketIds.has(ticket.id);
+                        return (
+                          <button
+                            key={ticket.id}
+                            onClick={() => handleSelectTicket(ticket.id)}
+                            className={`w-full text-left px-4 py-3.5 border-b flex items-center gap-3 transition-colors last:border-b-0 ${
+                              isSelected
+                                ? 'bg-gray-50 border-l-2 border-l-gray-900'
+                                : 'hover:bg-gray-50 border-l-2 border-l-transparent'
+                            }`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium text-gray-900 truncate">
+                                  Ticket {ticket.ticketId}
+                                </span>
+                                {hasUnread && (
+                                  <span className="w-2 h-2 bg-blue-500 rounded-full shrink-0" title="New message" />
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge className={`text-[10px] px-1.5 py-0 leading-4 ${getStatusColor(ticket.status)}`}>
+                                  {ticket.status}
+                                </Badge>
+                                <span className="text-xs text-gray-400 truncate">{ticket.timestamp}</span>
+                              </div>
+                            </div>
+                            <ChevronRight className={`w-4 h-4 shrink-0 transition-colors ${isSelected ? 'text-gray-700' : 'text-gray-300'}`} />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Right panel: ticket detail */}
+                  <div className={`flex-1 overflow-y-auto ${showMobileDetail || !selectedTicket ? 'block' : 'hidden md:block'}`}>
+                    {/* Mobile back button */}
+                    <button
+                      className="md:hidden flex items-center gap-1.5 text-sm text-gray-500 px-4 py-3 border-b w-full hover:bg-gray-50"
+                      onClick={() => setShowMobileDetail(false)}
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      Back to list
+                    </button>
+
+                    {selectedTicket ? (
+                      <div className="p-6 space-y-6">
+                        {/* Ticket header */}
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                          <div>
+                            <div className="flex items-center gap-3 flex-wrap">
+                              {getStatusIcon(selectedTicket.status)}
+                              <h2 className="font-semibold text-lg text-gray-900">
+                                Ticket {selectedTicket.ticketId}
+                              </h2>
+                              <Badge className={getStatusColor(selectedTicket.status)}>
+                                {selectedTicket.status.charAt(0).toUpperCase() + selectedTicket.status.slice(1)}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-gray-500 mt-1">Submitted {selectedTicket.timestamp}</p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {selectedTicket.redditUrl && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.open(selectedTicket.redditUrl, '_blank')}
+                              >
+                                <Eye className="w-4 h-4 mr-2" />
+                                View on Reddit
+                              </Button>
+                            )}
+                            {selectedTicket.status === 'approved' && selectedTicket.amount && (
+                              <Button
+                                size="sm"
+                                className="bg-gray-950 hover:bg-gray-800 text-white"
+                                onClick={() => handleTicketPayment(selectedTicket.id)}
+                                disabled={payingTicket === selectedTicket.id}
+                              >
+                                {payingTicket === selectedTicket.id ? (
                                   <RefreshCw className="w-4 h-4 animate-spin" />
                                 ) : (
                                   <>
                                     <CreditCard className="w-4 h-4 mr-2" />
-                                    Pay ${(ticket as any).amount}
+                                    Pay ${selectedTicket.amount}
                                   </>
                                 )}
                               </Button>
                             )}
                           </div>
                         </div>
-                        
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium">Reddit URL:</p>
-                          <p className="text-sm text-blue-600 break-all">{ticket.redditUrl}</p>
+
+                        {/* Pay Now callout when approved */}
+                        {selectedTicket.status === 'approved' && selectedTicket.amount && (
+                          <div className="bg-indigo-50 border border-indigo-200 rounded-xl px-5 py-4 flex items-center gap-3">
+                            <CreditCard className="w-5 h-5 text-indigo-600 shrink-0" />
+                            <div className="flex-1">
+                              <p className="font-semibold text-indigo-800 text-sm">Your quote is ready — payment activates your case</p>
+                              <p className="text-sm text-indigo-700">Our team has reviewed your request and quoted ${selectedTicket.amount}.</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Content URL */}
+                        <div className="bg-gray-50 rounded-xl p-4">
+                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Content URL</p>
+                          {selectedTicket.redditUrl ? (
+                            <a
+                              href={selectedTicket.redditUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-blue-600 hover:underline break-all"
+                            >
+                              {selectedTicket.redditUrl}
+                            </a>
+                          ) : (
+                            <p className="text-sm text-gray-400">—</p>
+                          )}
                         </div>
 
-                        <TicketThread ticketId={ticket.id} />
+                        {/* Progress bar */}
+                        {typeof selectedTicket.progress === 'number' && selectedTicket.progress > 0 && (
+                          <div>
+                            <div className="flex justify-between text-sm mb-2">
+                              <span className="font-medium text-gray-700">Case Progress</span>
+                              <span className="text-gray-500">{selectedTicket.progress}%</span>
+                            </div>
+                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-gray-900 rounded-full transition-all duration-500"
+                                style={{ width: `${selectedTicket.progress}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Message thread */}
+                        <TicketThread ticketId={selectedTicket.id} />
                       </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Wallet Tab */}
-          <TabsContent value="wallet" className="space-y-6">
-            <WalletTab stats={stats} />
-          </TabsContent>
-
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Email</label>
-                    <p className="text-gray-600">{user?.email || 'Not provided'}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Name</label>
-                    <p className="text-gray-600">{user?.firstName ? `${user.firstName} ${user?.lastName || ''}`.trim() : 'Not set'}</p>
+                    ) : (
+                      <div className="hidden md:flex items-center justify-center h-full text-gray-400 text-sm">
+                        Select a ticket to view details
+                      </div>
+                    )}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              )}
+            </TabsContent>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Notifications</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Email Notifications</p>
-                    <p className="text-sm text-gray-600">You'll receive email updates for all ticket status changes</p>
+            {/* Wallet Tab */}
+            <TabsContent value="wallet" className="space-y-6">
+              <WalletTab stats={stats} />
+            </TabsContent>
+
+            {/* Settings Tab */}
+            <TabsContent value="settings" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Account Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">Email</label>
+                      <p className="text-gray-600">{user?.email || 'Not provided'}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">Name</label>
+                      <p className="text-gray-600">{user?.firstName ? `${user.firstName} ${user?.lastName || ''}`.trim() : 'Not set'}</p>
+                    </div>
                   </div>
-                  <Badge className="bg-green-100 text-green-800">Active</Badge>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Security</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Button variant="outline" className="w-full justify-start" onClick={() => setLocation('/reset-password')}>
-                  Change Password
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notifications</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Email Notifications</p>
+                      <p className="text-sm text-gray-600">You'll receive email updates for all ticket status changes</p>
+                    </div>
+                    <Badge className="bg-green-100 text-green-800">Active</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Security</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Button variant="outline" className="w-full justify-start" onClick={() => setLocation('/reset-password')}>
+                    Change Password
+                  </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
       <Footer />
