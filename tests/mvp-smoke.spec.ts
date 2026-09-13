@@ -31,18 +31,18 @@ test.describe('Homepage & Navigation', () => {
 });
 
 test.describe('Auth Flow', () => {
-  test('login page renders with sign in and create account tabs', async ({ page }) => {
+  test('login page renders with sign in and create account options', async ({ page }) => {
     await page.goto('/login');
-    await expect(page.getByRole('tab', { name: /Sign In/i })).toBeVisible();
-    await expect(page.getByRole('tab', { name: /Create Account/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Welcome back/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Create one free/i })).toBeVisible();
   });
 
   test('registration form validates required fields', async ({ page }) => {
     await page.goto('/login');
-    await page.getByRole('tab', { name: /Create Account/i }).click();
+    await page.getByRole('button', { name: /Create one free/i }).click();
 
     // Try to submit empty form — HTML5 validation should block
-    const submitBtn = page.getByRole('button', { name: /Create Account/i });
+    const submitBtn = page.getByRole('button', { name: /Create account/i });
     await submitBtn.click();
 
     // Should still be on login page (form not submitted)
@@ -51,14 +51,14 @@ test.describe('Auth Flow', () => {
 
   test('registration form shows password hint', async ({ page }) => {
     await page.goto('/login');
-    await page.getByRole('tab', { name: /Create Account/i }).click();
-    await expect(page.getByText('Must be at least 8 characters')).toBeVisible();
+    await page.getByRole('button', { name: /Create one free/i }).click();
+    await expect(page.getByText('Minimum 8 characters')).toBeVisible();
   });
 
-  test('forgot password dialog opens', async ({ page }) => {
+  test('forgot password opens reset form', async ({ page }) => {
     await page.goto('/login');
-    await page.getByRole('button', { name: /Forgot your password/i }).click();
-    await expect(page.getByText('Reset Password')).toBeVisible();
+    await page.getByRole('button', { name: /Forgot password/i }).click();
+    await expect(page.getByRole('heading', { name: /Reset password/i })).toBeVisible();
     await expect(page.locator('input[id="forgot-email"]')).toBeVisible();
   });
 });
@@ -70,21 +70,21 @@ test.describe('Full Registration & Login Flow', () => {
   test('can register a new account and auto-login', async ({ page }) => {
     await page.goto('/login');
 
-    // Switch to Create Account tab
-    await page.getByRole('tab', { name: /Create Account/i }).click();
+    // Switch to create account mode
+    await page.getByRole('button', { name: /Create one free/i }).click();
 
     // Fill out the registration form
-    await page.locator('#register-firstname').fill('Test');
-    await page.locator('#register-lastname').fill('User');
-    await page.locator('#register-email').fill(testEmail);
-    await page.locator('#register-password').fill(testPassword);
+    await page.locator('#reg-first').fill('Test');
+    await page.locator('#reg-last').fill('User');
+    await page.locator('#reg-email').fill(testEmail);
+    await page.locator('#reg-password').fill(testPassword);
 
     // Submit
-    await page.getByRole('button', { name: /Create Account/i }).click();
+    await page.getByRole('button', { name: /Create account/i }).click();
 
     // Should redirect to my-account after auto-login
     await page.waitForURL(/\/my-account/, { timeout: 10000 });
-    await expect(page.getByRole('heading', { name: 'My Account' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /My Account|Welcome back/i })).toBeVisible();
   });
 
   test('can login with existing credentials', async ({ page, request }) => {
@@ -122,12 +122,12 @@ test.describe('Account Page', () => {
     // Register and login
     const email = `acct-test${Date.now()}@example.com`;
     await page.goto('/login');
-    await page.getByRole('tab', { name: /Create Account/i }).click();
-    await page.locator('#register-firstname').fill('Account');
-    await page.locator('#register-lastname').fill('Tester');
-    await page.locator('#register-email').fill(email);
-    await page.locator('#register-password').fill('TestPass123!');
-    await page.getByRole('button', { name: /Create Account/i }).click();
+    await page.getByRole('button', { name: /Create one free/i }).click();
+    await page.locator('#reg-first').fill('Account');
+    await page.locator('#reg-last').fill('Tester');
+    await page.locator('#reg-email').fill(email);
+    await page.locator('#reg-password').fill('TestPass123!');
+    await page.getByRole('button', { name: /Create account/i }).click();
     await page.waitForURL(/\/my-account/, { timeout: 10000 });
 
     // Verify dashboard tabs are visible
@@ -140,12 +140,12 @@ test.describe('Account Page', () => {
   test('settings tab shows user info', async ({ page }) => {
     const email = `settings-test${Date.now()}@example.com`;
     await page.goto('/login');
-    await page.getByRole('tab', { name: /Create Account/i }).click();
-    await page.locator('#register-firstname').fill('Settings');
-    await page.locator('#register-lastname').fill('User');
-    await page.locator('#register-email').fill(email);
-    await page.locator('#register-password').fill('TestPass123!');
-    await page.getByRole('button', { name: /Create Account/i }).click();
+    await page.getByRole('button', { name: /Create one free/i }).click();
+    await page.locator('#reg-first').fill('Settings');
+    await page.locator('#reg-last').fill('User');
+    await page.locator('#reg-email').fill(email);
+    await page.locator('#reg-password').fill('TestPass123!');
+    await page.getByRole('button', { name: /Create account/i }).click();
     await page.waitForURL(/\/my-account/, { timeout: 10000 });
 
     // Click Settings tab
@@ -166,17 +166,17 @@ test.describe('Public Pages', () => {
 
   test('ticket status page loads', async ({ page }) => {
     await page.goto('/ticket-status');
-    await expect(page.getByText('Check Your Ticket Status')).toBeVisible();
+    await expect(page.getByText('Track your case')).toBeVisible();
   });
 
   test('contact page loads', async ({ page }) => {
     await page.goto('/contact');
-    await expect(page.getByRole('heading', { name: /Contact/i }).first()).toBeVisible();
+    await expect(page.locator('h1').first()).toBeVisible();
   });
 
   test('about page loads', async ({ page }) => {
     await page.goto('/about');
-    await expect(page.getByRole('heading', { name: /About/i }).first()).toBeVisible();
+    await expect(page.locator('h1').first()).toBeVisible();
   });
 
   test('privacy policy loads', async ({ page }) => {
@@ -242,12 +242,12 @@ test.describe('Mobile Navigation', () => {
     await page.goto('/login');
     const email = `mobile-test${Date.now()}@example.com`;
 
-    await page.getByRole('tab', { name: /Create Account/i }).click();
-    await page.locator('#register-firstname').fill('Mobile');
-    await page.locator('#register-lastname').fill('User');
-    await page.locator('#register-email').fill(email);
-    await page.locator('#register-password').fill('TestPass123!');
-    await page.getByRole('button', { name: /Create Account/i }).click();
+    await page.getByRole('button', { name: /Create one free/i }).click();
+    await page.locator('#reg-first').fill('Mobile');
+    await page.locator('#reg-last').fill('User');
+    await page.locator('#reg-email').fill(email);
+    await page.locator('#reg-password').fill('TestPass123!');
+    await page.getByRole('button', { name: /Create account/i }).click();
 
     await page.waitForURL(/\/my-account/, { timeout: 10000 });
   });
