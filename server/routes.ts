@@ -1006,18 +1006,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Create or find user based on email to satisfy foreign key constraint
-      const userId = email.replace('@', '_').replace(/\./g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+      // Create or find user based on email to satisfy foreign key constraint.
+      // Always look up by email first — if a registered user already has this email
+      // we must reuse their existing ID or the INSERT will hit a unique-email constraint.
+      const existingUser = await storage.getUserByEmail(email);
+      const userId = existingUser?.id ?? `guest_${email.replace(/[^a-zA-Z0-9]/g, '_')}`;
       const user = await storage.upsertUser({
         id: userId,
         email: email,
-        role: 'user',
-        firstName: null,
-        lastName: null,
-        profileImageUrl: null,
-        password: null,
-        accountBalance: "0.00",
-        creditsRemaining: 0
+        role: existingUser?.role ?? 'user',
+        firstName: existingUser?.firstName ?? null,
+        lastName: existingUser?.lastName ?? null,
+        profileImageUrl: existingUser?.profileImageUrl ?? null,
+        password: existingUser?.password ?? null,
+        accountBalance: existingUser?.accountBalance ?? "0.00",
+        creditsRemaining: existingUser?.creditsRemaining ?? 0
       });
 
       // Create ticket directly - no legacy quote request table needed

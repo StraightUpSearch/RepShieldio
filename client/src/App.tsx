@@ -8,6 +8,7 @@ import { SchemaOrg } from "@/components/schema-org";
 import SEOHead from "@/components/seo-head";
 import AdvancedSEO from "@/components/advanced-seo";
 import { ErrorBoundary } from "@/components/error-boundary";
+import TelegramWidget from "@/components/telegram-widget";
 
 // Static imports - lightweight pages needed on first paint
 import HomeServiceFirst from "@/pages/home-service-first";
@@ -99,6 +100,7 @@ function App() {
             <Router />
           </main>
         </ErrorBoundary>
+        <TelegramWidget />
       </TooltipProvider>
     </QueryClientProvider>
   );
