@@ -41,10 +41,23 @@ export const globalErrorHandler = (
     userMessage = 'Service temporarily unavailable';
   }
 
-  // Build response - never leak stack traces in production
+  // Build response
   const response: Record<string, any> = {
     error: userMessage,
   };
+
+  // Temporary debug: include error details to diagnose Vercel 400 errors
+  // TODO: Remove after debugging
+  if (process.env.NODE_ENV !== 'development') {
+    response._debug = {
+      message: err.message,
+      name: err.name,
+      code: err.code,
+      statusCode: err.statusCode,
+      status: err.status,
+      isOperational: err.isOperational,
+    };
+  }
 
   if (process.env.NODE_ENV === 'development') {
     response.message = err.message;
