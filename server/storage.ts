@@ -20,7 +20,10 @@ import {
   type QuoteRequest,
   type InsertQuoteRequest,
   type BrandScanTicket,
-  type InsertBrandScanTicket
+  type InsertBrandScanTicket,
+  ticketMessages,
+  type TicketMessage,
+  type InsertTicketMessage,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, gt, sql } from "drizzle-orm";
@@ -131,6 +134,10 @@ export interface IStorage {
   getUserSubscription(userId: string): Promise<any | undefined>;
   updateSubscription(id: number, data: any): Promise<any | undefined>;
   cancelSubscription(id: number): Promise<any | undefined>;
+
+  // Ticket messages
+  createTicketMessage(data: InsertTicketMessage): Promise<TicketMessage>;
+  getTicketMessages(ticketId: number, includeInternal?: boolean): Promise<TicketMessage[]>;
 
   // Funnel analytics
   trackFunnelEvent(data: { eventType: string; userId?: string; sessionId?: string; metadata?: any }): Promise<void>;
@@ -943,6 +950,53 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  // ============ TICKET MESSAGES ============
+
+  async createTicketMessage(data: InsertTicketMessage): Promise<TicketMessage> {
+    try {
+      const [msg] = await db
+        .insert(ticketMessages)
+        .values({
+          ticketId: data.ticketId,
+          senderId: data.senderId || null,
+          senderRole: data.senderRole,
+          message: data.message,
+          isInternal: data.isInternal ?? false,
+          createdAt: toDbTimestamp(new Date()),
+        } as any)
+        .returning();
+      return {
+        ...msg,
+        createdAt: fromDbTimestamp(msg.createdAt),
+      };
+    } catch (error) {
+      console.error("Error creating ticket message:", error);
+      throw error;
+    }
+  }
+
+  async getTicketMessages(ticketId: number, includeInternal = false): Promise<TicketMessage[]> {
+    try {
+      const conditions = includeInternal
+        ? eq(ticketMessages.ticketId, ticketId)
+        : and(eq(ticketMessages.ticketId, ticketId), eq(ticketMessages.isInternal, false));
+
+      const messages = await db
+        .select()
+        .from(ticketMessages)
+        .where(conditions!)
+        .orderBy(ticketMessages.createdAt);
+
+      return messages.map(msg => ({
+        ...msg,
+        createdAt: fromDbTimestamp(msg.createdAt),
+      }));
+    } catch (error) {
+      console.error("Error getting ticket messages:", error);
+      return [];
+    }
+  }
+
   // ============ FUNNEL ANALYTICS ============
 
   async trackFunnelEvent(data: { eventType: string; userId?: string; sessionId?: string; metadata?: any }): Promise<void> {
@@ -1450,6 +1504,26 @@ export class MemStorage implements IStorage {
   async getUserSubscription(userId: string): Promise<any | undefined> { return undefined; }
   async updateSubscription(id: number, data: any): Promise<any | undefined> { return undefined; }
   async cancelSubscription(id: number): Promise<any | undefined> { return undefined; }
+
+  private ticketMessagesList: TicketMessage[] = [];
+  async createTicketMessage(data: InsertTicketMessage): Promise<TicketMessage> {
+    const msg: TicketMessage = {
+      id: this.ticketMessagesList.length + 1,
+      ticketId: data.ticketId,
+      senderId: data.senderId || null,
+      senderRole: data.senderRole,
+      message: data.message,
+      isInternal: data.isInternal ?? false,
+      createdAt: new Date(),
+    };
+    this.ticketMessagesList.push(msg);
+    return msg;
+  }
+  async getTicketMessages(ticketId: number, includeInternal = false): Promise<TicketMessage[]> {
+    return this.ticketMessagesList.filter(m =>
+      m.ticketId === ticketId && (includeInternal || !m.isInternal)
+    );
+  }
 
   async trackFunnelEvent(data: any): Promise<void> { /* no-op in memory */ }
   async getFunnelEvents(eventType?: string, limit?: number): Promise<any[]> { return []; }

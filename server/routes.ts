@@ -422,6 +422,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Ticket messages — admin can post replies and internal notes
+  app.get('/api/admin/tickets/:id/messages', isAdmin, async (req: any, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const messages = await storage.getTicketMessages(ticketId, true); // include internal
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching ticket messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  app.post('/api/admin/tickets/:id/messages', isAdmin, async (req: any, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const { message, isInternal } = req.body;
+      if (!message?.trim()) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+      const msg = await storage.createTicketMessage({
+        ticketId,
+        senderId: req.user.id,
+        senderRole: 'admin',
+        message: message.trim(),
+        isInternal: !!isInternal,
+      });
+      res.status(201).json(msg);
+    } catch (error) {
+      console.error("Error creating ticket message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
+  // Customer-facing: get messages for own ticket (excludes internal notes)
+  app.get('/api/tickets/:id/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      // Verify the ticket belongs to this user
+      const ticket = await storage.getTicket(ticketId);
+      if (!ticket || ticket.userId !== req.user.id) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+      const messages = await storage.getTicketMessages(ticketId, false); // exclude internal
+      res.json(messages);
+    } catch (error) {
+      console.error("Error fetching ticket messages:", error);
+      res.status(500).json({ message: "Failed to fetch messages" });
+    }
+  });
+
+  // Customer-facing: post a reply to own ticket
+  app.post('/api/tickets/:id/messages', isAuthenticated, async (req: any, res) => {
+    try {
+      const ticketId = parseInt(req.params.id);
+      const { message } = req.body;
+      if (!message?.trim()) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+      // Verify the ticket belongs to this user
+      const ticket = await storage.getTicket(ticketId);
+      if (!ticket || ticket.userId !== req.user.id) {
+        return res.status(404).json({ message: "Ticket not found" });
+      }
+      const msg = await storage.createTicketMessage({
+        ticketId,
+        senderId: req.user.id,
+        senderRole: 'customer',
+        message: message.trim(),
+      });
+      res.status(201).json(msg);
+    } catch (error) {
+      console.error("Error creating ticket message:", error);
+      res.status(500).json({ message: "Failed to send message" });
+    }
+  });
+
   // Monitoring subscription endpoint
   app.post('/api/monitoring/subscribe', isAuthenticated, async (req: any, res) => {
     try {

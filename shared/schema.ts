@@ -133,6 +133,16 @@ const _pgFunnelEvents = pgTable("funnel_events", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+const _pgTicketMessages = pgTable("ticket_messages", {
+  id: serial("id").primaryKey(),
+  ticketId: integer("ticket_id").notNull().references(() => _pgTickets.id),
+  senderId: varchar("sender_id").references(() => _pgUsers.id),
+  senderRole: varchar("sender_role").notNull(), // 'admin' | 'customer' | 'system'
+  message: text("message").notNull(),
+  isInternal: boolean("is_internal").default(false), // admin-only notes not visible to customer
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 const _pgBlogPosts = pgTable("blog_posts", {
   id: integer("id").primaryKey().generatedByDefaultAsIdentity(),
   title: varchar("title", { length: 255 }).notNull(),
@@ -289,6 +299,16 @@ const _sqliteFunnelEvents = sqliteTable("funnel_events", {
   createdAt: sqliteInt("created_at"),
 });
 
+const _sqliteTicketMessages = sqliteTable("ticket_messages", {
+  id: sqliteInt("id").primaryKey({ autoIncrement: true }),
+  ticketId: sqliteInt("ticket_id").notNull().references(() => _sqliteTickets.id),
+  senderId: sqliteText("sender_id").references(() => _sqliteUsers.id),
+  senderRole: sqliteText("sender_role").notNull(),
+  message: sqliteText("message").notNull(),
+  isInternal: sqliteInt("is_internal").default(0),
+  createdAt: sqliteInt("created_at"),
+});
+
 const _sqliteBlogPosts = sqliteTable("blog_posts", {
   id: sqliteInt("id").primaryKey({ autoIncrement: true }),
   title: sqliteText("title").notNull(),
@@ -335,6 +355,7 @@ export const subscriptions = (isPostgres ? _pgSubscriptions : _sqliteSubscriptio
 export const funnelEvents = (isPostgres ? _pgFunnelEvents : _sqliteFunnelEvents) as typeof _pgFunnelEvents;
 export const blogPosts = (isPostgres ? _pgBlogPosts : _sqliteBlogPosts) as typeof _pgBlogPosts;
 export const blogCategories = (isPostgres ? _pgBlogCategories : _sqliteBlogCategories) as typeof _pgBlogCategories;
+export const ticketMessages = (isPostgres ? _pgTicketMessages : _sqliteTicketMessages) as typeof _pgTicketMessages;
 
 // ============ Insert Schemas ============
 // Cast through z.AnyZodObject to work around drizzle-zod .omit() type inference issue
@@ -472,6 +493,17 @@ export interface InsertBlogCategory {
 }
 export type BlogCategory = typeof blogCategories.$inferSelect;
 
+export interface InsertTicketMessage {
+  ticketId: number;
+  senderId?: string | null;
+  senderRole: string;
+  message: string;
+  isInternal?: boolean | null;
+  id?: number;
+  createdAt?: Date | null;
+}
+export type TicketMessage = typeof ticketMessages.$inferSelect;
+
 // ============ Relations ============
 
 export const usersRelations = relations(users, ({ many }) => ({
@@ -485,6 +517,18 @@ export const ticketsRelations = relations(tickets, ({ one, many }) => ({
     references: [users.id],
   }),
   transactions: many(transactions),
+  messages: many(ticketMessages),
+}));
+
+export const ticketMessagesRelations = relations(ticketMessages, ({ one }) => ({
+  ticket: one(tickets, {
+    fields: [ticketMessages.ticketId],
+    references: [tickets.id],
+  }),
+  sender: one(users, {
+    fields: [ticketMessages.senderId],
+    references: [users.id],
+  }),
 }));
 
 export const transactionsRelations = relations(transactions, ({ one }) => ({

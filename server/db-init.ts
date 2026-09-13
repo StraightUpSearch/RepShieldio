@@ -201,6 +201,18 @@ export async function initializeDatabase(): Promise<void> {
         )
       `);
 
+      await ensureTable(client, 'ticket_messages', `
+        CREATE TABLE ticket_messages (
+          id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+          ticket_id INTEGER NOT NULL REFERENCES tickets(id),
+          sender_id TEXT REFERENCES users(id),
+          sender_role TEXT NOT NULL,
+          message TEXT NOT NULL,
+          is_internal INTEGER DEFAULT 0,
+          created_at INTEGER
+        )
+      `);
+
       // Create indexes for common query patterns (SQLite)
       console.log('📋 Creating database indexes...');
       const indexes = [
@@ -389,6 +401,16 @@ async function initializePostgresql(): Promise<void> {
         meta_description VARCHAR(160),
         created_at TIMESTAMP DEFAULT NOW()
       );
+
+      CREATE TABLE IF NOT EXISTS ticket_messages (
+        id SERIAL PRIMARY KEY,
+        ticket_id INTEGER NOT NULL REFERENCES tickets(id),
+        sender_id VARCHAR REFERENCES users(id),
+        sender_role VARCHAR NOT NULL,
+        message TEXT NOT NULL,
+        is_internal BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
     `);
 
     // Create indexes for common query patterns
@@ -418,6 +440,10 @@ async function initializePostgresql(): Promise<void> {
       -- Password reset token lookups
       CREATE UNIQUE INDEX IF NOT EXISTS idx_password_reset_tokens_token ON password_reset_tokens(token);
       CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON password_reset_tokens(user_id);
+
+      -- Ticket messages
+      CREATE INDEX IF NOT EXISTS idx_ticket_messages_ticket_id ON ticket_messages(ticket_id);
+      CREATE INDEX IF NOT EXISTS idx_ticket_messages_created_at ON ticket_messages(created_at);
     `);
 
     // Create index on session expire (connect-pg-simple creates the session table itself)
