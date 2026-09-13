@@ -2,10 +2,6 @@
  * Custom Vercel build script using the Build Output API.
  * Bypasses Vercel's default ncc bundler (which crashes on this project)
  * by pre-bundling the API with esbuild into a self-contained function.
- *
- * 1. Builds the React frontend with Vite → .vercel/output/static/
- * 2. Bundles the Express API with esbuild → .vercel/output/functions/api/index.func/
- * 3. Writes config.json for routing
  */
 import { execSync } from "child_process";
 import { mkdirSync, writeFileSync, cpSync } from "fs";
@@ -27,29 +23,35 @@ mkdirSync(staticDir, { recursive: true });
 cpSync(join(root, "dist", "public"), staticDir, { recursive: true });
 console.log("Frontend copied to .vercel/output/static/");
 
-// 3. Bundle API function with esbuild
-// --bundle inlines all npm packages (self-contained, no node_modules at runtime)
-// SQLite packages are external — they're only used in dev, never reached in production
-console.log("\n=== Bundling API function with esbuild ===");
+// 3. Create a DIAGNOSTIC handler first to verify Build Output API works
+console.log("\n=== Creating diagnostic API function ===");
 const funcDir = join(output, "functions", "api", "index.func");
 mkdirSync(funcDir, { recursive: true });
 
-execSync(
-  [
-    "npx esbuild api/index.ts",
-    "--bundle",
-    "--platform=node",
-    "--target=node20",
-    "--format=esm",
-    "--outfile=.vercel/output/functions/api/index.func/index.mjs",
-    "--external:better-sqlite3",
-    "--external:connect-sqlite3",
-    "--external:@libsql/client",
-    "--external:drizzle-orm/libsql",
-    '--alias:@shared=./shared',
-    '--alias:@=./client/src',
-  ].join(" "),
-  { stdio: "inherit", cwd: root }
+// Minimal handler to test Build Output API setup
+const diagnosticHandler = `
+module.exports = function handler(req, res) {
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify({
+    ok: true,
+    path: req.url,
+    method: req.method,
+    env: {
+      NODE_ENV: process.env.NODE_ENV || 'not set',
+      HAS_DB_URL: !!process.env.PROD_DATABASE_URL,
+      HAS_SESSION_SECRET: !!process.env.SESSION_SECRET,
+    },
+    timestamp: new Date().toISOString()
+  }));
+};
+`;
+
+writeFileSync(join(funcDir, "index.js"), diagnosticHandler);
+
+// Write package.json for the function (CJS mode)
+writeFileSync(
+  join(funcDir, "package.json"),
+  JSON.stringify({ type: "commonjs" }, null, 2)
 );
 
 // Write .vc-config.json for the function
@@ -57,12 +59,12 @@ writeFileSync(
   join(funcDir, ".vc-config.json"),
   JSON.stringify({
     runtime: "nodejs20.x",
-    handler: "index.mjs",
+    handler: "index.js",
     launcherType: "Nodejs",
     maxDuration: 30,
   }, null, 2)
 );
-console.log("API function bundled to .vercel/output/functions/api/index.func/");
+console.log("Diagnostic API function created");
 
 // 4. Write config.json with routing rules
 writeFileSync(
@@ -70,16 +72,13 @@ writeFileSync(
   JSON.stringify({
     version: 3,
     routes: [
-      // API routes → serverless function
       { src: "/api/(.*)", dest: "/api/index" },
-      // Static assets (with hashed filenames) — immutable cache
       { src: "/assets/(.*)", headers: { "Cache-Control": "public, max-age=31536000, immutable" } },
-      // SPA fallback — all other routes serve index.html
       { handle: "filesystem" },
       { src: "/(.*)", dest: "/index.html" },
     ],
   }, null, 2)
 );
 
-console.log("\n=== Build complete ===");
+console.log("\n=== Build complete (diagnostic mode) ===");
 console.log("Output: .vercel/output/");
