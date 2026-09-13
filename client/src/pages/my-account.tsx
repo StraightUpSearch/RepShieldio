@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { useLocation } from "wouter";
@@ -23,7 +24,9 @@ import {
   RefreshCw,
   Search,
   Loader2,
-  ShoppingCart
+  ShoppingCart,
+  MessageCircle,
+  Send,
 } from "lucide-react";
 
 interface Order {
@@ -46,6 +49,116 @@ interface AccountStats {
   successfulRemovals: number;
   accountBalance: number;
   creditsRemaining: number;
+}
+
+interface TicketMessage {
+  id: number;
+  ticketId: number;
+  senderId: string | null;
+  senderRole: string;
+  message: string;
+  isInternal: boolean;
+  createdAt: string;
+}
+
+function TicketThread({ ticketId }: { ticketId: number }) {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [replyText, setReplyText] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const { data: messages = [] } = useQuery<TicketMessage[]>({
+    queryKey: [`/api/tickets/${ticketId}/messages`],
+    refetchInterval: 15000,
+  });
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages.length]);
+
+  const sendMessage = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("POST", `/api/tickets/${ticketId}/messages`, {
+        message: replyText.trim(),
+      });
+    },
+    onSuccess: () => {
+      setReplyText("");
+      queryClient.invalidateQueries({ queryKey: [`/api/tickets/${ticketId}/messages`] });
+    },
+    onError: () => {
+      toast({ title: "Failed to send", description: "Please try again.", variant: "destructive" });
+    },
+  });
+
+  return (
+    <div className="space-y-3 pt-2">
+      <p className="text-sm font-medium flex items-center gap-2 text-gray-700">
+        <MessageCircle className="w-4 h-4" />
+        Messages from our team
+        {messages.length > 0 && (
+          <span className="text-xs bg-gray-100 text-gray-500 rounded-full px-2 py-0.5">{messages.length}</span>
+        )}
+      </p>
+
+      {messages.length === 0 ? (
+        <p className="text-sm text-gray-400 italic bg-gray-50 rounded-lg p-3">
+          No messages yet — our team will be in touch soon.
+        </p>
+      ) : (
+        <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+          {messages.map((msg) => {
+            const isAdmin = msg.senderRole === "admin";
+            return (
+              <div key={msg.id} className={`flex ${isAdmin ? "" : "justify-end"}`}>
+                <div className={`max-w-[85%] rounded-xl px-3 py-2 text-sm ${
+                  isAdmin ? "bg-gray-100 text-gray-800" : "bg-gray-900 text-white"
+                }`}>
+                  {isAdmin && (
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-0.5">RepShield Team</p>
+                  )}
+                  <p className="leading-relaxed">{msg.message}</p>
+                  <p className={`text-[10px] mt-1 ${isAdmin ? "text-gray-400" : "text-gray-400"}`}>
+                    {new Date(msg.createdAt).toLocaleString("en-GB", {
+                      day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
+                    })}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+          <div ref={messagesEndRef} />
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <Textarea
+          placeholder="Reply to our team..."
+          value={replyText}
+          onChange={(e) => setReplyText(e.target.value)}
+          rows={2}
+          className="resize-none text-sm"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && replyText.trim()) {
+              sendMessage.mutate();
+            }
+          }}
+        />
+        <Button
+          onClick={() => sendMessage.mutate()}
+          disabled={!replyText.trim() || sendMessage.isPending}
+          className="shrink-0 self-end bg-gray-900 hover:bg-gray-800"
+          size="sm"
+        >
+          {sendMessage.isPending ? (
+            <RefreshCw className="w-4 h-4 animate-spin" />
+          ) : (
+            <Send className="w-4 h-4" />
+          )}
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 function WalletTab({ stats }: { stats: AccountStats }) {
@@ -470,12 +583,7 @@ export default function MyAccount() {
                           <p className="text-sm text-blue-600 break-all">{ticket.redditUrl}</p>
                         </div>
 
-                        <div className="space-y-2">
-                          <p className="text-sm font-medium">Specialist Reply:</p>
-                          <div className="bg-gray-50 p-3 rounded-lg">
-                            <p className="text-sm">{ticket.specialistReply}</p>
-                          </div>
-                        </div>
+                        <TicketThread ticketId={ticket.id} />
                       </div>
                     ))
                   )}
