@@ -1,16 +1,5 @@
 {
   "version": 2,
   "installCommand": "npm install --ignore-scripts",
-  "buildCommand": "node build-vercel.mjs",
-  "outputDirectory": "dist/public",
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
+  "buildCommand": "node build-vercel.mjs"
 }
