@@ -1,5 +1,4 @@
 import { getDatabaseConfig } from './config/database';
-import { createClient, type Client } from '@libsql/client';
 import postgres from 'postgres';
 
 const config = getDatabaseConfig();
@@ -16,6 +15,7 @@ export async function initializeDatabase(): Promise<void> {
     if (isPostgres) {
       await initializePostgresql();
     } else {
+      const { createClient } = require('@libsql/client');
       const dbPath = config.url.replace('sqlite://', '');
       const client = createClient({ url: `file:${dbPath}` });
 
@@ -433,7 +433,7 @@ async function initializePostgresql(): Promise<void> {
   }
 }
 
-async function ensureTable(client: Client, tableName: string, createSQL: string): Promise<void> {
+async function ensureTable(client: any, tableName: string, createSQL: string): Promise<void> {
   try {
     const result = await client.execute({
       sql: `SELECT name FROM sqlite_master WHERE type='table' AND name=?`,

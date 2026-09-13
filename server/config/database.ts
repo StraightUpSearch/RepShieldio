@@ -1,7 +1,5 @@
 import { drizzle as drizzlePg, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
-import { drizzle as drizzleSqlite } from 'drizzle-orm/libsql';
 import postgres from 'postgres';
-import { createClient } from '@libsql/client';
 import * as schema from '@shared/schema';
 
 interface DatabaseConfig {
@@ -71,7 +69,10 @@ function initializeDatabase() {
     console.log(`✅ Using PostgreSQL database for ${config.environment}`);
     return db;
   } else {
-    // SQLite connection for development or fallback (via @libsql/client — no native compilation)
+    // SQLite — dynamic import so @libsql/client isn't loaded on Vercel (production)
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { createClient } = require('@libsql/client');
+    const { drizzle: drizzleSqlite } = require('drizzle-orm/libsql');
     const dbPath = config.url.replace('sqlite://', '');
     const client = createClient({ url: `file:${dbPath}` });
     const db = drizzleSqlite(client, { schema });
