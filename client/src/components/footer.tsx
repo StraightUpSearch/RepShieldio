@@ -31,7 +31,7 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold mb-4">Services</h4>
             <ul className="space-y-2 text-gray-400">
-              <li><Link href="/scan" className="hover:text-white transition-colors">Live Scanner</Link></li>
+              <li><Link href="/scan" className="hover:text-white transition-colors">Free Brand Scan</Link></li>
               <li><Link href="/monitoring" className="hover:text-white transition-colors">Brand Monitoring</Link></li>
               <li><Link href="/ticket-status" className="hover:text-white transition-colors">Check Status</Link></li>
               <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>

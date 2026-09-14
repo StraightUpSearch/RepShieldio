@@ -469,7 +469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!isInternal) {
         try {
           const ticket = await storage.getTicket(ticketId);
-          const customerEmail = ticket?.requestData?.email || null;
+          const customerEmail = (ticket?.requestData as any)?.email || null;
           if (customerEmail) {
             await sendCustomerMessageNotification({ customerEmail, ticketId, message: message.trim() });
           }

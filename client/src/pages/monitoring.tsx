@@ -7,6 +7,8 @@ import { Shield, Bell, TrendingUp, CheckCircle, Globe, CreditCard } from "lucide
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import Header from "@/components/header";
+import Footer from "@/components/footer";
 
 interface MonitoringPlan {
   id: string;
@@ -105,8 +107,9 @@ export default function MonitoringSetup() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <Header />
+      {/* Page header */}
+      <div className="bg-white shadow-sm border-b mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
@@ -254,6 +257,7 @@ export default function MonitoringSetup() {
           </div>
         </Card>
       </div>
+      <Footer />
     </div>
   );
 }
