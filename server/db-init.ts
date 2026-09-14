@@ -215,6 +215,18 @@ export async function initializeDatabase(): Promise<void> {
         )
       `);
 
+      await ensureTable(client, 'drip_emails', `
+        CREATE TABLE drip_emails (
+          id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+          email TEXT NOT NULL,
+          ticket_id INTEGER REFERENCES tickets(id),
+          drip_step INTEGER NOT NULL,
+          send_at INTEGER NOT NULL,
+          sent INTEGER DEFAULT 0,
+          created_at INTEGER
+        )
+      `);
+
       // Create indexes for common query patterns (SQLite)
       console.log('📋 Creating database indexes...');
       const indexes = [
@@ -483,6 +495,16 @@ async function initializePostgresql(): Promise<void> {
         sender_role VARCHAR NOT NULL,
         message TEXT NOT NULL,
         is_internal BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS drip_emails (
+        id SERIAL PRIMARY KEY,
+        email TEXT NOT NULL,
+        ticket_id INTEGER REFERENCES tickets(id),
+        drip_step INTEGER NOT NULL,
+        send_at TIMESTAMP NOT NULL,
+        sent BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT NOW()
       );
     `);

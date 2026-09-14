@@ -365,6 +365,10 @@ export async function sendTicketCompletedEmail(data: { email: string; ticketId: 
   }
 }
 
+export async function sendDripEmail(data: { to: string; subject: string; html: string }): Promise<void> {
+  await sendMail({ to: data.to, from: FROM_EMAIL, subject: data.subject, html: data.html });
+}
+
 export async function sendCustomerMessageNotification(data: {
   customerEmail: string;
   ticketId: number;

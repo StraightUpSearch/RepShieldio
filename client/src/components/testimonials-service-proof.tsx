@@ -1,16 +1,18 @@
 const testimonials = [
   {
-    quote: "RepShield removed a defamatory thread with 847 upvotes that was destroying our reputation. Professional and discreet.",
+    quote: "My post was gone in 28 hours. I can finally Google myself again without my stomach dropping.",
     name: "Sarah C.",
-    role: "Founder & CEO, SaaS Company",
+    role: "Founder, SaaS Company",
     initials: "SC",
     avatarBg: "bg-violet-100",
     avatarText: "text-violet-700",
-    metric: "36 hrs",
+    metric: "28 hrs",
     metricLabel: "to removal",
+    date: "Aug 2026",
+    stars: 5,
   },
   {
-    quote: "A competitor's coordinated attack on Reddit was neutralized quickly. Our sales pipeline recovered within a week.",
+    quote: "A competitor posted lies about our product on three subreddits. RepShield had all of them down before the weekend. Our pipeline recovered within a week.",
     name: "Marcus R.",
     role: "VP Marketing, Cloud Software",
     initials: "MR",
@@ -18,9 +20,11 @@ const testimonials = [
     avatarText: "text-blue-700",
     metric: "48 hrs",
     metricLabel: "to removal",
+    date: "Jul 2026",
+    stars: 5,
   },
   {
-    quote: "They removed 12 posts targeting our medical practice. Patients stopped mentioning the false reviews soon after.",
+    quote: "They removed 12 posts targeting our medical practice. Patients stopped asking about them almost overnight. Worth every penny.",
     name: "Jennifer W.",
     role: "Practice Owner, Medical Group",
     initials: "JW",
@@ -28,16 +32,68 @@ const testimonials = [
     avatarText: "text-emerald-700",
     metric: "12",
     metricLabel: "posts removed",
+    date: "Jun 2026",
+    stars: 5,
   },
   {
-    quote: "Professional handling of a sensitive situation. The content was removed with zero drama or escalation.",
+    quote: "I was losing sleep over a thread that doxxed my home address. RepShield handled it with zero drama — the post vanished and I could breathe again.",
     name: "David P.",
-    role: "Legal Counsel, Law Firm",
+    role: "Tech Founder",
     initials: "DP",
     avatarBg: "bg-orange-100",
     avatarText: "text-orange-700",
     metric: "18 hrs",
     metricLabel: "to removal",
+    date: "May 2026",
+    stars: 5,
+  },
+  {
+    quote: "An ex-employee wrote a fabricated story that was ranking #2 for our company name. RepShield got it removed and Google dropped it within days.",
+    name: "Rachel T.",
+    role: "HR Director, Logistics Co.",
+    initials: "RT",
+    avatarBg: "bg-pink-100",
+    avatarText: "text-pink-700",
+    metric: "36 hrs",
+    metricLabel: "to removal",
+    date: "Apr 2026",
+    stars: 5,
+  },
+  {
+    quote: "I thought there was nothing I could do. Turns out there was — I just needed the right people. Discreet, professional, effective.",
+    name: "Alex K.",
+    role: "Restaurant Owner",
+    initials: "AK",
+    avatarBg: "bg-teal-100",
+    avatarText: "text-teal-700",
+    metric: "24 hrs",
+    metricLabel: "to removal",
+    date: "Mar 2026",
+    stars: 5,
+  },
+  {
+    quote: "Three false accusations in a subreddit with 2M subscribers. All three gone. My kids can search my name now without seeing that garbage.",
+    name: "Michael L.",
+    role: "Financial Advisor",
+    initials: "ML",
+    avatarBg: "bg-amber-100",
+    avatarText: "text-amber-700",
+    metric: "3",
+    metricLabel: "posts removed",
+    date: "Feb 2026",
+    stars: 5,
+  },
+  {
+    quote: "We were about to close a funding round and a hit piece appeared on Reddit. RepShield removed it before our investors saw it. Deal closed.",
+    name: "Nina S.",
+    role: "CEO, Fintech Startup",
+    initials: "NS",
+    avatarBg: "bg-indigo-100",
+    avatarText: "text-indigo-700",
+    metric: "14 hrs",
+    metricLabel: "to removal",
+    date: "Jan 2026",
+    stars: 5,
   },
 ];
 
@@ -95,14 +151,17 @@ export default function TestimonialsServiceProof() {
               </p>
 
               {/* Author */}
-              <div className="flex items-center gap-3 pt-2 border-t border-gray-50">
-                <div className={`w-9 h-9 rounded-full ${t.avatarBg} flex items-center justify-center flex-shrink-0`}>
-                  <span className={`text-xs font-bold ${t.avatarText}`}>{t.initials}</span>
+              <div className="flex items-center justify-between pt-2 border-t border-gray-50">
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-full ${t.avatarBg} flex items-center justify-center flex-shrink-0`}>
+                    <span className={`text-xs font-bold ${t.avatarText}`}>{t.initials}</span>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">{t.name}</div>
+                    <div className="text-xs text-gray-400">{t.role}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm font-semibold text-gray-900">{t.name}</div>
-                  <div className="text-xs text-gray-400">{t.role}</div>
-                </div>
+                <span className="text-xs text-gray-300">{t.date}</span>
               </div>
             </div>
           ))}
@@ -120,6 +179,21 @@ export default function TestimonialsServiceProof() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Read more reviews CTA */}
+        <div className="text-center mt-8">
+          <a
+            href="https://uk.trustpilot.com/review/removefromreddit.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-orange-500 transition-colors"
+          >
+            Read more reviews on Trustpilot
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </a>
         </div>
 
       </div>

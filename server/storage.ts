@@ -144,6 +144,11 @@ export interface IStorage {
   trackFunnelEvent(data: { eventType: string; userId?: string; sessionId?: string; metadata?: any }): Promise<void>;
   getFunnelEvents(eventType?: string, limit?: number): Promise<any[]>;
   getFunnelStats(): Promise<any>;
+
+  // Drip emails
+  createDripEmail(data: { email: string; ticketId: number; dripStep: number; sendAt: number }): Promise<void>;
+  getDueDripEmails(): Promise<{ id: number; email: string; ticketId: number; dripStep: number }[]>;
+  markDripEmailSent(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1084,6 +1089,30 @@ export class DatabaseStorage implements IStorage {
       return { totalEvents: 0, eventCounts: {}, conversionRates: {} };
     }
   }
+
+  // Drip emails
+  async createDripEmail(data: { email: string; ticketId: number; dripStep: number; sendAt: number }): Promise<void> {
+    const ts = isPostgres ? new Date(data.sendAt).toISOString() : Math.floor(data.sendAt / 1000);
+    const now = isPostgres ? new Date().toISOString() : Math.floor(Date.now() / 1000);
+    await db.execute(sql`INSERT INTO drip_emails (email, ticket_id, drip_step, send_at, sent, created_at) VALUES (${data.email}, ${data.ticketId}, ${data.dripStep}, ${ts}, ${isPostgres ? false : 0}, ${now})`);
+  }
+
+  async getDueDripEmails(): Promise<{ id: number; email: string; ticketId: number; dripStep: number }[]> {
+    const now = isPostgres ? new Date().toISOString() : Math.floor(Date.now() / 1000);
+    const sentVal = isPostgres ? false : 0;
+    const rows: any = await db.execute(sql`SELECT id, email, ticket_id, drip_step FROM drip_emails WHERE sent = ${sentVal} AND send_at <= ${now}`);
+    return ((rows.rows || rows) as any[]).map(r => ({
+      id: r.id,
+      email: r.email,
+      ticketId: r.ticket_id,
+      dripStep: r.drip_step,
+    }));
+  }
+
+  async markDripEmailSent(id: number): Promise<void> {
+    const sentVal = isPostgres ? true : 1;
+    await db.execute(sql`UPDATE drip_emails SET sent = ${sentVal} WHERE id = ${id}`);
+  }
 }
 
 // Temporary: Use memory storage for legacy operations until database is fully migrated
@@ -1397,7 +1426,7 @@ export class MemStorage implements IStorage {
       userId: 'test-user',
       redditUrl: 'https://reddit.com/r/technology/comments/*****/******',
       status: 'quoted',
-      estimatedPrice: '$899',
+      estimatedPrice: '$1,200',
       description: 'Remove defamatory post about company practices from r/technology. High visibility post with 250+ comments requiring strategic approach.',
       createdAt: new Date().toISOString(),
       progress: 0,
@@ -1561,6 +1590,19 @@ export class MemStorage implements IStorage {
   async trackFunnelEvent(data: any): Promise<void> { /* no-op in memory */ }
   async getFunnelEvents(eventType?: string, limit?: number): Promise<any[]> { return []; }
   async getFunnelStats(): Promise<any> { return { totalEvents: 0, eventCounts: {}, conversionRates: {} }; }
+
+  // Drip emails (in-memory)
+  private dripEmails: { id: number; email: string; ticketId: number; dripStep: number; sendAt: number; sent: boolean }[] = [];
+  async createDripEmail(data: { email: string; ticketId: number; dripStep: number; sendAt: number }): Promise<void> {
+    this.dripEmails.push({ id: this.dripEmails.length + 1, ...data, sent: false });
+  }
+  async getDueDripEmails(): Promise<{ id: number; email: string; ticketId: number; dripStep: number }[]> {
+    return this.dripEmails.filter(d => !d.sent && d.sendAt <= Date.now());
+  }
+  async markDripEmailSent(id: number): Promise<void> {
+    const drip = this.dripEmails.find(d => d.id === id);
+    if (drip) drip.sent = true;
+  }
 }
 
 // Use memory storage for development until database tables are set up

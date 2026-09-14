@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { CheckCircle2, ArrowRight } from "lucide-react";
 const plans = [
   {
     name: "Comment Removal",
-    price: "$199",
+    price: "$300",
     description: "Individual Reddit comments containing false, defamatory, or harmful content.",
     features: [
       "Full eligibility review",
@@ -22,7 +23,7 @@ const plans = [
   },
   {
     name: "Post & Thread Removal",
-    price: "$899",
+    price: "$1,200",
     description: "Complete Reddit posts, threads, or cross-posted content — including associated comments.",
     features: [
       "Full eligibility review",
@@ -63,6 +64,32 @@ const faqs = [
 ];
 
 export default function PricingPage() {
+  useEffect(() => {
+    const faqSchema = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": faqs.map(faq => ({
+        "@type": "Question",
+        "name": faq.q,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": faq.a,
+        },
+      })),
+    };
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.setAttribute("data-schema", "pricing-faq");
+    script.textContent = JSON.stringify(faqSchema);
+    const existing = document.querySelector('script[data-schema="pricing-faq"]');
+    if (existing) existing.remove();
+    document.head.appendChild(script);
+    return () => {
+      const el = document.querySelector('script[data-schema="pricing-faq"]');
+      if (el) el.remove();
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-white">
       <Header />

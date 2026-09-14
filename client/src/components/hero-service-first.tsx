@@ -1,13 +1,31 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SiReddit, SiTelegram } from "react-icons/si";
 import { CheckCircle2, Search, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+
+function useAnimatedCounter(target: number, duration = 1200) {
+  const [value, setValue] = useState(0);
+  const started = useRef(false);
+  useEffect(() => {
+    if (!target || started.current) return;
+    started.current = true;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(eased * target));
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }, [target, duration]);
+  return value;
+}
 
 const allCases = [
   { type: "Reddit post, 2.4k upvotes", sector: "SaaS startup", time: "2 hrs ago" },
@@ -28,6 +46,16 @@ export default function HeroServiceFirst() {
   const [showEmailStep, setShowEmailStep] = useState(false);
   const [caseOffset, setCaseOffset] = useState(0);
   const visibleCases = allCases.slice(caseOffset, caseOffset + 5);
+
+  const { data: stats } = useQuery({
+    queryKey: ['/api/public/stats'],
+    queryFn: async () => {
+      const res = await fetch('/api/public/stats');
+      return res.json();
+    },
+    staleTime: 60_000,
+  });
+  const animatedCases = useAnimatedCounter(stats?.casesResolved ?? 1650);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -269,7 +297,7 @@ export default function HeroServiceFirst() {
 
               <div className="px-5 py-4 border-t border-gray-100 grid grid-cols-3 gap-4">
                 <div>
-                  <div className="text-2xl font-satoshi font-black text-gray-950 tracking-[-0.03em]">1,650+</div>
+                  <div className="text-2xl font-satoshi font-black text-gray-950 tracking-[-0.03em]">{animatedCases.toLocaleString()}+</div>
                   <div className="text-xs text-gray-400 mt-0.5">Cases resolved</div>
                 </div>
                 <div>
@@ -288,7 +316,7 @@ export default function HeroServiceFirst() {
 
         {/* Mobile stats — only visible below lg */}
         <div className="lg:hidden flex items-center gap-6 mt-8 pt-8 border-t border-gray-100 text-sm text-gray-500">
-          <span><strong className="text-gray-950 font-black">1,650+</strong> cases</span>
+          <span><strong className="text-gray-950 font-black">{animatedCases.toLocaleString()}+</strong> cases</span>
           <span><strong className="text-gray-950 font-black">95%</strong> success</span>
           <span><strong className="text-gray-950 font-black">36hrs</strong> avg</span>
         </div>

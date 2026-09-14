@@ -23,7 +23,7 @@ export async function getChatbotResponse(userMessage: string, conversationHistor
         role: 'system',
         content: `You are RepShield's AI assistant specializing in Reddit content removal.
 Be helpful, professional, and direct. Key facts:
-- Post removal: $899, Comment removal: $199
+- Post removal: $1,200, Comment removal: $300
 - Success rate: 95%+, Turnaround: 24-48 hours
 - Only legal and ethical methods
 - Free brand scan available on the website
@@ -102,7 +102,7 @@ export async function analyzeRedditUrl(url: string): Promise<{ contentType: stri
       model: 'gpt-4o-mini',
       messages: [{
         role: 'user',
-        content: `Analyze this Reddit URL and determine: 1) Is it a post or comment? 2) Estimated removal price ($899 post, $199 comment). 3) Brief description. URL: ${url}. Return JSON: {"contentType":"post|comment","estimatedPrice":"$X","description":"brief desc"}`,
+        content: `Analyze this Reddit URL and determine: 1) Is it a post or comment? 2) Estimated removal price ($1,200 post, $300 comment). 3) Brief description. URL: ${url}. Return JSON: {"contentType":"post|comment","estimatedPrice":"$X","description":"brief desc"}`,
       }],
       max_tokens: 150,
       temperature: 0.3,
@@ -112,7 +112,7 @@ export async function analyzeRedditUrl(url: string): Promise<{ contentType: stri
     try {
       return JSON.parse(text);
     } catch {
-      return { contentType: 'Reddit content', estimatedPrice: '$899', description: text.substring(0, 200) };
+      return { contentType: 'Reddit content', estimatedPrice: '$1,200', description: text.substring(0, 200) };
     }
   } catch (error) {
     console.error('OpenAI URL analysis error:', error);
@@ -133,15 +133,15 @@ function getFallbackResponse(userMessage: string): string {
   }
 
   if (message.includes('price') || message.includes('cost') || message.includes('quote')) {
-    return "Reddit post removal costs $899 and comments cost $199. We have a 95%+ success rate with 24-48 hour completion. Would you like a custom quote for your specific content?";
+    return "Reddit post removal costs $1,200 and comments cost $300. We have a 95%+ success rate with 24-48 hour completion. Would you like a custom quote for your specific content?";
   }
 
   if (message.includes('remove') && message.includes('post')) {
-    return "I can help you remove Reddit posts for $899 each. We complete most post removals within 24-48 hours with a 95%+ success rate using only legal methods. Share your Reddit URL for a detailed quote.";
+    return "I can help you remove Reddit posts for $1,200 each. We complete most post removals within 24-48 hours with a 95%+ success rate using only legal methods. Share your Reddit URL for a detailed quote.";
   }
 
   if (message.includes('remove') && message.includes('comment')) {
-    return "Reddit comment removal costs $199 per comment with 24-hour completion time. We use only legal and ethical methods with a 95%+ success rate. What Reddit comments need removing?";
+    return "Reddit comment removal costs $300 per comment with 24-hour completion time. We use only legal and ethical methods with a 95%+ success rate. What Reddit comments need removing?";
   }
 
   if (message.includes('how') || message.includes('process')) {
@@ -161,11 +161,11 @@ function getFallbackResponse(userMessage: string): string {
   }
 
   if (message.includes('reddit.com') || message.includes('r/')) {
-    return "I can analyze that Reddit URL. Our removal service costs $899 for posts, $199 for comments, with 95%+ success rate in 24-48 hours. Want a detailed quote?";
+    return "I can analyze that Reddit URL. Our removal service costs $1,200 for posts, $300 for comments, with 95%+ success rate in 24-48 hours. Want a detailed quote?";
   }
 
   if (message.includes('multiple') || message.includes('bulk') || message.includes('many')) {
-    return "We handle bulk removals with volume discounts available. Posts: $899 each, Comments: $199 each. For 5+ items, we offer special pricing. What's the scope of your project?";
+    return "We handle bulk removals with volume discounts available. Posts: $1,200 each, Comments: $300 each. For 5+ items, we offer special pricing. What's the scope of your project?";
   }
 
   if (message.includes('monitor') || message.includes('alert') || message.includes('watch')) {
@@ -176,5 +176,5 @@ function getFallbackResponse(userMessage: string): string {
     return "You can purchase scan credits to run unlimited brand scans. 10 credits for $49, 25 for $99, or 100 for $299. Credits never expire. Want to get started?";
   }
 
-  return "Hi! I'm here to help you remove unwanted Reddit content. I can get you a quote in under 60 seconds. What type of content do you need removed — posts ($899) or comments ($199)?";
+  return "Hi! I'm here to help you remove unwanted Reddit content. I can get you a quote in under 60 seconds. What type of content do you need removed — posts ($1,200) or comments ($300)?";
 }

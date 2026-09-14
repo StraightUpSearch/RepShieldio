@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, ArrowRight } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import { SiReddit } from "react-icons/si";
+import { SiReddit, SiGoogle } from "react-icons/si";
 
 export default function AuthPage() {
   const { user, isLoading } = useAuth();
@@ -26,6 +26,12 @@ export default function AuthPage() {
   });
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
+
+  const { data: providers } = useQuery({
+    queryKey: ['/api/auth/providers'],
+    queryFn: async () => { const r = await fetch('/api/auth/providers'); return r.json(); },
+    staleTime: Infinity,
+  });
 
   useEffect(() => {
     if (!isLoading && user) setLocation("/my-account");
@@ -113,6 +119,24 @@ export default function AuthPage() {
               <p className="text-gray-500">Sign in to your account to track your cases.</p>
             </div>
 
+            {/* Social login */}
+            {providers?.google && (
+              <div className="mb-6">
+                <a
+                  href="/api/auth/google"
+                  className="flex items-center justify-center gap-3 w-full h-11 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors"
+                >
+                  <SiGoogle className="w-4 h-4" />
+                  Continue with Google
+                </a>
+
+                <div className="relative my-5">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100" /></div>
+                  <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-gray-400 uppercase tracking-wider">or</span></div>
+                </div>
+              </div>
+            )}
+
             <form
               onSubmit={(e) => { e.preventDefault(); loginMutation.mutate(loginForm); }}
               className="space-y-4"
@@ -180,6 +204,24 @@ export default function AuthPage() {
               </h1>
               <p className="text-gray-500">Track your cases and manage your removals in one place.</p>
             </div>
+
+            {/* Social signup */}
+            {providers?.google && (
+              <div className="mb-6">
+                <a
+                  href="/api/auth/google"
+                  className="flex items-center justify-center gap-3 w-full h-11 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-sm font-medium text-gray-700 transition-colors"
+                >
+                  <SiGoogle className="w-4 h-4" />
+                  Sign up with Google
+                </a>
+
+                <div className="relative my-5">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100" /></div>
+                  <div className="relative flex justify-center"><span className="bg-white px-3 text-xs text-gray-400 uppercase tracking-wider">or</span></div>
+                </div>
+              </div>
+            )}
 
             <form
               onSubmit={(e) => { e.preventDefault(); registerMutation.mutate(registerForm); }}

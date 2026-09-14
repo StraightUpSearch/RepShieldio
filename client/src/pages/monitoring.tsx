@@ -2,8 +2,10 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Shield, Bell, TrendingUp, CheckCircle, Globe, CreditCard } from "lucide-react";
+import { Shield, Bell, TrendingUp, CheckCircle, Globe, CreditCard, Send } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -95,6 +97,25 @@ export default function MonitoringSetup() {
         variant: "destructive",
       });
     }
+  });
+
+  const [inquiryName, setInquiryName] = useState("");
+  const [inquiryEmail, setInquiryEmail] = useState("");
+  const [inquiryBrand, setInquiryBrand] = useState("");
+  const [inquiryProblem, setInquiryProblem] = useState("");
+  const [inquirySubmitted, setInquirySubmitted] = useState(false);
+
+  const submitInquiry = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiRequest("POST", "/api/monitoring-inquiry", data);
+    },
+    onSuccess: () => {
+      setInquirySubmitted(true);
+      toast({ title: "Inquiry sent", description: "We'll be in touch within 24 hours." });
+    },
+    onError: () => {
+      toast({ title: "Something went wrong", description: "Please try again.", variant: "destructive" });
+    },
   });
 
   const handleSubscribe = (plan: MonitoringPlan) => {
@@ -255,6 +276,39 @@ export default function MonitoringSetup() {
               </div>
             </div>
           </div>
+        </Card>
+
+        {/* Inline inquiry form */}
+        <Card className="p-8 mt-8 border-gray-200 shadow-sm">
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Get a custom monitoring plan</h3>
+          <p className="text-gray-500 text-sm mb-6">Tell us about your brand and we'll set up a tailored monitoring solution within 24 hours.</p>
+
+          {inquirySubmitted ? (
+            <div className="text-center py-8">
+              <CheckCircle className="w-10 h-10 text-green-500 mx-auto mb-3" />
+              <p className="text-lg font-semibold text-gray-900">Inquiry received</p>
+              <p className="text-gray-500 text-sm">We'll reach out to you shortly.</p>
+            </div>
+          ) : (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitInquiry.mutate({ name: inquiryName, email: inquiryEmail, brand: inquiryBrand, problem: inquiryProblem });
+              }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-4"
+            >
+              <Input placeholder="Name" value={inquiryName} onChange={(e) => setInquiryName(e.target.value)} required className="h-12" />
+              <Input type="email" placeholder="Email" value={inquiryEmail} onChange={(e) => setInquiryEmail(e.target.value)} required className="h-12" />
+              <Input placeholder="Website or brand to monitor" value={inquiryBrand} onChange={(e) => setInquiryBrand(e.target.value)} required className="h-12 md:col-span-2" />
+              <Textarea placeholder="What's the current problem?" value={inquiryProblem} onChange={(e) => setInquiryProblem(e.target.value)} className="md:col-span-2 min-h-[100px]" />
+              <div className="md:col-span-2">
+                <Button type="submit" disabled={submitInquiry.isPending} className="bg-orange-500 hover:bg-orange-600 text-white h-12 px-8">
+                  <Send className="w-4 h-4 mr-2" />
+                  {submitInquiry.isPending ? "Sending..." : "Send inquiry"}
+                </Button>
+              </div>
+            </form>
+          )}
         </Card>
       </div>
       <Footer />

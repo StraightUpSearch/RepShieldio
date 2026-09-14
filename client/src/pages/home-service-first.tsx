@@ -28,7 +28,7 @@ const homepageStructuredData = {
       "@type": "Offer",
       "name": "Reddit Post Removal",
       "description": "Professional removal of defamatory or false Reddit posts that damage your business reputation",
-      "price": "899",
+      "price": "1200",
       "priceCurrency": "USD",
       "availability": "https://schema.org/InStock",
       "url": "https://removefromreddit.com"
@@ -37,7 +37,7 @@ const homepageStructuredData = {
       "@type": "Offer",
       "name": "Reddit Comment Removal",
       "description": "Professional removal of harmful or false Reddit comments targeting your brand",
-      "price": "199",
+      "price": "300",
       "priceCurrency": "USD",
       "availability": "https://schema.org/InStock",
       "url": "https://removefromreddit.com"

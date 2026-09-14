@@ -1,5 +1,6 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
@@ -204,6 +205,78 @@ export async function setupSimpleAuth(app: Express) {
     // Forward to the new endpoint
     req.url = "/api/auth/login";
     return app._router.handle(req, res, next);
+  });
+
+  // ───── Google OAuth ─────
+  const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+  const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+  const BASE_URL = process.env.RESET_URL_BASE || (process.env.NODE_ENV === 'production' ? 'https://removefromreddit.com' : 'http://localhost:3000');
+
+  if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
+    passport.use(new GoogleStrategy({
+      clientID: GOOGLE_CLIENT_ID,
+      clientSecret: GOOGLE_CLIENT_SECRET,
+      callbackURL: `${BASE_URL}/api/auth/google/callback`,
+    }, async (_accessToken, _refreshToken, profile, done) => {
+      try {
+        const email = profile.emails?.[0]?.value;
+        if (!email) return done(null, false);
+
+        const adminEmails = (process.env.ADMIN_EMAILS || 'jamie@straightupsearch.com').split(',').map(e => e.trim().toLowerCase());
+        const role = adminEmails.includes(email.toLowerCase()) ? 'admin' : 'user';
+
+        // Look for existing user by email
+        const existing = await storage.getUserByEmail(email);
+        let user;
+        if (existing) {
+          // Update profile info if missing
+          user = await storage.upsertUser({
+            ...existing,
+            firstName: existing.firstName || profile.name?.givenName || null,
+            lastName: existing.lastName || profile.name?.familyName || null,
+            profileImageUrl: existing.profileImageUrl || profile.photos?.[0]?.value || null,
+            role: existing.role || role,
+          });
+        } else {
+          user = await storage.upsertUser({
+            id: `google_${profile.id}`,
+            email,
+            firstName: profile.name?.givenName || null,
+            lastName: profile.name?.familyName || null,
+            profileImageUrl: profile.photos?.[0]?.value || null,
+            role,
+            password: null,
+            accountBalance: '0.00',
+            creditsRemaining: role === 'admin' ? 1000 : 0,
+          });
+        }
+        return done(null, user);
+      } catch (err) {
+        return done(err as Error);
+      }
+    }));
+
+    app.get('/api/auth/google', passport.authenticate('google', {
+      scope: ['profile', 'email'],
+    }));
+
+    app.get('/api/auth/google/callback',
+      passport.authenticate('google', { failureRedirect: '/login?error=google' }),
+      (_req, res) => {
+        res.redirect('/my-account');
+      }
+    );
+
+    console.log('🔐 Google OAuth configured');
+  } else {
+    console.log('🔐 Google OAuth not configured (set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)');
+  }
+
+  // Endpoint to tell the frontend which social providers are available
+  app.get('/api/auth/providers', (_req, res) => {
+    res.json({
+      google: !!(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET),
+    });
   });
 
   // Logout endpoint
