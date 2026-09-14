@@ -16,7 +16,7 @@ test.describe('Homepage & Navigation', () => {
     await page.goto('/');
 
     // Desktop nav — use getByRole for precise matching
-    await page.getByRole('link', { name: /Live Scanner/i }).first().click();
+    await page.getByRole('link', { name: /Free Brand Scan|Live Scanner/i }).first().click();
     await expect(page).toHaveURL(/\/scan/);
 
     await page.goto('/');
@@ -225,7 +225,7 @@ test.describe('Mobile Navigation', () => {
 
     // Mobile menu should show links — scope to nav within header
     const nav = page.locator('header nav');
-    await expect(nav.getByRole('link', { name: /Live Scanner/i })).toBeVisible();
+    await expect(nav.getByRole('link', { name: /Free Brand Scan|Live Scanner/i })).toBeVisible();
     await expect(nav.getByRole('link', { name: /Check Status/i })).toBeVisible();
   });
 
