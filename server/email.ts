@@ -1,4 +1,4 @@
-import sgMail from '@sendgrid/mail';
+import * as postmark from 'postmark';
 
 function escapeHtml(str: string): string {
   return str
@@ -13,20 +13,33 @@ const BRAND_ORANGE = '#f97316';
 const BRAND_DARK = '#111827';
 const BRAND_ORANGE_DARK = '#ea580c';
 
-// Make email optional for both development and production
-const apiKey = process.env.SENDGRID_API_KEY;
+const postmarkToken = process.env.POSTMARK_SERVER_TOKEN;
+let pmClient: postmark.ServerClient | null = null;
 
-if (apiKey) {
-  sgMail.setApiKey(apiKey);
-  console.log('📧 SendGrid configured for email notifications');
+if (postmarkToken) {
+  pmClient = new postmark.ServerClient(postmarkToken);
+  console.log('📧 Postmark configured for email notifications');
 } else {
   const envMsg = process.env.NODE_ENV === 'production' ? 'production (logging only)' : 'development';
-  console.log(`📧 SendGrid not configured for ${envMsg} - emails will be logged only`);
+  console.log(`📧 Postmark not configured for ${envMsg} - emails will be logged only`);
 }
 
-// Use environment variables for email addresses
 const ADMIN_EMAIL = process.env.SENDER_EMAIL || process.env.ADMIN_EMAIL || 'contact@removefromreddit.com';
-const FROM_EMAIL = process.env.FROM_EMAIL || ADMIN_EMAIL;
+const FROM_EMAIL = process.env.FROM_EMAIL || 'support@removefromreddit.com';
+
+async function sendMail(msg: { to: string; from: string; subject: string; html: string }): Promise<void> {
+  if (pmClient) {
+    await pmClient.sendEmail({
+      From: msg.from,
+      To: msg.to,
+      Subject: msg.subject,
+      HtmlBody: msg.html,
+    });
+  } else {
+    console.log('📧 DEV MODE - Would send email:', msg.subject);
+    console.log('📧 To:', msg.to);
+  }
+}
 
 export async function sendQuoteNotification(data: {
   redditUrl: string;
@@ -56,14 +69,8 @@ export async function sendQuoteNotification(data: {
   };
 
   try {
-    if (apiKey) {
-      await sgMail.send(msg);
-      console.log('Quote notification sent successfully');
-    } else {
-      console.log('📧 DEV MODE - Would send email:', msg.subject);
-      console.log('📧 To:', msg.to);
-      console.log('📧 Content:', data);
-    }
+    await sendMail(msg);
+    console.log('Quote notification sent successfully');
   } catch (error) {
     console.error('Error sending quote notification:', error);
     throw error;
@@ -103,14 +110,8 @@ export async function sendContactNotification(data: {
   };
 
   try {
-    if (apiKey) {
-      await sgMail.send(msg);
-      console.log('Contact notification sent successfully');
-    } else {
-      console.log('📧 DEV MODE - Would send contact email:', msg.subject);
-      console.log('📧 From:', data.name, data.email);
-      console.log('📧 Message:', data.message);
-    }
+    await sendMail(msg);
+    console.log('Contact notification sent successfully');
   } catch (error) {
     console.error('Error sending contact notification:', error);
     throw error;
@@ -172,15 +173,8 @@ export async function sendPasswordResetEmail(data: {
   };
 
   try {
-    if (apiKey) {
-      await sgMail.send(msg);
-      console.log('Password reset email sent successfully to:', data.email);
-      console.log('Email sent from:', FROM_EMAIL, 'to:', data.email);
-    } else {
-      console.log('📧 DEV MODE - Would send password reset email:', msg.subject);
-      console.log('📧 To:', data.email);
-      console.log('📧 Reset URL:', resetUrl);
-    }
+    await sendMail(msg);
+    console.log('Password reset email sent to:', data.email);
   } catch (error) {
     console.error('Error sending password reset email:', error);
     throw error;
@@ -220,12 +214,8 @@ export async function sendWelcomeEmail(data: { email: string; firstName?: string
   };
 
   try {
-    if (apiKey) {
-      await sgMail.send(msg);
-      console.log('Welcome email sent to:', data.email);
-    } else {
-      console.log('📧 DEV MODE - Would send welcome email to:', data.email);
-    }
+    await sendMail(msg);
+    console.log('Welcome email sent to:', data.email);
   } catch (error) {
     console.error('Error sending welcome email:', error);
   }
@@ -268,12 +258,8 @@ export async function sendTicketQuotedEmail(data: {
   };
 
   try {
-    if (apiKey) {
-      await sgMail.send(msg);
-      console.log('Quote email sent to:', data.email);
-    } else {
-      console.log('📧 DEV MODE - Would send quote email:', ticketNumber, 'to:', data.email);
-    }
+    await sendMail(msg);
+    console.log('Quote email sent to:', data.email);
   } catch (error) {
     console.error('Error sending quote email:', error);
   }
@@ -300,12 +286,8 @@ export async function sendTicketApprovedEmail(data: { email: string; ticketId: n
   };
 
   try {
-    if (apiKey) {
-      await sgMail.send(msg);
-      console.log('Approved email sent to:', data.email);
-    } else {
-      console.log('📧 DEV MODE - Would send approved email:', ticketNumber, 'to:', data.email);
-    }
+    await sendMail(msg);
+    console.log('Approved email sent to:', data.email);
   } catch (error) {
     console.error('Error sending approved email:', error);
   }
@@ -335,12 +317,8 @@ export async function sendTicketInProgressEmail(data: { email: string; ticketId:
   };
 
   try {
-    if (apiKey) {
-      await sgMail.send(msg);
-      console.log('Progress email sent to:', data.email);
-    } else {
-      console.log('📧 DEV MODE - Would send progress email:', ticketNumber, `${data.progress}%`, 'to:', data.email);
-    }
+    await sendMail(msg);
+    console.log('Progress email sent to:', data.email);
   } catch (error) {
     console.error('Error sending progress email:', error);
   }
@@ -375,12 +353,8 @@ export async function sendTicketCompletedEmail(data: { email: string; ticketId: 
   };
 
   try {
-    if (apiKey) {
-      await sgMail.send(msg);
-      console.log('Completion email sent to:', data.email);
-    } else {
-      console.log('📧 DEV MODE - Would send completion email:', ticketNumber, 'to:', data.email);
-    }
+    await sendMail(msg);
+    console.log('Completion email sent to:', data.email);
   } catch (error) {
     console.error('Error sending completion email:', error);
   }
@@ -416,12 +390,8 @@ export async function sendCustomerMessageNotification(data: {
   };
 
   try {
-    if (apiKey) {
-      await sgMail.send(msg);
-      console.log('Customer message notification sent to:', data.customerEmail);
-    } else {
-      console.log('📧 DEV MODE - Would send customer message email to:', data.customerEmail, 'for ticket:', ticketNumber);
-    }
+    await sendMail(msg);
+    console.log('Customer message notification sent to:', data.customerEmail);
   } catch (error) {
     console.error('Error sending customer message notification:', error);
     // Don't throw — email failure shouldn't block message creation
