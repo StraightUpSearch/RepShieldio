@@ -15,7 +15,7 @@ const defaultSEO = {
   description: "Professional Reddit reputation management for SMBs, SaaS companies, and eCommerce brands. We ethically remove false, defamatory content that damages your business reputation.",
   keywords: "reddit reputation management, online reputation, content removal, business reputation, defamatory content removal, SMB reputation, SaaS reputation, ecommerce reputation",
   ogType: "website",
-  ogImage: "https://repshield.io/og-image.svg"
+  ogImage: "https://removefromreddit.com/og-image.svg"
 };
 
 const pageSEO: Record<string, SEOProps> = {
@@ -103,7 +103,7 @@ export default function SEOHead({
       keywords: keywords || currentPageSEO.keywords || defaultSEO.keywords,
       ogType: ogType || currentPageSEO.ogType || defaultSEO.ogType,
       ogImage: ogImage || currentPageSEO.ogImage || defaultSEO.ogImage,
-      canonicalUrl: canonicalUrl || `https://repshield.io${location}`
+      canonicalUrl: canonicalUrl || `https://removefromreddit.com${location}`
     };
 
     // Update document title
@@ -135,7 +135,7 @@ export default function SEOHead({
     updateMetaTag('og:type', seoData.ogType, true);
     updateMetaTag('og:url', seoData.canonicalUrl, true);
     updateMetaTag('og:image', seoData.ogImage, true);
-    updateMetaTag('og:site_name', 'RepShield', true);
+    updateMetaTag('og:site_name', 'RemoveFromReddit.com', true);
     updateMetaTag('og:locale', 'en_US', true);
     
     // Twitter Card tags
@@ -145,8 +145,8 @@ export default function SEOHead({
     updateMetaTag('twitter:image', seoData.ogImage);
     
     // Additional SEO tags
-    updateMetaTag('theme-color', '#3B82F6');
-    updateMetaTag('msapplication-TileColor', '#3B82F6');
+    updateMetaTag('theme-color', '#f97316');
+    updateMetaTag('msapplication-TileColor', '#f97316');
     
     // Canonical URL
     let canonical = document.querySelector('link[rel="canonical"]') as HTMLLinkElement;

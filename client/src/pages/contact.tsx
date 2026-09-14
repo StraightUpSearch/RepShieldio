@@ -185,7 +185,7 @@ export default function Contact() {
               <div className="px-6 py-5 flex items-center gap-3">
                 <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
                 <span className="text-sm text-gray-500">
-                  Questions? <a href="mailto:contact@repshield.io" className="text-gray-900 font-medium hover:underline">contact@repshield.io</a>
+                  Questions? <a href="mailto:contact@removefromreddit.com" className="text-gray-900 font-medium hover:underline">contact@removefromreddit.com</a>
                 </span>
               </div>
             </div>

@@ -98,7 +98,7 @@ export default function LegalCompliance() {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-gray-700">
                   <strong>RepShield Compliance Team</strong><br />
-                  Email: compliance@repshield.io<br />
+                  Email: compliance@removefromreddit.com<br />
                   Subject: Compliance Inquiry<br />
                   <em>All reports are treated confidentially and investigated promptly.</em>
                 </p>

@@ -102,8 +102,8 @@ export default function DynamicMeta() {
     updateMetaTag('business-type', 'Professional Services');
 
     // Enhanced Open Graph optimization
-    updateMetaTag('og:business:contact_data:website', 'https://repshield.io', true);
-    updateMetaTag('og:business:contact_data:email', 'support@repshield.io', true);
+    updateMetaTag('og:business:contact_data:website', 'https://removefromreddit.com', true);
+    updateMetaTag('og:business:contact_data:email', 'support@removefromreddit.com', true);
     updateMetaTag('og:business:hours:day', 'monday,tuesday,wednesday,thursday,friday', true);
     updateMetaTag('og:business:hours:start', '09:00', true);
     updateMetaTag('og:business:hours:end', '17:00', true);

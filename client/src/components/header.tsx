@@ -94,7 +94,7 @@ export default function Header() {
     <header className={`fixed w-full top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 transition-shadow duration-200 ${isScrolled ? 'shadow-md' : ''}`}>
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-blue-700 focus:font-semibold focus:rounded focus:shadow-lg focus:outline-2 focus:outline-blue-600"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[100] focus:px-4 focus:py-2 focus:bg-white focus:text-orange-600 focus:font-semibold focus:rounded focus:shadow-lg focus:outline-2 focus:outline-orange-500"
       >
         Skip to main content
       </a>
@@ -131,7 +131,7 @@ export default function Header() {
                       <Button variant="outline" className="ml-2 flex items-center gap-2" onMouseEnter={prefetchMyAccount}>
                         <User className="h-4 w-4" />
                         {(user as any)?.role === 'admin' ? (
-                          <span className="text-blue-600 font-semibold">Admin</span>
+                          <span className="text-orange-500 font-semibold">Admin</span>
                         ) : (
                           <span>{(user as any)?.firstName || (user as any)?.email?.split('@')[0] || 'User'}</span>
                         )}
@@ -154,7 +154,7 @@ export default function Header() {
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem asChild>
-                            <Link href="/admin-dashboard" className="flex items-center gap-2 w-full text-blue-600">
+                            <Link href="/admin-dashboard" className="flex items-center gap-2 w-full text-orange-500">
                               <Settings className="h-4 w-4" />
                               Admin Dashboard
                             </Link>
@@ -225,7 +225,7 @@ export default function Header() {
                         My Account
                       </Link>
                       {(user as any)?.role === 'admin' && (
-                        <Link href="/admin-dashboard" className="text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
+                        <Link href="/admin-dashboard" className="text-orange-500 hover:text-orange-600 transition-colors flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
                           <Settings className="h-4 w-4" />
                           Admin Dashboard
                         </Link>

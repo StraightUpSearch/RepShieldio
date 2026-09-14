@@ -5,13 +5,13 @@ const schemaData = {
   "@graph": [
     {
       "@type": "Organization",
-      "@id": "https://repshield.io/#organization",
+      "@id": "https://removefromreddit.com/#organization",
       "name": "RepShield",
       "alternateName": "RepShield Professional Services",
-      "url": "https://repshield.io/",
+      "url": "https://removefromreddit.com/",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://repshield.io/favicon.svg"
+        "url": "https://removefromreddit.com/favicon.svg"
       },
       "description": "RepShield offers professional Reddit reputation management, ethically removing false and defamatory content that damages business reputations. We serve SMBs, SaaS companies, and eCommerce brands.",
       "sameAs": [],
@@ -27,12 +27,12 @@ const schemaData = {
     },
     {
       "@type": "WebSite",
-      "@id": "https://repshield.io/#website",
-      "url": "https://repshield.io/",
-      "name": "RepShield - Professional Reddit Reputation Management",
+      "@id": "https://removefromreddit.com/#website",
+      "url": "https://removefromreddit.com/",
+      "name": "RemoveFromReddit.com — Professional Reddit Reputation Management",
       "description": "Professional Reddit reputation management for SMBs, SaaS companies, and eCommerce brands. We ethically remove false, defamatory content that damages your business reputation.",
       "publisher": {
-        "@id": "https://repshield.io/#organization"
+        "@id": "https://removefromreddit.com/#organization"
       },
       "author": {
         "@type": "Organization",
@@ -43,21 +43,21 @@ const schemaData = {
         "@type": "SearchAction",
         "target": {
           "@type": "EntryPoint",
-          "urlTemplate": "https://repshield.io/?s={search_term_string}"
+          "urlTemplate": "https://removefromreddit.com/?s={search_term_string}"
         },
         "query-input": "required name=search_term_string"
       }
     },
     {
       "@type": "Service",
-      "@id": "https://repshield.io/#service",
+      "@id": "https://removefromreddit.com/#service",
       "name": "Reddit Reputation Management",
       "serviceType": "Online Reputation Management",
       "additionalType": "Content Removal Service",
       "category": "Business Services",
       "description": "Specialized service for managing and improving online reputations on Reddit. This includes the ethical identification and removal of false, misleading, or defamatory content targeting businesses.",
       "provider": {
-        "@id": "https://repshield.io/#organization"
+        "@id": "https://removefromreddit.com/#organization"
       },
       "areaServed": {
         "@type": "AdministrativeArea",
@@ -84,10 +84,10 @@ const schemaData = {
       },
       "availableChannel": {
         "@type": "ServiceChannel",
-        "serviceUrl": "https://repshield.io/",
+        "serviceUrl": "https://removefromreddit.com/",
         "description": "Services are provided online through consultation and direct engagement."
       },
-      "termsOfService": "https://repshield.io/terms-of-service",
+      "termsOfService": "https://removefromreddit.com/terms-of-service",
       "offers": {
         "@type": "Offer",
         "name": "Initial Consultation for Reddit Reputation Management",
@@ -102,13 +102,13 @@ const schemaData = {
     },
     {
       "@type": "BreadcrumbList",
-      "@id": "https://repshield.io/#breadcrumb",
+      "@id": "https://removefromreddit.com/#breadcrumb",
       "itemListElement": [
         {
           "@type": "ListItem",
           "position": 1,
           "name": "Home",
-          "item": "https://repshield.io/"
+          "item": "https://removefromreddit.com/"
         }
       ]
     }

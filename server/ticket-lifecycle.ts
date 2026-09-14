@@ -1,6 +1,7 @@
 import { storage } from './storage';
 import { telegramBot } from './telegram';
 import { notificationManager } from './notification-manager';
+
 import {
   sendTicketQuotedEmail,
   sendTicketApprovedEmail,
@@ -42,18 +43,30 @@ class TicketLifecycleService {
     return updated;
   }
 
-  private getClientEmail(ticket: any): string | undefined {
+  private async resolveClientEmail(ticket: any): Promise<string | undefined> {
     if (ticket.requestData?.email) return ticket.requestData.email;
+    // Fall back to the user record if the ticket has a linked user
+    if (ticket.userId) {
+      try {
+        const user = await storage.getUser(ticket.userId);
+        if (user?.email) return user.email;
+      } catch {
+        // non-fatal
+      }
+    }
     return undefined;
   }
 
-  private generatePaymentLink(ticketId: number): string {
-    const base = process.env.RESET_URL_BASE || 'http://localhost:3000';
-    return `${base}/dashboard?case=${ticketId}&action=pay`;
+  private generatePaymentLink(ticketId: number, email?: string): string {
+    const base = process.env.RESET_URL_BASE || 'https://removefromreddit.com';
+    if (email) {
+      return `${base}/ticket-status?email=${encodeURIComponent(email)}`;
+    }
+    return `${base}/ticket-status`;
   }
 
   private async onTransition(from: string, to: string, oldTicket: any, newTicket: any) {
-    const clientEmail = this.getClientEmail(oldTicket);
+    const clientEmail = await this.resolveClientEmail(oldTicket);
     console.log(`📋 Ticket #${oldTicket.id}: ${from} → ${to}${clientEmail ? ` (client: ${clientEmail})` : ''}`);
 
     try {
@@ -66,7 +79,7 @@ class TicketLifecycleService {
               ticketId: oldTicket.id,
               amount: newTicket?.amount || 'Contact specialist for pricing',
               report: newTicket?.notes || '',
-              paymentLink: this.generatePaymentLink(oldTicket.id),
+              paymentLink: this.generatePaymentLink(oldTicket.id, clientEmail),
             });
           }
           break;
@@ -103,6 +116,9 @@ class TicketLifecycleService {
       console.error(`Failed to send lifecycle email for ticket #${oldTicket.id} (${to}):`, error);
       // Non-fatal: never block ticket transitions for email failures
     }
+
+    // Telegram alert to admin
+    telegramBot.sendTicketAlert(oldTicket.id, to, clientEmail, newTicket?.amount).catch(() => {});
 
     // SSE broadcast to connected admin clients
     notificationManager.broadcast({

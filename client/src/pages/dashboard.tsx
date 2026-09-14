@@ -103,7 +103,7 @@ export default function Dashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'text-green-600 bg-green-50 border-green-200';
-      case 'in_progress': return 'text-blue-600 bg-blue-50 border-blue-200';
+      case 'in_progress': return 'text-orange-600 bg-orange-50 border-orange-200';
       case 'failed': return 'text-red-600 bg-red-50 border-red-200';
       case 'analyzing': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
@@ -160,7 +160,7 @@ export default function Dashboard() {
   if (isLoading || !user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full"></div>
+        <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full"></div>
       </div>
     );
   }
@@ -188,11 +188,11 @@ export default function Dashboard() {
 
             {/* Active Case Highlight */}
             {activeCase && (
-              <Card className="mb-8 border-blue-200 bg-blue-50">
+              <Card className="mb-8 border-orange-200 bg-orange-50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center gap-2">
-                      <FileText className="w-5 h-5 text-blue-600" />
+                      <FileText className="w-5 h-5 text-orange-500" />
                       Case #{activeCase.id} - Active
                     </CardTitle>
                     <Badge className={`${getStatusColor(activeCase.status)} flex items-center gap-1`}>
@@ -294,23 +294,23 @@ export default function Dashboard() {
 
                         {/* Assigned Specialist */}
                         {case_.specialist && (
-                          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+                          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200 mb-4">
                             <div className="flex items-start gap-3">
                               <img
                                 src={case_.specialist.avatar}
                                 alt={case_.specialist.name}
                                 loading="lazy"
-                                className="w-12 h-12 rounded-full object-cover border-2 border-blue-300"
+                                className="w-12 h-12 rounded-full object-cover border-2 border-orange-300"
                               />
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-semibold text-blue-900 text-sm">{case_.specialist.name}</h4>
-                                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                                  <h4 className="font-semibold text-gray-900 text-sm">{case_.specialist.name}</h4>
+                                  <Badge variant="secondary" className="bg-orange-100 text-orange-800 text-xs">
                                     {case_.specialist.successRate} Success
                                   </Badge>
                                 </div>
-                                <p className="text-blue-700 font-medium text-xs mb-1">{case_.specialist.title}</p>
-                                <p className="text-blue-600 text-xs">{case_.specialist.experience}</p>
+                                <p className="text-orange-700 font-medium text-xs mb-1">{case_.specialist.title}</p>
+                                <p className="text-gray-600 text-xs">{case_.specialist.experience}</p>
                               </div>
                             </div>
                           </div>
@@ -323,7 +323,7 @@ export default function Dashboard() {
                               <div className={`w-2 h-2 rounded-full mt-2 ${
                                 case_.updates[0].type === 'success' ? 'bg-green-500' :
                                 case_.updates[0].type === 'warning' ? 'bg-yellow-500' :
-                                case_.updates[0].type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+                                case_.updates[0].type === 'error' ? 'bg-red-500' : 'bg-orange-500'
                               }`}></div>
                               <div className="flex-1">
                                 <p className="text-sm">{case_.updates[0].message}</p>

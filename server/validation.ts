@@ -87,7 +87,14 @@ export const dataAdminOrderSchema = z.object({
 
 // Scan brand validation
 export const scanBrandRequestSchema = z.object({
-  brandName: z.string().min(1, "Brand name is required").max(100),
+  brandName: z
+    .string()
+    .min(2, "Brand name must be at least 2 characters")
+    .max(80, "Brand name must be 80 characters or fewer")
+    .trim()
+    .refine(v => /[a-zA-Z]/.test(v), "Brand name must contain at least one letter")
+    .refine(v => !/^[^a-zA-Z0-9]+$/.test(v), "Brand name must not be all symbols")
+    .refine(v => !/(.)\1{4,}/.test(v), "Brand name appears to be spam"),
   includePlatforms: z.array(z.string()).optional().default(["reddit", "reviews", "social", "news"]),
 });
 

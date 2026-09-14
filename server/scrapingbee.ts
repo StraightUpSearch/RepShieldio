@@ -42,7 +42,7 @@ class ScrapingBeeAPI {
   constructor() {
     this.apiKey = process.env.SCRAPINGBEE_API_KEY || null;
     if (!this.apiKey) {
-      console.warn("SCRAPINGBEE_API_KEY not found. Reddit scanning will not work.");
+      console.log("SCRAPINGBEE_API_KEY not found. Reddit scanning will use public API fallback.");
     }
   }
 
@@ -68,9 +68,67 @@ class ScrapingBeeAPI {
     return data.body;
   }
 
+  private async searchBrandFallback(brandName: string): Promise<RedditSearchResult> {
+    const posts: RedditPost[] = [];
+    const comments: RedditComment[] = [];
+
+    try {
+      const q = encodeURIComponent(`"${brandName}"`);
+      const searchUrl = `https://www.reddit.com/search.json?q=${q}&sort=new&limit=25&type=link`;
+
+      const response = await fetch(searchUrl, {
+        headers: {
+          'User-Agent': 'RepShieldBrandScanner/1.0 (brand reputation monitoring)',
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Reddit API responded with ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.data?.children) {
+        for (const child of data.data.children) {
+          if (child.kind === 't3' && child.data) {
+            const p = child.data;
+            posts.push({
+              id: p.id || '',
+              title: p.title || '',
+              selftext: p.selftext || '',
+              url: p.url || '',
+              subreddit: p.subreddit || '',
+              author: p.author || '',
+              created_utc: p.created_utc || 0,
+              score: p.score || 0,
+              num_comments: p.num_comments || 0,
+              permalink: p.permalink || '',
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Reddit public API fallback error:', err);
+    }
+
+    const allContent = posts.map(p => p.title + ' ' + p.selftext);
+    const riskScore = this.calculateRiskScore(allContent);
+    const sentiment = this.calculateSentiment(allContent);
+
+    return {
+      posts,
+      comments,
+      totalFound: posts.length + comments.length,
+      riskScore,
+      sentiment,
+    };
+  }
+
   async searchBrand(brandName: string): Promise<RedditSearchResult> {
     if (!this.apiKey) {
-      throw new Error("ScrapingBee API key required for Reddit scanning");
+      console.log(`[Reddit] No ScrapingBee key — using public API fallback for: ${brandName}`);
+      return this.searchBrandFallback(brandName);
     }
 
     try {

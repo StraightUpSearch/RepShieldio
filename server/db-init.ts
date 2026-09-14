@@ -237,13 +237,85 @@ export async function initializeDatabase(): Promise<void> {
       await client.batch(indexes.map(sql => ({ sql, args: [] })));
       console.log('✅ Database indexes created');
 
-      
+      try {
+        await seedBlogPostsSqlite(client);
+      } catch (seedErr) {
+        console.error('Blog seed failed (non-fatal):', seedErr);
+      }
     }
 
     console.log('✅ Database initialization complete');
   } catch (error) {
     console.error('❌ Database initialization failed:', error);
     // Don't throw - let the application start even if this fails
+  }
+}
+
+const SEED_POSTS = [
+  {
+    title: 'How to Remove False Reddit Posts About Your Business',
+    slug: 'how-to-remove-false-reddit-posts',
+    excerpt: 'A step-by-step guide to getting defamatory or false content removed from Reddit — and what to do when standard reporting fails.',
+    content: `Reddit is one of the most trusted domains on the internet, which makes false or defamatory posts about your business especially damaging. A single thread on a popular subreddit can surface on the first page of Google within hours and stay there for years.\n\nHere is the process professionals use to remove harmful Reddit content.\n\n## Step 1: Document Everything\n\nBefore taking any action, screenshot the post, note the subreddit, author username, and timestamp. This evidence is critical if you need to escalate.\n\n## Step 2: Assess the Claim\n\nIs the content demonstrably false? Does it make specific factual claims that can be disproven? Content that crosses into defamation (false statements of fact presented as true) has the strongest removal grounds.\n\n## Step 3: Report to Reddit\n\nUse the native report button for content that violates Reddit's Content Policy — particularly rules around doxxing, harassment, and misinformation. Reddit's Trust & Safety team reviews flagged content.\n\n## Step 4: Contact the Subreddit Moderators\n\nSubreddit moderators have wide discretion to remove posts. A polite, evidence-backed message explaining why the content is false is often more effective than the platform report.\n\n## Step 5: Work With a Professional\n\nIf both steps fail, a reputation management specialist can escalate through Reddit's business channels, send formal legal notices, and in some cases negotiate with the original poster. RepShield handles over 1,650 cases per year with a 95% success rate.\n\n## What Not to Do\n\nAvoid engaging with the post publicly. Replies often resurface the thread in search results and can appear to validate the claims. Similarly, avoid asking friends or employees to downvote — coordinated voting manipulation violates Reddit's rules and can make your situation worse.`,
+    metaTitle: 'How to Remove False Reddit Posts About Your Business | RepShield',
+    metaDescription: 'Step-by-step guide to removing defamatory Reddit posts. Learn what works, what to avoid, and when to call a professional.',
+    keywords: 'remove reddit post, reddit defamation, false reddit review, reddit reputation management',
+    author: 'RepShield Team',
+    category: 'guides',
+    tags: ['reddit removal', 'defamation', 'reputation management'],
+    readingTime: 5,
+  },
+  {
+    title: "Reddit's Hidden Risk to SaaS Companies: What Founders Need to Know",
+    slug: 'reddit-risk-saas-companies',
+    excerpt: 'A single negative thread about a SaaS product can suppress trial signups for months. Here is why Reddit is a unique threat — and how leading founders are managing it.',
+    content: `For SaaS founders, Reddit occupies a strange position in the marketing stack. On one hand, organic mentions in communities like r/SaaS, r/Entrepreneur, and product-specific subreddits drive high-intent signups. On the other, a single negative experience posted to the right community can become a persistent SEO liability that suppresses conversions for years.\n\n## Why Reddit Ranks So Well\n\nReddit pages consistently appear in the top five results for brand-name searches. Google treats Reddit as a trusted source due to its domain authority and high engagement signals. A post asking "Is [YourProduct] legit?" that receives ten replies will almost certainly outrank your own landing page for that query.\n\n## The Compounding Effect\n\nUnlike a tweet that disappears in hours, a Reddit thread ages well in search engines. A complaint posted during your beta in 2022 is still findable in 2025. Worse, dormant threads can be "necroposted" — a new user adds a comment years later, refreshing the page's freshness signal in Google's eyes.\n\n## Common Trigger Points for SaaS\n\n- Billing disputes (especially unexpected renewals)\n- Failed cancellation attempts\n- Data loss or downtime events\n- Founder public statements taken out of context\n- Competitor-initiated negative posts (more common than founders realise)\n\n## What Smart Founders Do\n\nMonitoring is the first line of defence. Tools that alert you within hours of a new brand mention let you respond constructively before a thread gains traction. When content crosses into false or defamatory territory, professional removal via established Reddit channels achieves 95%+ success rates.\n\nRepShield scans Reddit for your brand name in seconds and surfaces any risk content.`,
+    metaTitle: 'Reddit Reputation Risk for SaaS Companies | RepShield',
+    metaDescription: 'Why Reddit is a unique SEO and reputation threat for SaaS founders, and how to manage it before a single thread suppresses your signups.',
+    keywords: 'saas reddit reputation, reddit brand mentions, saas negative reviews reddit',
+    author: 'RepShield Team',
+    category: 'industry',
+    tags: ['saas', 'reddit monitoring', 'brand risk'],
+    readingTime: 6,
+  },
+  {
+    title: "What Reddit's Content Policy Actually Allows You to Remove",
+    slug: 'reddit-content-policy-removal-guide',
+    excerpt: 'Most businesses do not know what Reddit will actually remove. This plain-language breakdown of Reddit\'s Content Policy tells you exactly what qualifies — and what does not.',
+    content: `Reddit's Content Policy is the rulebook that determines what gets removed from the platform. Understanding it is the difference between a successful removal request and weeks of wasted effort.\n\n## What Reddit Will Remove\n\n### Personal Information (Doxxing)\nReddit prohibits posting someone's private information without consent. If a post includes your home address, personal phone number, or private email, this is a strong removal ground.\n\n### Harassment\nContent that constitutes targeted harassment of an individual or organisation — including repeated unwanted contact or coordinated abuse — violates the policy.\n\n### Misinformation About Public Health and Voting\nReddit has specific rules against health and electoral misinformation, though these rarely apply to business reputation cases.\n\n### Impersonation\nImpersonating your brand, your employees, or your executives in a misleading way is a policy violation.\n\n### Illegal Content\nContent that is defamatory under applicable law, or that constitutes an illegal threat, may be removed — though Reddit requires a formal legal notice for most defamation removals.\n\n## What Reddit Will NOT Remove\n\n- Negative but genuine customer reviews\n- Opinions clearly framed as opinions\n- Satire and parody (when clearly labelled)\n- Factually accurate negative coverage\n\n## The Gap: False Factual Claims\n\nThis is where most businesses get stuck. A post stating "Company X stole my deposit and never delivered" may be entirely false — but if it is framed as a personal account, Reddit's platform-level tools have limited reach. This is where moderator outreach and legal notices become the more effective route.\n\nRepShield specialises in cases that fall into this gap. We know which escalation paths work for which types of content, and we only take cases we believe we can win.`,
+    metaTitle: "What Reddit's Content Policy Allows You to Remove | RepShield",
+    metaDescription: "Plain-language guide to Reddit's Content Policy. Know exactly what qualifies for removal and what doesn't before you file a report.",
+    keywords: "reddit content policy, reddit removal policy, what can be removed from reddit, reddit defamation",
+    author: 'RepShield Team',
+    category: 'guides',
+    tags: ['reddit policy', 'content removal', 'defamation'],
+    readingTime: 7,
+  },
+];
+
+async function seedBlogPostsSqlite(client: any): Promise<void> {
+  try {
+    const result = await client.execute({ sql: 'SELECT COUNT(*) as count FROM blog_posts', args: [] });
+    const count = result.rows[0]?.count ?? result.rows[0]?.[0] ?? 0;
+    if (Number(count) > 0) return; // already seeded
+
+    const now = Math.floor(Date.now() / 1000);
+    for (const post of SEED_POSTS) {
+      await client.execute({
+        sql: `INSERT INTO blog_posts (title, slug, excerpt, content, meta_title, meta_description, keywords, author, status, category, tags, reading_time, published_at, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'published', ?, ?, ?, ?, ?, ?)`,
+        args: [
+          post.title, post.slug, post.excerpt, post.content,
+          post.metaTitle, post.metaDescription, post.keywords,
+          post.author, post.category,
+          JSON.stringify(post.tags), post.readingTime,
+          now, now, now,
+        ],
+      });
+    }
+    console.log('✅ Blog posts seeded (3 posts)');
+  } catch (err) {
+    console.error('❌ Blog seed failed:', err);
   }
 }
 

@@ -1,5 +1,18 @@
 import sgMail from '@sendgrid/mail';
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+const BRAND_ORANGE = '#f97316';
+const BRAND_DARK = '#111827';
+const BRAND_ORANGE_DARK = '#ea580c';
+
 // Make email optional for both development and production
 const apiKey = process.env.SENDGRID_API_KEY;
 
@@ -12,7 +25,7 @@ if (apiKey) {
 }
 
 // Use environment variables for email addresses
-const ADMIN_EMAIL = process.env.SENDER_EMAIL || process.env.ADMIN_EMAIL || 'contact@repshield.io';
+const ADMIN_EMAIL = process.env.SENDER_EMAIL || process.env.ADMIN_EMAIL || 'contact@removefromreddit.com';
 const FROM_EMAIL = process.env.FROM_EMAIL || ADMIN_EMAIL;
 
 export async function sendQuoteNotification(data: {
@@ -111,7 +124,7 @@ export async function sendPasswordResetEmail(data: {
 }) {
   // Use environment variable for reset URL base or fallback to localhost for development
   const RESET_URL_BASE = process.env.RESET_URL_BASE || 
-    (process.env.NODE_ENV === 'production' ? 'https://repshield.io' : 'http://localhost:3000');
+    (process.env.NODE_ENV === 'production' ? 'https://removefromreddit.com' : 'http://localhost:3000');
   
   const resetUrl = `${RESET_URL_BASE}/reset-password?token=${data.resetToken}`;
   
@@ -121,7 +134,7 @@ export async function sendPasswordResetEmail(data: {
     subject: 'RepShield - Password Reset Request',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #2563eb; margin-bottom: 20px;">Password Reset Request</h2>
+        <h2 style="color: #111827; margin-bottom: 20px;">Password Reset Request</h2>
         
         <p>Hello${data.userName ? ` ${data.userName}` : ''},</p>
         
@@ -129,7 +142,7 @@ export async function sendPasswordResetEmail(data: {
         
         <div style="text-align: center; margin: 30px 0;">
           <a href="${resetUrl}" 
-             style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+             style="background-color: #111827; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
             Reset Password
           </a>
         </div>
@@ -148,7 +161,7 @@ export async function sendPasswordResetEmail(data: {
         <p style="color: #666; font-size: 14px;">
           Best regards,<br>
           The RepShield Team<br>
-          <a href="${RESET_URL_BASE}" style="color: #2563eb;">repshield.io</a>
+          <a href="${RESET_URL_BASE}" style="color: ${BRAND_ORANGE_DARK};">removefromreddit.com</a>
         </p>
         
         <p style="font-size: 12px; color: #999; margin-top: 20px;">
@@ -176,8 +189,8 @@ export async function sendPasswordResetEmail(data: {
 // ============ CLIENT-FACING LIFECYCLE EMAILS ============
 
 export async function sendWelcomeEmail(data: { email: string; firstName?: string }) {
-  const RESET_URL_BASE = process.env.RESET_URL_BASE || 
-    (process.env.NODE_ENV === 'production' ? 'https://repshield.io' : 'http://localhost:3000');
+  const BASE = process.env.RESET_URL_BASE ||
+    (process.env.NODE_ENV === 'production' ? 'https://removefromreddit.com' : 'http://localhost:3000');
 
   const msg = {
     to: data.email,
@@ -185,22 +198,23 @@ export async function sendWelcomeEmail(data: { email: string; firstName?: string
     subject: 'Welcome to RepShield — Your Brand Protection Starts Now',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #2563eb; margin-bottom: 20px;">Welcome to RepShield</h2>
-        <p>Hello${data.firstName ? ` ${data.firstName}` : ''},</p>
-        <p>Your RepShield account is now active. You can now:</p>
+        <div style="margin-bottom: 24px;"><span style="font-size: 22px; font-weight: 900; color: ${BRAND_DARK}; letter-spacing: -0.03em;">RepShield</span></div>
+        <h2 style="color: ${BRAND_DARK}; margin-bottom: 20px;">Welcome to RepShield</h2>
+        <p>Hello${data.firstName ? ` ${escapeHtml(data.firstName)}` : ''},</p>
+        <p>Your account is now active. You can now:</p>
         <ul>
-          <li>Run brand mention scans across Reddit</li>
+          <li>Run live brand scans across Reddit</li>
           <li>Track removal requests in your dashboard</li>
-          <li>Purchase scan credits for self-serve monitoring</li>
+          <li>Get a free quote for any content you need removed</li>
         </ul>
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${RESET_URL_BASE}/my-account" 
-             style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
-            Go to Dashboard
+          <a href="${BASE}/my-account"
+             style="background-color: ${BRAND_ORANGE}; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+            Go to Dashboard →
           </a>
         </div>
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
-        <p style="color: #666; font-size: 14px;">The RepShield Team<br><a href="${RESET_URL_BASE}" style="color: #2563eb;">repshield.io</a></p>
+        <p style="color: #6b7280; font-size: 14px;">The RepShield Team<br><a href="${BASE}" style="color: ${BRAND_ORANGE_DARK};">removefromreddit.com</a></p>
       </div>
     `,
   };
@@ -231,7 +245,7 @@ export async function sendTicketQuotedEmail(data: {
     subject: `Your RepShield Quote is Ready — ${ticketNumber}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #2563eb; margin-bottom: 20px;">Your Specialist Quote is Ready</h2>
+        <h2 style="color: #111827; margin-bottom: 20px;">Your Specialist Quote is Ready</h2>
         <p>Our specialist has reviewed your case and prepared a quote:</p>
         <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 20px; margin: 20px 0;">
           <p style="margin: 0 0 10px 0;"><strong>Ticket:</strong> ${ticketNumber}</p>
@@ -240,12 +254,12 @@ export async function sendTicketQuotedEmail(data: {
         </div>
         ${data.paymentLink ? `
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${data.paymentLink}" 
-             style="background-color: #16a34a; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
-            Pay & Start Removal
+          <a href="${data.paymentLink}"
+             style="background-color: ${BRAND_ORANGE}; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; font-size: 16px;">
+            Pay &amp; Start Removal →
           </a>
         </div>
-        <p style="text-align: center; color: #666; font-size: 13px;">This quote is valid for 72 hours.</p>
+        <p style="text-align: center; color: #6b7280; font-size: 13px;">This quote is valid for 72 hours.</p>
         ` : ''}
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
         <p style="color: #666; font-size: 14px;">The RepShield Team</p>
@@ -305,11 +319,11 @@ export async function sendTicketInProgressEmail(data: { email: string; ticketId:
     subject: `Removal In Progress — ${ticketNumber} (${data.progress}% Complete)`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2 style="color: #2563eb; margin-bottom: 20px;">Removal Update</h2>
+        <h2 style="color: #111827; margin-bottom: 20px;">Removal Update</h2>
         <p>Progress update for ticket <strong>${ticketNumber}</strong>:</p>
         <div style="background: #eff6ff; border-radius: 8px; padding: 15px; margin: 20px 0;">
           <div style="background: #e5e7eb; border-radius: 999px; height: 24px; overflow: hidden;">
-            <div style="background: #2563eb; height: 100%; width: ${data.progress}%; border-radius: 999px;"></div>
+            <div style="background: #f97316; height: 100%; width: ${data.progress}%; border-radius: 999px;"></div>
           </div>
           <p style="text-align: center; margin: 10px 0 0 0; font-weight: bold;">${data.progress}% Complete</p>
         </div>
@@ -334,7 +348,7 @@ export async function sendTicketInProgressEmail(data: { email: string; ticketId:
 
 export async function sendTicketCompletedEmail(data: { email: string; ticketId: number; completedAt: string }) {
   const RESET_URL_BASE = process.env.RESET_URL_BASE || 
-    (process.env.NODE_ENV === 'production' ? 'https://repshield.io' : 'http://localhost:3000');
+    (process.env.NODE_ENV === 'production' ? 'https://removefromreddit.com' : 'http://localhost:3000');
   const ticketNumber = `REP-${data.ticketId.toString().padStart(4, '0')}`;
   const msg = {
     to: data.email,
@@ -352,7 +366,7 @@ export async function sendTicketCompletedEmail(data: { email: string; ticketId: 
         <div style="background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; padding: 15px; margin: 20px 0;">
           <p style="margin: 0; font-weight: bold;">Protect against future posts</p>
           <p style="margin: 5px 0 0 0;">Set up automated monitoring to catch new mentions early.</p>
-          <a href="${RESET_URL_BASE}/monitoring" style="color: #2563eb; font-weight: bold;">Explore Monitoring Plans →</a>
+          <a href="${RESET_URL_BASE}/monitoring" style="color: #111827; font-weight: bold;">Explore Monitoring Plans →</a>
         </div>
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">
         <p style="color: #666; font-size: 14px;">The RepShield Team</p>
@@ -377,8 +391,11 @@ export async function sendCustomerMessageNotification(data: {
   ticketId: number;
   message: string;
 }) {
+  const BASE = process.env.RESET_URL_BASE ||
+    (process.env.NODE_ENV === 'production' ? 'https://removefromreddit.com' : 'http://localhost:3000');
   const ticketNumber = `REP-${data.ticketId.toString().padStart(4, '0')}`;
-  const trackUrl = `${RESET_URL_BASE}/ticket-status?email=${encodeURIComponent(data.customerEmail)}`;
+  const trackUrl = `${BASE}/ticket-status?email=${encodeURIComponent(data.customerEmail)}`;
+  const safeMessage = escapeHtml(data.message);
 
   const msg = {
     to: data.customerEmail,
@@ -389,7 +406,7 @@ export async function sendCustomerMessageNotification(data: {
         <h2 style="color: #111827;">You have a new message</h2>
         <p>The RepShield team has replied to your case <strong>${ticketNumber}</strong>.</p>
         <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 15px; margin: 20px 0;">
-          <p style="margin: 0; white-space: pre-wrap;">${data.message}</p>
+          <p style="margin: 0; white-space: pre-wrap;">${safeMessage}</p>
         </div>
         <a href="${trackUrl}" style="display: inline-block; background: #111827; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 10px;">View your case →</a>
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;">

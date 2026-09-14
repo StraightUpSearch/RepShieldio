@@ -9,6 +9,7 @@ import SEOHead from "@/components/seo-head";
 import AdvancedSEO from "@/components/advanced-seo";
 import { ErrorBoundary } from "@/components/error-boundary";
 import TelegramWidget from "@/components/telegram-widget";
+import CookieConsent from "@/components/cookie-consent";
 
 // Static imports - lightweight pages needed on first paint
 import HomeServiceFirst from "@/pages/home-service-first";
@@ -101,6 +102,7 @@ function App() {
           </main>
         </ErrorBoundary>
         <TelegramWidget />
+        <CookieConsent />
       </TooltipProvider>
     </QueryClientProvider>
   );

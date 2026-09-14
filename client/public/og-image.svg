@@ -1,36 +1,40 @@
 <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1e3a5f;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-
-  <!-- Background -->
-  <rect width="1200" height="630" fill="url(#bgGradient)" />
-
-  <!-- Shield icon centered above text -->
-  <g transform="translate(552, 120)">
-    <path d="M48 4 L88 20 L88 52 C88 80 68 104 48 112 C28 104 8 80 8 52 L8 20 Z"
-          fill="none" stroke="white" stroke-width="4" stroke-linejoin="round" />
-    <path d="M48 16 L78 28 L78 52 C78 72 64 92 48 100 C32 92 18 72 18 52 L18 28 Z"
-          fill="white" fill-opacity="0.15" />
-    <path d="M36 56 L44 64 L62 44"
-          fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- White background -->
+  <rect width="1200" height="630" fill="#ffffff"/>
+  <!-- Subtle dot grid -->
+  <pattern id="dots" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+    <circle cx="2" cy="2" r="1.2" fill="#f3f4f6"/>
+  </pattern>
+  <rect width="1200" height="630" fill="url(#dots)"/>
+  <!-- Orange accent bar left -->
+  <rect x="0" y="0" width="8" height="630" fill="#f97316"/>
+  <!-- Shield icon -->
+  <g transform="translate(540, 120)">
+    <rect width="120" height="120" rx="16" fill="#fff7ed"/>
+    <path d="M60 18 L96 32 L96 64 C96 90 80 112 60 118 C40 112 24 90 24 64 L24 32 Z"
+          fill="#f97316"/>
+    <path d="M60 28 L88 40 L88 64 C88 84 76 102 60 108 C44 102 32 84 32 64 L32 40 Z"
+          fill="white" fill-opacity="0.3"/>
+    <path d="M46 66 L55 75 L74 54"
+          fill="none" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
-
-  <!-- RepShield text -->
-  <text x="600" y="320" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="bold"
-        text-anchor="middle" fill="white" letter-spacing="2">RepShield</text>
-
-  <!-- Tagline -->
-  <text x="600" y="380" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="normal"
-        text-anchor="middle" fill="white" fill-opacity="0.85">Reddit Reputation Management</text>
-
-  <!-- Subtle bottom accent line -->
-  <rect x="450" y="420" width="300" height="2" rx="1" fill="white" fill-opacity="0.3" />
-
+  <!-- Headline -->
+  <text x="600" y="310" font-family="Arial Black, Arial, sans-serif" font-size="64" font-weight="900"
+        text-anchor="middle" fill="#111827" letter-spacing="-2">RepShield</text>
+  <!-- Subline -->
+  <text x="600" y="370" font-family="Arial, Helvetica, sans-serif" font-size="28"
+        text-anchor="middle" fill="#6b7280">Get Reddit posts removed. Fast.</text>
+  <!-- Trust stat pills -->
+  <rect x="310" y="410" width="175" height="44" rx="22" fill="#fff7ed"/>
+  <text x="397" y="438" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="bold"
+        text-anchor="middle" fill="#f97316">1,650+ Cases</text>
+  <rect x="510" y="410" width="175" height="44" rx="22" fill="#fff7ed"/>
+  <text x="597" y="438" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="bold"
+        text-anchor="middle" fill="#f97316">95% Success</text>
+  <rect x="710" y="410" width="175" height="44" rx="22" fill="#fff7ed"/>
+  <text x="797" y="438" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="bold"
+        text-anchor="middle" fill="#f97316">Pay on Success</text>
   <!-- Domain -->
-  <text x="600" y="560" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="normal"
-        text-anchor="middle" fill="white" fill-opacity="0.6">repshield.io</text>
+  <text x="600" y="570" font-family="Arial, Helvetica, sans-serif" font-size="20"
+        text-anchor="middle" fill="#9ca3af">removefromreddit.com</text>
 </svg>

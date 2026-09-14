@@ -25,8 +25,8 @@ interface Ticket {
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
   pending:    { label: 'Pending review', color: 'bg-yellow-50 text-yellow-700 border-yellow-200',  icon: <Clock className="w-3.5 h-3.5" /> },
-  approved:   { label: 'Quote ready',   color: 'bg-blue-50 text-blue-700 border-blue-200',         icon: <CreditCard className="w-3.5 h-3.5" /> },
-  processing: { label: 'In progress',   color: 'bg-indigo-50 text-indigo-700 border-indigo-200',   icon: <RefreshCw className="w-3.5 h-3.5 animate-spin" /> },
+  approved:   { label: 'Quote ready',   color: 'bg-orange-50 text-orange-700 border-orange-200',   icon: <CreditCard className="w-3.5 h-3.5" /> },
+  processing: { label: 'In progress',   color: 'bg-orange-50 text-orange-700 border-orange-200',   icon: <RefreshCw className="w-3.5 h-3.5 animate-spin" /> },
   completed:  { label: 'Removed',       color: 'bg-green-50 text-green-700 border-green-200',      icon: <CheckCircle className="w-3.5 h-3.5" /> },
   failed:     { label: 'Failed',        color: 'bg-red-50 text-red-700 border-red-200',            icon: <AlertCircle className="w-3.5 h-3.5" /> },
 };

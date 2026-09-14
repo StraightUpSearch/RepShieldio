@@ -160,6 +160,27 @@ class TelegramBot {
     }
   }
 
+  async sendTicketAlert(ticketId: number, status: string, clientEmail?: string, amount?: string): Promise<void> {
+    if (!this.botToken) return;
+    const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+    if (!adminChatId) return;
+
+    const emoji: Record<string, string> = {
+      pending: '📥', quoted: '💰', approved: '✅', in_progress: '⚙️', completed: '🎉', failed: '❌',
+    };
+    const icon = emoji[status] ?? '📋';
+    let message = `${icon} <b>TICKET #${ticketId} → ${status.toUpperCase().replace('_', ' ')}</b>\n`;
+    if (clientEmail) message += `📧 ${clientEmail}\n`;
+    if (amount) message += `💵 £${amount}\n`;
+    message += `⏰ ${new Date().toLocaleString()}`;
+
+    try {
+      await this.sendMessage(parseInt(adminChatId), message);
+    } catch (error) {
+      console.error('Failed to send ticket alert:', error);
+    }
+  }
+
   async sendChatbotInteraction(userMessage: string, botResponse: string, userInfo?: any): Promise<void> {
     if (!this.botToken) return;
 

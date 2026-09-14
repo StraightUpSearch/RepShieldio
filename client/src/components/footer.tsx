@@ -22,7 +22,7 @@ export default function Footer() {
               <a href="https://www.linkedin.com/company/repshield-io/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors">
                 <SiLinkedin className="w-6 h-6" />
               </a>
-              <a href="mailto:contact@repshield.io" className="text-gray-400 hover:text-white transition-colors">
+              <a href="mailto:contact@removefromreddit.com" className="text-gray-400 hover:text-white transition-colors">
                 <Mail className="w-6 h-6" />
               </a>
             </div>

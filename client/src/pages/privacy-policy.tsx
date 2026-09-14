@@ -83,7 +83,7 @@ export default function PrivacyPolicy() {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-gray-700">
                   <strong>RepShield</strong><br />
-                  Email: privacy@repshield.io<br />
+                  Email: privacy@removefromreddit.com<br />
                   Subject: Privacy Policy Inquiry
                 </p>
               </div>

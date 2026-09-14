@@ -1,20 +1,7 @@
 <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="shieldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#1e3a5f;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#3B82F6;stop-opacity:1" />
-    </linearGradient>
-  </defs>
-
-  <!-- Shield shape -->
-  <path d="M16 1 L30 7 L30 15 C30 24 23 30 16 32 C9 30 2 24 2 15 L2 7 Z"
-        fill="url(#shieldGradient)" />
-
-  <!-- Inner shield highlight -->
-  <path d="M16 4 L27 9 L27 15 C27 22 21 28 16 30 C11 28 5 22 5 15 L5 9 Z"
-        fill="white" fill-opacity="0.1" />
-
-  <!-- Checkmark inside shield -->
-  <path d="M10 16 L14 20 L22 11"
-        fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+  <rect width="32" height="32" rx="6" fill="#f97316"/>
+  <path d="M16 4 L28 9 L28 16 C28 23.5 22.5 29.5 16 31.5 C9.5 29.5 4 23.5 4 16 L4 9 Z"
+        fill="white" fill-opacity="0.95"/>
+  <path d="M11 17 L14.5 20.5 L21 13"
+        fill="none" stroke="#f97316" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

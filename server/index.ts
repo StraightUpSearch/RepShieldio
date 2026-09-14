@@ -12,7 +12,7 @@ app.use((req, res, next) => {
   if (process.env.NODE_ENV === 'production') {
     res.setHeader(
       'Content-Security-Policy',
-      "default-src 'self'; script-src 'self' https://js.stripe.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.stripe.com; frame-src https://js.stripe.com;"
+      "default-src 'self'; script-src 'self' https://js.stripe.com https://telegram.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.stripe.com https://t.me; frame-src https://js.stripe.com https://telegram.org; child-src https://telegram.org;"
     );
     res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   }

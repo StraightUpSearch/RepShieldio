@@ -27,7 +27,7 @@ export default function TelegramWidget() {
       setBubbleDismissed(true);
       return;
     }
-    const t = setTimeout(() => setShowBubble(true), 5000);
+    const t = setTimeout(() => setShowBubble(true), 15000);
     return () => clearTimeout(t);
   }, [isExcluded]);
 
@@ -46,10 +46,10 @@ export default function TelegramWidget() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-none">
-      {/* Pop-up card */}
+      {/* Pop-up card — desktop only (hidden on mobile to avoid blocking content) */}
       {showBubble && !bubbleDismissed && (
         <div
-          className="pointer-events-auto relative bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 w-72 animate-in slide-in-from-bottom-4 fade-in duration-300"
+          className="pointer-events-auto relative hidden md:block bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 w-72 animate-in slide-in-from-bottom-4 fade-in duration-300"
           style={{ animationDuration: "350ms" }}
         >
           {/* Dismiss button */}
@@ -102,15 +102,13 @@ export default function TelegramWidget() {
       {/* Floating button */}
       <button
         onClick={openTelegram}
-        className="pointer-events-auto relative w-14 h-14 bg-[#0088CC] hover:bg-[#0077BB] active:bg-[#0066AA] text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
+        className="pointer-events-auto relative w-12 h-12 md:w-14 md:h-14 bg-[#0088CC] hover:bg-[#0077BB] active:bg-[#0066AA] text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center"
         aria-label="Chat with us on Telegram"
         title="Chat with us — free assessment"
       >
-        <TelegramIcon className="w-7 h-7" />
-        {/* Pulse ring */}
-        <span className="absolute inset-0 rounded-full animate-ping bg-[#0088CC] opacity-20 pointer-events-none" />
+        <TelegramIcon className="w-6 h-6 md:w-7 md:h-7" />
         {/* Online indicator */}
-        <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
+        <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 md:w-4 md:h-4 bg-green-500 border-2 border-white rounded-full" />
       </button>
     </div>
   );

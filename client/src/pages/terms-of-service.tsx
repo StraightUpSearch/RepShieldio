@@ -97,7 +97,7 @@ export default function TermsOfService() {
               <div className="bg-gray-50 p-4 rounded-lg">
                 <p className="text-gray-700">
                   <strong>RepShield</strong><br />
-                  Email: legal@repshield.io<br />
+                  Email: legal@removefromreddit.com<br />
                   Subject: Terms of Service Inquiry
                 </p>
               </div>

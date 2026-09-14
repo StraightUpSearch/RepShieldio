@@ -38,20 +38,20 @@ export default function Blog() {
     "@type": "Blog",
     "name": "RepShield Blog - Reddit Reputation Management Insights",
     "description": "Expert insights on Reddit reputation management, content removal strategies, and brand protection tips.",
-    "url": "https://repshield.io/blog",
+    "url": "https://removefromreddit.com/blog",
     "publisher": {
       "@type": "Organization",
       "name": "RepShield",
-      "url": "https://repshield.io",
+      "url": "https://removefromreddit.com",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://repshield.io/favicon.svg"
+        "url": "https://removefromreddit.com/favicon.svg"
       }
     },
     "blogPost": posts?.map(post => ({
       "@type": "BlogPosting",
       "headline": post.title,
-      "url": `https://repshield.io/blog/${post.slug}`,
+      "url": `https://removefromreddit.com/blog/${post.slug}`,
       "datePublished": post.publishedAt,
       "author": {
         "@type": "Person",
@@ -62,11 +62,11 @@ export default function Blog() {
       "publisher": {
         "@type": "Organization",
         "name": "RepShield",
-        "url": "https://repshield.io"
+        "url": "https://removefromreddit.com"
       },
       "mainEntityOfPage": {
         "@type": "WebPage",
-        "@id": `https://repshield.io/blog/${post.slug}`
+        "@id": `https://removefromreddit.com/blog/${post.slug}`
       }
     })) || []
   };
@@ -105,14 +105,14 @@ export default function Blog() {
         
         <main className="pt-20">
           {/* Hero Section */}
-          <section className="bg-gradient-to-r from-blue-50 to-indigo-50 py-16">
+          <section className="bg-white border-b border-gray-100 py-16">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center">
                 <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl lg:text-6xl">
                   Reputation Management
-                  <span className="text-blue-600"> Insights</span>
+                  <span className="text-orange-500"> Insights</span>
                 </h1>
-                <p className="mt-6 text-xl text-gray-600 max-w-3xl mx-auto">
+                <p className="mt-6 text-xl text-gray-500 max-w-3xl mx-auto">
                   Expert strategies, case studies, and actionable tips for protecting your brand reputation across Reddit and social platforms.
                 </p>
               </div>
@@ -161,7 +161,7 @@ export default function Blog() {
                               </Badge>
                             ))}
                           </div>
-                          <Link href={`/blog/${post.slug}`} className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+                          <Link href={`/blog/${post.slug}`} className="text-orange-500 hover:text-orange-600 font-medium flex items-center gap-1">
                             Read More <ArrowRight className="w-4 h-4" />
                           </Link>
                         </div>
@@ -183,7 +183,7 @@ export default function Blog() {
                     <Link 
                       key={category.slug} 
                       href={`/blog/category/${category.slug}`}
-                      className="bg-white p-4 rounded-lg border hover:border-blue-300 hover:shadow-md transition-all"
+                      className="bg-white p-4 rounded-lg border hover:border-orange-300 hover:shadow-md transition-all"
                     >
                       <h3 className="font-semibold text-gray-900">{category.name}</h3>
                       <p className="text-sm text-gray-600 mt-1">{category.description}</p>
@@ -242,7 +242,7 @@ export default function Blog() {
                           <Badge variant="outline" className="text-xs">
                             {post.category}
                           </Badge>
-                          <Link href={`/blog/${post.slug}`} className="text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+                          <Link href={`/blog/${post.slug}`} className="text-orange-500 hover:text-orange-600 font-medium flex items-center gap-1">
                             Read More <ArrowRight className="w-4 h-4" />
                           </Link>
                         </div>
@@ -260,17 +260,17 @@ export default function Blog() {
           </section>
 
           {/* CTA Section */}
-          <section className="py-16 bg-blue-600">
+          <section className="py-16 bg-orange-500">
             <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
               <h2 className="text-3xl font-bold text-white mb-4">
                 Need Immediate Reddit Content Removal?
               </h2>
-              <p className="text-xl text-blue-100 mb-8">
+              <p className="text-xl text-orange-100 mb-8">
                 Don't wait for negative content to damage your reputation. Get professional removal services with 95%+ success rate.
               </p>
-              <Link 
-                href="/#scanner" 
-                className="inline-flex items-center px-8 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
+              <Link
+                href="/#scanner"
+                className="inline-flex items-center px-8 py-3 bg-white text-orange-600 font-semibold rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Start Free Brand Scan <ArrowRight className="ml-2 w-5 h-5" />
               </Link>

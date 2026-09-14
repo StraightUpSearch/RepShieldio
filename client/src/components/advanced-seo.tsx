@@ -17,7 +17,7 @@ const generateArticleSchema = (title: string, description: string, url: string) 
     "name": "RepShield",
     "logo": {
       "@type": "ImageObject",
-      "url": "https://repshield.io/favicon.svg"
+      "url": "https://removefromreddit.com/favicon.svg"
     }
   },
   "datePublished": new Date().toISOString(),
@@ -84,14 +84,14 @@ const generateServiceSchema = () => ({
   "@type": "ProfessionalService",
   "name": "RepShield",
   "description": "Professional Reddit content removal service. We ethically remove false, defamatory, and harmful Reddit posts and comments that damage your business reputation.",
-  "url": "https://repshield.io",
+  "url": "https://removefromreddit.com",
   "serviceType": "Online Reputation Management",
   "priceRange": "$$",
   "areaServed": "Worldwide",
   "provider": {
     "@type": "Organization",
     "name": "RepShield",
-    "url": "https://repshield.io"
+    "url": "https://removefromreddit.com"
   },
   "aggregateRating": {
     "@type": "AggregateRating",
@@ -108,7 +108,7 @@ const generateServiceSchema = () => ({
       "price": "899",
       "priceCurrency": "USD",
       "availability": "https://schema.org/InStock",
-      "url": "https://repshield.io"
+      "url": "https://removefromreddit.com"
     },
     {
       "@type": "Offer",
@@ -117,7 +117,7 @@ const generateServiceSchema = () => ({
       "price": "199",
       "priceCurrency": "USD",
       "availability": "https://schema.org/InStock",
-      "url": "https://repshield.io"
+      "url": "https://removefromreddit.com"
     }
   ],
   "hasOfferCatalog": {
@@ -181,8 +181,8 @@ export default function AdvancedSEO() {
       hreflang.href = href;
     };
 
-    addHreflang('en', `https://repshield.io${location}`);
-    addHreflang('x-default', `https://repshield.io${location}`);
+    addHreflang('en', `https://removefromreddit.com${location}`);
+    addHreflang('x-default', `https://removefromreddit.com${location}`);
 
     // Add page-specific structured data
     const removeExistingSchema = (type: string) => {
@@ -202,7 +202,7 @@ export default function AdvancedSEO() {
     };
 
     // Add page-specific schemas
-    const currentUrl = `https://repshield.io${location}`;
+    const currentUrl = `https://removefromreddit.com${location}`;
     
     switch (location) {
       case '/':

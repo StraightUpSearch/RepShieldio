@@ -293,7 +293,7 @@ class LiveScannerService {
     
     const ticket = await store.createBrandScanTicket({
       brandName: request.brandName,
-      email: request.userEmail || 'unregistered@repshield.io',
+      email: request.userEmail || 'unregistered@removefromreddit.com',
       name: 'Brand Scanner User',
       company: request.brandName,
       processed: false

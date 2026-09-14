@@ -2,119 +2,68 @@ import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, AlertTriangle, CheckCircle, ExternalLink } from "lucide-react";
+import { SiReddit } from "react-icons/si";
+import { Search, Loader2, AlertTriangle, CheckCircle2, ExternalLink } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 
-interface RedditPost {
-  id: string;
-  title: string;
-  selftext: string;
+interface PreviewMention {
+  subreddit: string;
+  timeAgo: string;
+  sentiment: string;
+  previewText: string;
   url: string;
-  subreddit: string;
-  author: string;
-  created_utc: number;
   score: number;
-  num_comments: number;
-  permalink: string;
-}
-
-interface RedditComment {
-  id: string;
-  body: string;
-  author: string;
-  subreddit: string;
-  created_utc: number;
-  score: number;
-  permalink: string;
-  link_title: string;
+  platform: string;
 }
 
 interface ScanResults {
-  posts: RedditPost[];
-  comments: RedditComment[];
   totalFound: number;
+  postsCount: number;
+  commentsCount: number;
   riskScore: number;
-  sentiment: 'positive' | 'negative' | 'neutral';
+  riskLevel: string;
+  sentiment: string;
+  previewMentions: PreviewMention[];
 }
 
 export default function Scan() {
   const [brandName, setBrandName] = useState("");
   const [results, setResults] = useState<ScanResults | null>(null);
   const { toast } = useToast();
-
-  const createTicketMutation = useMutation({
-    mutationFn: async (data: { type: string; brandName: string; scanResults: any }) => {
-      const response = await apiRequest("POST", "/api/tickets", {
-        subject: `Brand Scan Analysis - ${data.brandName}`,
-        description: `Customer requested specialist analysis for ${data.type} found in Reddit scan. Brand: ${data.brandName}. Risk Score: ${data.scanResults.riskScore}%. Total mentions: ${data.scanResults.totalFound}.`,
-        priority: data.scanResults.riskScore > 70 ? 'high' : 'medium',
-        category: 'Brand Scan',
-      });
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Specialist Contacted",
-        description: "Our Reddit specialist will analyze your results and contact you within 1 hour.",
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Request Submitted",
-        description: "Your specialist request has been received. We'll contact you shortly.",
-      });
-    }
-  });
-
-  const handleCreateTicket = (type: string) => {
-    if (!results) return;
-    createTicketMutation.mutate({
-      type,
-      brandName,
-      scanResults: results
-    });
-  };
+  const [, setLocation] = useLocation();
 
   const scanMutation = useMutation({
     mutationFn: async (brand: string) => {
       const response = await apiRequest("POST", "/api/live-scan", {
         brandName: brand,
-        platforms: ['reddit']
+        platforms: ["reddit"],
       });
       return await response.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: (res: any) => {
+      const d = res.data ?? res;
       setResults({
-        totalFound: data.totalMentions,
-        riskScore: data.riskScore,
-        posts: data.previewMentions.filter((m: any) => m.platform === 'Reddit'),
-        comments: data.platforms.reddit.comments || 0,
-        sentiment: data.sentiment || 'neutral'
+        totalFound: d.totalMentions ?? 0,
+        postsCount: d.posts ?? 0,
+        commentsCount: d.comments ?? 0,
+        riskScore: d.riskScore ?? 0,
+        riskLevel: d.riskLevel ?? "low",
+        sentiment: d.sentiment ?? "neutral",
+        previewMentions: d.previewMentions ?? [],
       });
       toast({
-        title: "✅ Live Scan Complete",
-        description: `Found ${data.totalMentions} mentions • Risk Level: ${data.riskLevel.toUpperCase()}`,
+        title: "Scan complete",
+        description: `Found ${d.totalMentions ?? 0} mentions — Risk: ${(d.riskLevel ?? "low").toUpperCase()}`,
       });
-      
-      // Show next steps to user
-      if (data.nextSteps.length > 0) {
-        setTimeout(() => {
-          toast({
-            title: "📋 Next Steps Available",
-            description: data.nextSteps[0],
-          });
-        }, 2000);
-      }
     },
-    onError: (error: any) => {
+    onError: () => {
       toast({
-        title: "Scan Unavailable",
-        description: "Live scanning is temporarily unavailable. Please try again shortly or contact support.",
+        title: "Scan unavailable",
+        description: "Live scanning is temporarily unavailable. Please try again shortly.",
         variant: "destructive",
       });
     },
@@ -122,305 +71,238 @@ export default function Scan() {
 
   const handleScan = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!brandName.trim()) {
-      toast({
-        title: "Brand Name Required",
-        description: "Please enter a brand name to scan",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!brandName.trim()) return;
     scanMutation.mutate(brandName.trim());
   };
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString();
-  };
-
-  const getRiskColor = (score: number) => {
+  const riskTextColor = (score: number) => {
     if (score >= 70) return "text-red-600";
-    if (score >= 40) return "text-yellow-600";
+    if (score >= 40) return "text-amber-600";
     return "text-green-600";
-  };
-
-  const getSentimentBadge = (sentiment: string) => {
-    const colors = {
-      positive: "bg-green-100 text-green-800",
-      negative: "bg-red-100 text-red-800",
-      neutral: "bg-gray-100 text-gray-800",
-    };
-    return colors[sentiment as keyof typeof colors] || colors.neutral;
   };
 
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">
-              Live Reddit Brand Scanner
-            </h1>
-            <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto mb-6">
-              Real-time scanning of Reddit for mentions of your brand, products, or company name.
-              Get instant insights into your online reputation.
-            </p>
-            
-            {/* Beta Notice */}
-            <div className="max-w-2xl mx-auto">
-              <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950 dark:border-blue-800">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-center gap-2 mb-3">
-                    <Badge className="bg-blue-600 text-white">BETA</Badge>
-                    <span className="text-blue-800 dark:text-blue-200 font-medium">Tool in Beta Testing</span>
-                  </div>
-                  <p className="text-blue-700 dark:text-blue-300 text-sm">
-                    If you encounter any issues or roadblocks, please{' '}
-                    <a href="/ticket-status" className="underline hover:text-blue-600">raise a ticket</a>,{' '}
-                    reach out via <span className="font-medium">Telegram</span>, or use our{' '}
-                    <span className="font-medium">chatbot</span> for immediate assistance.
-                  </p>
-                </CardContent>
-              </Card>
+      <div className="relative min-h-screen bg-white overflow-hidden">
+        <div
+          className="absolute inset-0 bg-dot-grid opacity-40 pointer-events-none"
+          aria-hidden="true"
+        />
+
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-24">
+
+          {/* Page header */}
+          <div className="mb-12 max-w-2xl">
+            <div className="inline-flex items-center gap-2 bg-orange-50 border border-orange-100 rounded-full px-3 py-1 text-xs font-semibold text-orange-600 mb-5">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse inline-block" />
+              Live Reddit Scanner
             </div>
+            <h1 className="font-satoshi text-4xl lg:text-5xl font-black text-gray-950 tracking-[-0.03em] leading-[1.06] mb-4">
+              See what Reddit is saying<br />about your brand
+            </h1>
+            <p className="text-lg text-gray-500 leading-relaxed">
+              Enter your brand name to scan Reddit for recent mentions, negative posts, and reputation risks.
+            </p>
           </div>
 
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Search className="h-5 w-5" />
-                Brand Scanner
-              </CardTitle>
-              <CardDescription>
-                Enter your brand name to scan Reddit for mentions and sentiment analysis
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleScan} className="flex gap-4">
+          {/* Scan form */}
+          <form onSubmit={handleScan} className="mb-12">
+            <div className="flex gap-3 max-w-xl">
+              <div className="flex-1 relative">
+                <SiReddit className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-500 pointer-events-none" />
                 <Input
-                  placeholder="Enter brand name (e.g., Tesla, Apple, Shopify)"
+                  placeholder="Brand name, company, or keyword"
                   value={brandName}
                   onChange={(e) => setBrandName(e.target.value)}
-                  className="flex-1"
+                  className="pl-12 h-14 text-base bg-white border border-gray-200 hover:border-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-200 rounded-xl shadow-sm transition-colors"
                   disabled={scanMutation.isPending}
                 />
-                <Button 
-                  type="submit" 
-                  disabled={scanMutation.isPending || !brandName.trim()}
-                  className="min-w-[120px]"
-                >
-                  {scanMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Scanning...
-                    </>
-                  ) : (
-                    <>
-                      <Search className="mr-2 h-4 w-4" />
-                      Scan Reddit
-                    </>
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
+              </div>
+              <Button
+                type="submit"
+                disabled={scanMutation.isPending || !brandName.trim()}
+                className="h-14 px-7 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold rounded-xl whitespace-nowrap shadow-sm transition-colors"
+              >
+                {scanMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Scanning...
+                  </>
+                ) : (
+                  <>
+                    <Search className="mr-2 h-4 w-4" />
+                    Scan Reddit
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="mt-3 text-xs text-gray-400">
+              Free scan · No account required · Results in under 30 seconds
+            </p>
+          </form>
 
+          {/* Results */}
           {results && (
             <div className="space-y-6">
-              {/* Results Summary */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    Scan Results Summary
-                    <Badge className={getSentimentBadge(results.sentiment)}>
-                      {results.sentiment.toUpperCase()} Sentiment
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                        {results.totalFound}
+
+              {/* Stats row */}
+              <div className="rounded-2xl overflow-hidden border border-gray-100">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-gray-100">
+                  {[
+                    { label: "Total mentions", value: String(results.totalFound) },
+                    { label: "Posts found", value: String(results.postsCount) },
+                    { label: "Comments found", value: String(results.commentsCount) },
+                    { label: "Risk score", value: `${results.riskScore}%`, colored: true },
+                  ].map((stat) => (
+                    <div key={stat.label} className="bg-white px-6 py-5">
+                      <div
+                        className={`font-satoshi text-3xl font-black tracking-[-0.03em] ${
+                          stat.colored ? riskTextColor(results.riskScore) : "text-gray-950"
+                        }`}
+                      >
+                        {stat.value}
                       </div>
-                      <div className="text-sm text-slate-600 dark:text-slate-300">
-                        Total Mentions
-                      </div>
+                      <div className="text-xs text-gray-400 mt-1">{stat.label}</div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                        {results.posts.length}
-                      </div>
-                      <div className="text-sm text-slate-600 dark:text-slate-300">
-                        Posts Found
-                      </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Risk alert */}
+              {results.riskLevel !== "low" && (
+                <div
+                  className={`rounded-2xl border p-5 flex items-start gap-3 ${
+                    results.riskLevel === "high"
+                      ? "bg-red-50 border-red-200"
+                      : "bg-amber-50 border-amber-200"
+                  }`}
+                >
+                  <AlertTriangle
+                    className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
+                      results.riskLevel === "high" ? "text-red-500" : "text-amber-500"
+                    }`}
+                  />
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">
+                      {results.riskLevel === "high"
+                        ? "High reputation risk detected"
+                        : "Moderate reputation activity detected"}
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-slate-900 dark:text-white">
-                        {results.comments.length}
-                      </div>
-                      <div className="text-sm text-slate-600 dark:text-slate-300">
-                        Comments Found
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className={`text-2xl font-bold ${getRiskColor(results.riskScore)}`}>
-                        {results.riskScore}%
-                      </div>
-                      <div className="text-sm text-slate-600 dark:text-slate-300">
-                        Risk Score
-                      </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      Our specialists can review this content and provide removal options.
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              )}
 
-              {/* Posts Preview with Paywall */}
-              {results.posts.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Reddit Posts ({results.posts.length})</CardTitle>
-                    <CardDescription>Critical issues detected that require immediate attention</CardDescription>
-                  </CardHeader>
-                  <CardContent className="relative">
-                    <div className="space-y-4">
-                      {results.posts.slice(0, 3).map((post, index) => (
-                        <div key={post.id} className={`border rounded-lg p-4 ${index >= 1 ? 'blur-sm' : ''}`}>
-                          <div className="flex items-start justify-between mb-2">
-                            <h3 className="font-semibold text-slate-900 dark:text-white line-clamp-2">
-                              {index === 0 ? post.title : "███████ ████ ██████ - ████ ██████"}
-                            </h3>
-                            <Badge variant="outline">r/{index === 0 ? post.subreddit : "██████"}</Badge>
-                          </div>
-                          {post.selftext && (
-                            <p className="text-slate-600 dark:text-slate-300 text-sm mb-2 line-clamp-3">
-                              {index === 0 ? post.selftext : "██████ ████████████ ████ ████████ ██████ ████████ ████████ ████"}
-                            </p>
-                          )}
-                          <div className="flex items-center justify-between text-xs text-slate-500">
-                            <span>by u/{index === 0 ? post.author : "██████"} • {index === 0 ? formatDate(post.created_utc) : "█ days ago"}</span>
-                            <div className="flex items-center gap-4">
-                              <span>{index === 0 ? post.score : "██"} points</span>
-                              <span>{index === 0 ? post.num_comments : "██"} comments</span>
-                              <Badge className="bg-red-100 text-red-800">negative</Badge>
+              {/* Mentions preview */}
+              {results.previewMentions.length > 0 ? (
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="font-satoshi text-xl font-black text-gray-950 tracking-[-0.02em]">
+                      Recent mentions on Reddit
+                    </h2>
+                    <span className="text-xs text-gray-400">
+                      {results.totalFound} total found
+                    </span>
+                  </div>
+
+                  <div className="relative">
+                    <div className="space-y-3">
+                      {results.previewMentions.map((mention, i) => (
+                        <div
+                          key={i}
+                          className={`border border-gray-100 rounded-2xl p-5 bg-white ${
+                            i >= 1 ? "blur-sm select-none pointer-events-none" : ""
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full">
+                              r/{mention.subreddit}
+                            </span>
+                            <div className="flex items-center gap-3 text-xs text-gray-400">
+                              <span>{mention.timeAgo}</span>
+                              <span>{mention.score} pts</span>
                             </div>
                           </div>
+                          <p className="text-sm text-gray-700 leading-relaxed line-clamp-3">
+                            {mention.previewText}
+                          </p>
+                          {i === 0 && (
+                            <a
+                              href={mention.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 mt-3 text-xs text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              View on Reddit
+                            </a>
+                          )}
                         </div>
                       ))}
                     </div>
 
-                    {/* Paywall Overlay for Posts */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/70 to-transparent flex items-end justify-center pb-8">
-                      <div className="text-center space-y-4 max-w-md">
-                        <div className="bg-white rounded-lg shadow-xl p-6 border-2 border-orange-200">
-                          <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                            ⚠️ {results.posts.length - 1} More Critical Posts Hidden
-                          </h3>
-                          <p className="text-slate-600 text-sm mb-4">
-                            View all {results.posts.length} posts, detailed analysis, and get removal quotes from our specialists.
-                          </p>
-                          <Button className="w-full bg-orange-600 hover:bg-orange-700" onClick={() => handleCreateTicket('posts')}>
-                            Get Specialist Analysis
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Comments Preview with Paywall */}
-              {results.comments.length > 0 && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Reddit Comments ({results.comments.length})</CardTitle>
-                    <CardDescription>
-                      <div className="flex items-center gap-2">
-                        <Badge className="bg-red-100 text-red-800">negative</Badge>
-                        Full details in report
-                      </div>
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="relative">
-                    <div className="space-y-4">
-                      {results.comments.slice(0, 5).map((comment, index) => (
-                        <div key={comment.id} className={`border rounded-lg p-4 ${index >= 2 ? 'blur-md' : index >= 1 ? 'blur-sm' : ''}`}>
-                          <div className="flex items-start justify-between mb-2">
-                            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                              {index === 0 ? `r/${comment.subreddit}` : "r/█████████"}
-                            </span>
-                            <span className="text-xs text-slate-500">
-                              {index === 0 ? formatDate(comment.created_utc) : "█ days ago"}
-                            </span>
-                          </div>
-                          <p className="text-slate-600 dark:text-slate-300 text-sm mb-2 line-clamp-2">
-                            {index === 0 ? comment.body : "██████ ████████ ████ ██████ ████████████ ██████ ████ ██████ ████████ ████"}
-                          </p>
-                          <div className="flex items-center justify-between text-xs text-slate-500">
-                            <span>{index === 0 ? `↓ ${comment.score}` : "↓ ██"}</span>
-                            <Badge className="bg-red-100 text-red-800">negative</Badge>
+                    {results.previewMentions.length > 1 && (
+                      <div className="absolute inset-0 bg-gradient-to-t from-white via-white/60 to-transparent flex items-end justify-center pb-4 pt-32">
+                        <div className="text-center max-w-sm w-full px-4">
+                          <div className="border border-gray-100 rounded-2xl p-6 bg-white shadow-sm">
+                            <div className="font-satoshi text-lg font-black text-gray-950 tracking-[-0.02em] mb-2">
+                              {Math.max(results.totalFound - 1, results.previewMentions.length - 1)} more mention
+                              {results.totalFound - 1 !== 1 ? "s" : ""} hidden
+                            </div>
+                            <p className="text-sm text-gray-500 mb-4">
+                              Get a full report with all mentions, risk analysis, and removal options.
+                            </p>
+                            <Button
+                              className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl transition-colors"
+                              onClick={() => setLocation("/contact")}
+                            >
+                              Get specialist analysis
+                            </Button>
+                            <p className="text-xs text-gray-400 mt-3">
+                              No upfront payment · Free assessment
+                            </p>
                           </div>
                         </div>
-                      ))}
-                    </div>
-
-                    {/* Paywall Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/80 to-transparent flex items-end justify-center pb-8">
-                      <div className="text-center space-y-4 max-w-md">
-                        <div className="bg-white rounded-lg shadow-xl p-6 border-2 border-blue-200">
-                          <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                            🔒 Full Report Available
-                          </h3>
-                          <p className="text-slate-600 text-sm mb-4">
-                            Get complete analysis of all {results.comments.length} comments, risk assessment, and removal recommendations from our Reddit specialists.
-                          </p>
-                          <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => handleCreateTicket('comments')}>
-                            Talk to Specialist Now
-                          </Button>
-                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-gray-100 p-10 text-center bg-white">
+                  <CheckCircle2 className="w-10 h-10 text-green-500 mx-auto mb-3" />
+                  <div className="font-satoshi text-lg font-black text-gray-950 mb-2">
+                    No mentions found
+                  </div>
+                  <p className="text-sm text-gray-500 max-w-xs mx-auto">
+                    We didn't find any recent Reddit mentions for "{brandName}". Your brand looks
+                    clean on this scan.
+                  </p>
+                </div>
               )}
 
-              {/* Call to Action */}
-              {results.riskScore > 30 && (
-                <Card className="border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-800">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-red-800 dark:text-red-200">
-                      <AlertTriangle className="h-5 w-5" />
-                      Reputation Risk Detected
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-red-700 dark:text-red-300 mb-4">
-                      Your brand scan revealed potential reputation risks. Our specialists can provide detailed analysis and removal quotes for the detected content.
-                    </p>
-                    <div className="flex gap-3">
-                      <Button 
-                        className="bg-red-600 hover:bg-red-700 text-white flex-1"
-                        onClick={() => handleCreateTicket('urgent')}
-                        disabled={createTicketMutation.isPending}
-                      >
-                        {createTicketMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Connecting...
-                          </>
-                        ) : (
-                          'Get Specialist Help'
-                        )}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              {/* Bottom CTA */}
+              <div className="border-t border-gray-100 pt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                  <div className="font-semibold text-gray-900 text-sm">
+                    Need something removed?
+                  </div>
+                  <div className="text-sm text-gray-500 mt-0.5">
+                    Our legal team opens cases within 4 hours. Pay only on success.
+                  </div>
+                </div>
+                <Button
+                  className="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 h-11 rounded-xl shrink-0 transition-colors"
+                  onClick={() => setLocation("/contact")}
+                >
+                  Get a free quote →
+                </Button>
+              </div>
             </div>
           )}
         </div>
-      </div>
       </div>
       <Footer />
     </>

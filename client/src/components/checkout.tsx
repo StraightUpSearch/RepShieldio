@@ -51,11 +51,11 @@ export default function Checkout({ caseId, amount, description, onSuccess, onCan
   return (
     <Card className="max-w-md mx-auto">
       <CardHeader className="text-center">
-        <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
           {stripeConfigured ? (
-            <CreditCard className="w-8 h-8 text-blue-600" />
+            <CreditCard className="w-8 h-8 text-orange-500" />
           ) : (
-            <MessageCircle className="w-8 h-8 text-blue-600" />
+            <MessageCircle className="w-8 h-8 text-orange-500" />
           )}
         </div>
         <CardTitle className="text-xl">
@@ -68,7 +68,7 @@ export default function Checkout({ caseId, amount, description, onSuccess, onCan
         <div className="bg-gray-50 p-4 rounded-lg">
           <div className="flex justify-between items-center mb-2">
             <span className="font-medium">Total</span>
-            <span className="text-2xl font-bold text-blue-600">{amount}</span>
+            <span className="text-2xl font-bold text-orange-500">{amount}</span>
           </div>
           {!stripeConfigured && (
             <div className="text-sm text-gray-600">
@@ -92,7 +92,7 @@ export default function Checkout({ caseId, amount, description, onSuccess, onCan
             <span>95%+ success rate guaranteed</span>
           </div>
           <div className="flex items-center gap-3 text-sm">
-            <Clock className="w-4 h-4 text-blue-500" />
+            <Clock className="w-4 h-4 text-orange-500" />
             <span>24-48 hour response time</span>
           </div>
           <div className="flex items-center gap-3 text-sm">
@@ -102,15 +102,15 @@ export default function Checkout({ caseId, amount, description, onSuccess, onCan
         </div>
 
         {!stripeConfigured && (
-          <div className="bg-blue-50 p-4 rounded-lg space-y-3">
-            <h4 className="font-medium text-blue-900">Contact Information</h4>
+          <div className="bg-orange-50 p-4 rounded-lg space-y-3">
+            <h4 className="font-medium text-gray-900">Contact Information</h4>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4 text-blue-600" />
-                <span>support@repshield.io</span>
+                <Mail className="w-4 h-4 text-orange-500" />
+                <span>support@removefromreddit.com</span>
               </div>
               <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4 text-blue-600" />
+                <Phone className="w-4 h-4 text-orange-500" />
                 <span>Available upon request</span>
               </div>
             </div>
@@ -121,7 +121,7 @@ export default function Checkout({ caseId, amount, description, onSuccess, onCan
           <Button
             onClick={handlePayment}
             disabled={isProcessing}
-            className="flex-1 bg-blue-600 hover:bg-blue-700"
+            className="flex-1 bg-orange-500 hover:bg-orange-600"
           >
             {isProcessing ? (
               <>

@@ -688,7 +688,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const scanRequest = {
         brandName: brandName.trim(),
-        userEmail: userEmail || 'unregistered@repshield.io',
+        userEmail: userEmail || 'unregistered@removefromreddit.com',
         priority: 'comprehensive' as const,
         platforms
       };
@@ -1055,24 +1055,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Continue even if email fails - ticket is still created
       }
 
-      // Auto-generate AI draft report if OpenAI is configured
-      if (isOpenAIConfigured()) {
-        try {
-          const draftReport = await generateSpecialistReport({ redditUrl, contentType: 'removal_request' });
-          if (draftReport) {
-            await storage.updateTicketNotes(ticket.id, `AI DRAFT REPORT:\n${draftReport}`);
-          }
-        } catch (err) {
-          console.error('Failed to auto-generate report:', err);
-        }
-      }
-
       res.status(201).json({
         success: true,
         message: "Quote request submitted successfully. Our specialist will review and respond within 24 hours.",
         ticketId: ticket.id,
         ticketNumber: `REP-${ticket.id.toString().padStart(4, '0')}`
       });
+
+      // Fire-and-forget: generate AI draft report after responding to the user
+      if (isOpenAIConfigured()) {
+        const ticketId = ticket.id;
+        generateSpecialistReport({ redditUrl, contentType: 'removal_request' })
+          .then(draftReport => {
+            if (draftReport) {
+              return storage.updateTicketNotes(ticketId, `AI DRAFT REPORT:\n${draftReport}`);
+            }
+          })
+          .catch(err => console.error('Failed to auto-generate report:', err));
+      }
     } catch (error) {
       console.error("Error creating quote request:", error);
       res.status(500).json({
@@ -1858,8 +1858,8 @@ ${JSON.stringify(errorDetails, null, 2)}
   });
 
   // SEO endpoints
-  app.get('/sitemap.xml', (req, res) => {
-    const baseUrl = 'https://repshield.io';
+  app.get('/sitemap.xml', async (req, res) => {
+    const baseUrl = 'https://removefromreddit.com';
     const pages = [
       { url: '/', priority: '1.0', changefreq: 'weekly' },
       { url: '/scan', priority: '0.9', changefreq: 'weekly' },
@@ -1867,17 +1867,27 @@ ${JSON.stringify(errorDetails, null, 2)}
       { url: '/contact', priority: '0.7', changefreq: 'monthly' },
       { url: '/blog', priority: '0.8', changefreq: 'weekly' },
       { url: '/monitoring', priority: '0.8', changefreq: 'monthly' },
+      { url: '/ticket-status', priority: '0.5', changefreq: 'monthly' },
       { url: '/privacy-policy', priority: '0.3', changefreq: 'yearly' },
       { url: '/terms-of-service', priority: '0.3', changefreq: 'yearly' },
-      { url: '/legal-compliance', priority: '0.3', changefreq: 'yearly' },
-      { url: '/login', priority: '0.5', changefreq: 'monthly' },
     ];
 
+    // Add dynamic blog post URLs
+    try {
+      const posts = await storage.getBlogPosts();
+      for (const post of posts) {
+        if (post.slug) pages.push({ url: `/blog/${post.slug}`, priority: '0.7', changefreq: 'monthly' });
+      }
+    } catch {
+      // non-fatal
+    }
+
+    const today = new Date().toISOString().split('T')[0];
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${pages.map(page => `  <url>
     <loc>${baseUrl}${page.url}</loc>
-    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <lastmod>${today}</lastmod>
     <changefreq>${page.changefreq}</changefreq>
     <priority>${page.priority}</priority>
   </url>`).join('\n')}
@@ -1895,7 +1905,7 @@ Disallow: /admin-dashboard
 Disallow: /data-admin
 Disallow: /api/
 
-Sitemap: https://repshield.io/sitemap.xml
+Sitemap: https://removefromreddit.com/sitemap.xml
 
 # Block AI crawlers that don't respect robots.txt
 User-agent: GPTBot

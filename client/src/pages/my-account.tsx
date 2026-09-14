@@ -207,7 +207,7 @@ function WalletTab({ stats }: { stats: AccountStats }) {
             <CardTitle>Scan Credits</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="text-3xl font-bold text-blue-600">{stats.creditsRemaining}</div>
+            <div className="text-3xl font-bold text-orange-500">{stats.creditsRemaining}</div>
             <p className="text-gray-600">Credits remaining</p>
           </CardContent>
         </Card>
@@ -445,7 +445,7 @@ export default function MyAccount() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed': return <CheckCircle className="w-4 h-4 text-green-500" />;
-      case 'processing': return <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />;
+      case 'processing': return <RefreshCw className="w-4 h-4 text-orange-500 animate-spin" />;
       case 'approved': return <CreditCard className="w-4 h-4 text-indigo-500" />;
       case 'pending': return <Clock className="w-4 h-4 text-yellow-500" />;
       case 'failed': return <AlertCircle className="w-4 h-4 text-red-500" />;
@@ -456,7 +456,7 @@ export default function MyAccount() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800';
-      case 'processing': return 'bg-blue-100 text-blue-800';
+      case 'processing': return 'bg-orange-100 text-orange-800';
       case 'approved': return 'bg-indigo-100 text-indigo-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'failed': return 'bg-red-100 text-red-800';
@@ -509,7 +509,7 @@ export default function MyAccount() {
                 <FileText className="w-4 h-4" />
                 My Tickets
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-blue-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
                     {unreadCount}
                   </span>
                 )}
@@ -565,7 +565,7 @@ export default function MyAccount() {
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Credits</CardTitle>
-                    <CreditCard className="h-4 w-4 text-blue-500" />
+                    <CreditCard className="h-4 w-4 text-orange-500" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{stats.creditsRemaining}</div>
@@ -692,7 +692,7 @@ export default function MyAccount() {
                                   Ticket {ticket.ticketId}
                                 </span>
                                 {hasUnread && (
-                                  <span className="w-2 h-2 bg-blue-500 rounded-full shrink-0" title="New message" />
+                                  <span className="w-2 h-2 bg-orange-500 rounded-full shrink-0" title="New message" />
                                 )}
                               </div>
                               <div className="flex items-center gap-2 mt-1">
@@ -786,7 +786,7 @@ export default function MyAccount() {
                               href={selectedTicket.redditUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-sm text-blue-600 hover:underline break-all"
+                              className="text-sm text-orange-500 hover:underline break-all"
                             >
                               {selectedTicket.redditUrl}
                             </a>

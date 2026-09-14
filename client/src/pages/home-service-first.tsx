@@ -11,7 +11,7 @@ const homepageStructuredData = {
   "@type": "ProfessionalService",
   "name": "RepShield",
   "description": "Professional Reddit content removal service. We ethically remove false, defamatory, and harmful Reddit posts and comments that damage your business reputation.",
-  "url": "https://repshield.io",
+  "url": "https://removefromreddit.com",
   "priceRange": "$$",
   "areaServed": "Worldwide",
   "aggregateRating": {
@@ -29,7 +29,7 @@ const homepageStructuredData = {
       "price": "899",
       "priceCurrency": "USD",
       "availability": "https://schema.org/InStock",
-      "url": "https://repshield.io"
+      "url": "https://removefromreddit.com"
     },
     {
       "@type": "Offer",
@@ -38,7 +38,7 @@ const homepageStructuredData = {
       "price": "199",
       "priceCurrency": "USD",
       "availability": "https://schema.org/InStock",
-      "url": "https://repshield.io"
+      "url": "https://removefromreddit.com"
     }
   ]
 };
