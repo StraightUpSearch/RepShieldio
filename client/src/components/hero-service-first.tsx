@@ -22,6 +22,7 @@ export default function HeroServiceFirst() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [redditUrl, setRedditUrl] = useState("");
+  const [urlError, setUrlError] = useState("");
   const [email, setEmail] = useState("");
   const [showEmailStep, setShowEmailStep] = useState(false);
   const [caseOffset, setCaseOffset] = useState(0);
@@ -39,7 +40,7 @@ export default function HeroServiceFirst() {
       return await apiRequest("POST", "/api/quote-request", data);
     },
     onSuccess: () => {
-      setLocation(`/ticket-status?email=${encodeURIComponent(email)}`);
+      setLocation(`/ticket-status?email=${encodeURIComponent(email)}&submitted=1`);
     },
     onError: () => {
       toast({
@@ -50,15 +51,19 @@ export default function HeroServiceFirst() {
     },
   });
 
+  const handleUrlBlur = () => {
+    if (redditUrl && !redditUrl.includes("reddit.com")) {
+      setUrlError("Please enter a valid reddit.com URL");
+    } else {
+      setUrlError("");
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!redditUrl.trim() || !redditUrl.includes("reddit.com")) {
-      toast({
-        title: "Valid Reddit URL required",
-        description: "Please enter a valid Reddit URL for removal.",
-        variant: "destructive",
-      });
+      setUrlError("Please enter a valid reddit.com URL");
       return;
     }
 
@@ -80,7 +85,7 @@ export default function HeroServiceFirst() {
   };
 
   return (
-    <section className="relative pt-28 pb-24 bg-white overflow-hidden">
+    <section className="relative pt-24 pb-16 lg:pt-28 lg:pb-24 bg-white overflow-hidden">
       {/* Dot-grid background */}
       <div className="absolute inset-0 bg-dot-grid opacity-50 pointer-events-none" aria-hidden="true" />
 
@@ -95,7 +100,7 @@ export default function HeroServiceFirst() {
               removed. Fast.
             </h1>
 
-            <p className="text-xl text-gray-500 mb-10 max-w-[500px] leading-relaxed">
+            <p className="text-xl text-gray-500 mb-6 lg:mb-10 max-w-[500px] leading-relaxed">
               Paste the URL below. Our legal team opens your case within 4 hours.
               Pay only after the content is gone.
             </p>
@@ -103,25 +108,31 @@ export default function HeroServiceFirst() {
             {/* Form */}
             <form onSubmit={handleSubmit} className="max-w-[540px] space-y-3 mb-8">
               {!showEmailStep ? (
-                <div className="flex gap-3">
-                  <div className="flex-1 relative">
-                    <SiReddit className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-500 pointer-events-none" />
-                    <Input
-                      type="url"
-                      placeholder="https://reddit.com/r/..."
-                      value={redditUrl}
-                      onChange={(e) => setRedditUrl(e.target.value)}
-                      className="pl-12 h-14 text-base bg-white border border-gray-200 hover:border-gray-300 focus:border-orange-400 focus:ring-1 focus:ring-orange-200 rounded-xl shadow-sm transition-colors"
-                      required
-                    />
+                <>
+                  <div className="flex gap-3">
+                    <div className="flex-1 relative">
+                      <SiReddit className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-500 pointer-events-none" />
+                      <Input
+                        type="url"
+                        placeholder="https://reddit.com/r/..."
+                        value={redditUrl}
+                        onChange={(e) => { setRedditUrl(e.target.value); if (urlError) setUrlError(""); }}
+                        onBlur={handleUrlBlur}
+                        className={`pl-12 h-14 text-base bg-white border hover:border-gray-300 focus:ring-1 rounded-xl shadow-sm transition-colors ${urlError ? 'border-red-400 focus:border-red-400 focus:ring-red-200' : 'border-gray-200 focus:border-orange-400 focus:ring-orange-200'}`}
+                        required
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="h-14 px-7 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold text-base rounded-xl transition-colors whitespace-nowrap shadow-sm"
+                    >
+                      Get quote
+                    </Button>
                   </div>
-                  <Button
-                    type="submit"
-                    className="h-14 px-7 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold text-base rounded-xl transition-colors whitespace-nowrap shadow-sm"
-                  >
-                    Get quote
-                  </Button>
-                </div>
+                  {urlError && (
+                    <p className="text-sm text-red-500 -mt-1">{urlError}</p>
+                  )}
+                </>
               ) : (
                 <div className="space-y-3">
                   <div className="border border-gray-100 rounded-xl p-4 bg-gray-50">

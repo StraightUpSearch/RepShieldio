@@ -60,7 +60,8 @@ export const AdminDashboard: React.FC = () => {
     status: '',
     assignedTo: '',
     notes: '',
-    progress: 0
+    progress: 0,
+    amount: '',
   });
 
   useEffect(() => {
@@ -98,7 +99,8 @@ export const AdminDashboard: React.FC = () => {
       status: ticket.status,
       assignedTo: ticket.assignedTo || '',
       notes: ticket.notes || '',
-      progress: ticket.progress || 0
+      progress: ticket.progress || 0,
+      amount: ticket.amount || '',
     });
   };
 
@@ -233,6 +235,7 @@ export const AdminDashboard: React.FC = () => {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="approved">Approved (Quote sent)</SelectItem>
                           <SelectItem value="processing">Processing</SelectItem>
                           <SelectItem value="completed">Completed</SelectItem>
                           <SelectItem value="failed">Failed</SelectItem>
@@ -257,6 +260,16 @@ export const AdminDashboard: React.FC = () => {
                         max="100"
                         value={editForm.progress}
                         onChange={(e) => setEditForm(prev => ({ ...prev, progress: parseInt(e.target.value) || 0 }))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="amount">Quote Amount (USD)</Label>
+                      <Input
+                        type="text"
+                        placeholder="e.g. 299"
+                        value={editForm.amount}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, amount: e.target.value }))}
                       />
                     </div>
 

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle, MessageCircle, Phone, Mail, CheckCircle, Send } from "lucide-react";
+import { AlertTriangle, MessageCircle, Mail, CheckCircle, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -100,7 +100,7 @@ export function ErrorFallback({ error, errorInfo, context }: ErrorFallbackProps)
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Phone className="h-5 w-5" />
+                <Mail className="h-5 w-5" />
                 Need Immediate Help?
               </CardTitle>
               <CardDescription>
@@ -108,36 +108,27 @@ export function ErrorFallback({ error, errorInfo, context }: ErrorFallbackProps)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button 
-                onClick={() => window.open('tel:+1-555-REPSHIELD')} 
-                variant="outline" 
-                className="w-full justify-start"
-              >
-                <Phone className="h-4 w-4 mr-2" />
-                Call: +1 (555) REP-SHIELD
-              </Button>
-              
-              <Button 
-                onClick={() => window.open('mailto:support@repshield.com')} 
-                variant="outline" 
+              <Button
+                onClick={() => window.open('mailto:contact@removefromreddit.com')}
+                variant="outline"
                 className="w-full justify-start"
               >
                 <Mail className="h-4 w-4 mr-2" />
-                Email: support@repshield.com
+                Email: contact@removefromreddit.com
               </Button>
-              
-              <Button 
-                onClick={() => window.open('/chat', '_blank')} 
-                variant="outline" 
+
+              <Button
+                onClick={() => window.open('https://t.me/repshield', '_blank')}
+                variant="outline"
                 className="w-full justify-start"
               >
                 <MessageCircle className="h-4 w-4 mr-2" />
-                Live Chat Support
+                Message us on Telegram
               </Button>
 
               <div className="text-xs text-gray-500 mt-4">
-                <p><strong>Business Hours:</strong> Mon-Fri 8AM-8PM EST</p>
-                <p><strong>Emergency Support:</strong> 24/7 for critical issues</p>
+                <p><strong>Response time:</strong> within 24 hours</p>
+                <p><strong>Telegram:</strong> typically within 1 hour</p>
               </div>
             </CardContent>
           </Card>

@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
-  Search, Clock, CheckCircle, AlertCircle, RefreshCw, CreditCard, ArrowRight, ExternalLink, X,
+  Search, Clock, CheckCircle, AlertCircle, RefreshCw, CreditCard, ArrowRight, ExternalLink, X, Send,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useSearch } from 'wouter';
@@ -158,12 +158,14 @@ export const TicketStatus: React.FC = () => {
   const params = new URLSearchParams(searchString);
   const emailParam = params.get('email') || '';
   const paymentParam = params.get('payment');
+  const submittedParam = params.get('submitted');
 
   const [email, setEmail] = useState(emailParam);
   const [submittedEmail, setSubmittedEmail] = useState('');
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [showSubmittedBanner, setShowSubmittedBanner] = useState(submittedParam === '1');
   const [paymentBanner, setPaymentBanner] = useState<'success' | 'cancelled' | null>(
     paymentParam === 'success' ? 'success' : paymentParam === 'cancelled' ? 'cancelled' : null
   );
@@ -206,6 +208,29 @@ export const TicketStatus: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto px-4 space-y-5">
+      {/* Submission confirmed banner */}
+      {showSubmittedBanner && (
+        <div className="bg-gray-950 text-white rounded-2xl px-6 py-5 flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Send className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <p className="font-semibold text-white text-base mb-1">Request received — ref #{emailParam.split('@')[0].slice(-6).toUpperCase()}</p>
+              <p className="text-sm text-white/60 leading-relaxed">A case manager will review your Reddit URL and send a fixed-price quote to <span className="text-white/90 font-medium">{emailParam}</span> within 4 hours.</p>
+              <div className="flex flex-wrap gap-4 mt-3 text-xs text-white/50">
+                <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 text-green-400" /> No upfront payment</span>
+                <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 text-green-400" /> Pay only on removal</span>
+                <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 text-green-400" /> 4-hour response</span>
+              </div>
+            </div>
+          </div>
+          <button onClick={() => setShowSubmittedBanner(false)} className="text-white/40 hover:text-white/80 flex-shrink-0 mt-0.5">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Payment result banners */}
       {paymentBanner === 'success' && (
         <div className="bg-green-50 border border-green-200 rounded-2xl px-5 py-4 flex items-start justify-between gap-4">
