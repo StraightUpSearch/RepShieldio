@@ -1042,19 +1042,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       await trackEvent(FUNNEL_EVENTS.TICKET_CREATED, userId, undefined, { redditUrl });
 
-      // Send notification to specialist team
-      try {
-        await sendQuoteNotification({
-          redditUrl: redditUrl,
-          email: email,
-          ticketId: ticket.id
-        });
-        console.log(`✅ Specialist notification sent for ticket ${ticket.id}`);
-      } catch (error) {
-        console.error("Failed to send specialist notification:", error);
-        // Continue even if email fails - ticket is still created
-      }
-
       res.status(201).json({
         success: true,
         message: "Quote request submitted successfully. Our specialist will review and respond within 24 hours.",
@@ -1062,7 +1049,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ticketNumber: `REP-${ticket.id.toString().padStart(4, '0')}`
       });
 
-      // Fire-and-forget: generate AI draft report after responding to the user
+      // Fire-and-forget: notification + AI draft after responding to user
+      const _notifyTicketId = ticket.id;
+      sendQuoteNotification({ redditUrl, email, ticketId: _notifyTicketId })
+        .then(() => console.log(`✅ Specialist notification sent for ticket ${_notifyTicketId}`))
+        .catch(err => console.error('Specialist notification failed (non-fatal):', err));
+
       if (isOpenAIConfigured()) {
         const ticketId = ticket.id;
         generateSpecialistReport({ redditUrl, contentType: 'removal_request' })

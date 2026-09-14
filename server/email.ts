@@ -24,17 +24,24 @@ if (postmarkToken) {
   console.log(`📧 Postmark not configured for ${envMsg} - emails will be logged only`);
 }
 
-const ADMIN_EMAIL = process.env.SENDER_EMAIL || process.env.ADMIN_EMAIL || 'contact@removefromreddit.com';
+const ADMIN_EMAIL = process.env.SENDER_EMAIL || process.env.ADMIN_EMAIL || process.env.ADMIN_EMAILS || 'contact@removefromreddit.com';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'support@removefromreddit.com';
 
 async function sendMail(msg: { to: string; from: string; subject: string; html: string }): Promise<void> {
   if (pmClient) {
-    await pmClient.sendEmail({
-      From: msg.from,
-      To: msg.to,
-      Subject: msg.subject,
-      HtmlBody: msg.html,
-    });
+    try {
+      await pmClient.sendEmail({
+        From: msg.from,
+        To: msg.to,
+        Subject: msg.subject,
+        HtmlBody: msg.html,
+      });
+    } catch (err: any) {
+      // Log full details so admin can action even without email delivery
+      console.error(`📧 Postmark send failed (code ${err?.code}): ${err?.message}`);
+      console.log(`📧 EMAIL NOT DELIVERED — Subject: ${msg.subject} | To: ${msg.to}`);
+      throw err;
+    }
   } else {
     console.log('📧 DEV MODE - Would send email:', msg.subject);
     console.log('📧 To:', msg.to);
@@ -72,8 +79,7 @@ export async function sendQuoteNotification(data: {
     await sendMail(msg);
     console.log('Quote notification sent successfully');
   } catch (error) {
-    console.error('Error sending quote notification:', error);
-    throw error;
+    // Non-fatal: ticket is already created, admin can check panel
   }
 }
 
@@ -113,8 +119,7 @@ export async function sendContactNotification(data: {
     await sendMail(msg);
     console.log('Contact notification sent successfully');
   } catch (error) {
-    console.error('Error sending contact notification:', error);
-    throw error;
+    // Non-fatal: submission is recorded, admin can check panel
   }
 }
 
