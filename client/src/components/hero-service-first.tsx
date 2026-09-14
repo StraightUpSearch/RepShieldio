@@ -1,18 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SiReddit } from "react-icons/si";
+import { SiReddit, SiTelegram } from "react-icons/si";
+import { CheckCircle2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 
-const recentCases = [
+const allCases = [
   { type: "Reddit post, 2.4k upvotes", sector: "SaaS startup", time: "2 hrs ago" },
   { type: "Thread + 17 comments", sector: "E-commerce brand", time: "5 hrs ago" },
   { type: "Cross-posted defamation", sector: "Law firm", time: "8 hrs ago" },
   { type: "Competitor attack thread", sector: "B2B software", time: "11 hrs ago" },
   { type: "False review campaign", sector: "Medical practice", time: "14 hrs ago" },
+  { type: "Doxxing attempt thread", sector: "Tech founder", time: "16 hrs ago" },
+  { type: "1.1k upvote smear post", sector: "Financial services", time: "19 hrs ago" },
 ];
 
 export default function HeroServiceFirst() {
@@ -21,6 +24,15 @@ export default function HeroServiceFirst() {
   const [redditUrl, setRedditUrl] = useState("");
   const [email, setEmail] = useState("");
   const [showEmailStep, setShowEmailStep] = useState(false);
+  const [caseOffset, setCaseOffset] = useState(0);
+  const visibleCases = allCases.slice(caseOffset, caseOffset + 5);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCaseOffset((prev) => (prev + 1) % (allCases.length - 4));
+    }, 3500);
+    return () => clearInterval(interval);
+  }, []);
 
   const submitQuoteRequest = useMutation({
     mutationFn: async (data: { redditUrl: string; email: string }) => {
@@ -143,19 +155,53 @@ export default function HeroServiceFirst() {
                 </div>
               )}
 
-              <p className="text-sm text-gray-400">
-                Step 1: Paste URL. Step 2: We send a removal quote. Step 3: We remove it.
-              </p>
+              {/* Step indicator */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${!showEmailStep ? 'bg-gray-950 text-white' : 'bg-green-500 text-white'}`}>
+                    {!showEmailStep ? '1' : '✓'}
+                  </span>
+                  <span className={`text-xs font-medium transition-colors ${!showEmailStep ? 'text-gray-900' : 'text-gray-400'}`}>Paste URL</span>
+                </div>
+                <div className="w-6 h-px bg-gray-200" />
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors ${showEmailStep ? 'bg-gray-950 text-white' : 'bg-gray-100 text-gray-400'}`}>
+                    2
+                  </span>
+                  <span className={`text-xs font-medium transition-colors ${showEmailStep ? 'text-gray-900' : 'text-gray-400'}`}>Enter email</span>
+                </div>
+                <div className="w-6 h-px bg-gray-200" />
+                <div className="flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold bg-gray-100 text-gray-400">3</span>
+                  <span className="text-xs font-medium text-gray-400">Get quote</span>
+                </div>
+              </div>
             </form>
 
             {/* Trust bar */}
-            <div className="flex flex-wrap items-center gap-5 text-sm text-gray-400">
-              <span>No upfront payment</span>
-              <span className="w-px h-3 bg-gray-200 inline-block" aria-hidden="true" />
-              <span>95% success rate</span>
-              <span className="w-px h-3 bg-gray-200 inline-block" aria-hidden="true" />
-              <span>Legal and confidential</span>
+            <div className="flex flex-wrap items-center gap-5 text-sm text-gray-500 mb-4">
+              {[
+                "No upfront payment",
+                "95% success rate",
+                "Legal and confidential",
+              ].map((item) => (
+                <span key={item} className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  {item}
+                </span>
+              ))}
             </div>
+
+            {/* Telegram quick CTA */}
+            <a
+              href="https://t.me/repshield"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-[#0088CC] transition-colors"
+            >
+              <SiTelegram className="w-4 h-4 text-[#0088CC]" />
+              Prefer to chat first? Message us on Telegram for a free assessment.
+            </a>
           </div>
 
           {/* Right: live case feed */}
@@ -172,8 +218,8 @@ export default function HeroServiceFirst() {
               </div>
 
               <div className="divide-y divide-gray-50">
-                {recentCases.map((c, i) => (
-                  <div key={i} className="px-5 py-4 flex items-center justify-between gap-4">
+                {visibleCases.map((c, i) => (
+                  <div key={`${caseOffset}-${i}`} className="px-5 py-4 flex items-center justify-between gap-4 transition-opacity duration-500">
                     <div className="min-w-0">
                       <div className="text-sm font-medium text-gray-900 truncate">{c.type}</div>
                       <div className="text-xs text-gray-400">{c.sector} · {c.time}</div>

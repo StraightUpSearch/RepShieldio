@@ -45,15 +45,15 @@ export default function ServiceFlow() {
         <div className="relative grid lg:grid-cols-3 gap-10">
           {/* Horizontal connector — desktop only */}
           <div
-            className="hidden lg:block absolute top-5 left-[calc(33.33%+8px)] right-[calc(33.33%+8px)] h-px bg-gray-100"
+            className="hidden lg:block absolute top-5 left-[calc(33.33%+28px)] right-[calc(33.33%+28px)] h-px bg-gray-200"
             aria-hidden="true"
           />
 
           {steps.map((step) => (
             <div key={step.step}>
               {/* Step number circle */}
-              <div className="w-10 h-10 rounded-full border border-gray-200 bg-white flex items-center justify-center mb-7 relative z-10">
-                <span className="text-sm font-semibold text-gray-700">{step.step}</span>
+              <div className="w-10 h-10 rounded-full bg-gray-950 flex items-center justify-center mb-7 relative z-10 shadow-sm">
+                <span className="text-sm font-bold text-white">{step.step}</span>
               </div>
 
               <h3 className="font-satoshi text-xl font-black text-gray-950 tracking-[-0.02em] mb-3">

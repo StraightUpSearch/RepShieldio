@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SiReddit } from "react-icons/si";
+import { SiReddit, SiTelegram } from "react-icons/si";
+import { CheckCircle2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -130,11 +131,27 @@ export default function FinalServiceCTA() {
         </form>
 
         {/* Trust strip */}
-        <div className="border-t border-white/10 pt-8 flex flex-wrap gap-x-8 gap-y-3 text-sm text-gray-400">
-          <span>No upfront payment</span>
-          <span>Pay only on success</span>
-          <span>Legal and confidential</span>
-          <span>4-hour response</span>
+        <div className="border-t border-white/10 pt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-gray-400">
+          {["No upfront payment", "Pay only on success", "Legal and confidential", "4-hour response"].map((item) => (
+            <span key={item} className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+              {item}
+            </span>
+          ))}
+        </div>
+
+        {/* Telegram alternative */}
+        <div className="mt-6 flex items-center gap-3">
+          <span className="text-sm text-gray-500">Prefer a direct conversation?</span>
+          <a
+            href="https://t.me/repshield"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-white/80 hover:text-white border border-white/20 hover:border-white/40 rounded-lg px-3 py-1.5 transition-all"
+          >
+            <SiTelegram className="w-4 h-4 text-[#0088CC]" />
+            Chat on Telegram — free assessment
+          </a>
         </div>
 
       </div>
