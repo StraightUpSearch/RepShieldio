@@ -71,6 +71,9 @@ writeFileSync(
       { handle: "filesystem" },
       // API routes → serverless function
       { src: "/api/(.*)", dest: "/api/index" },
+      // Server-rendered routes that must hit Express, not the SPA
+      { src: "/sitemap.xml", dest: "/api/index" },
+      { src: "/robots.txt", dest: "/api/index" },
       // SPA fallback for client-side routing
       { src: "/(.*)", dest: "/index.html" },
     ],
