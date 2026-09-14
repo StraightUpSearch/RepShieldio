@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Search, User, LogOut, Settings, Ticket } from "lucide-react";
+import { Menu, X, Search, User, LogOut, Settings, Ticket, DollarSign, Shield } from "lucide-react";
 import { SiReddit } from "react-icons/si";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -18,6 +18,7 @@ const prefetchScan = () => { import("@/pages/scan"); };
 const prefetchDashboard = () => { import("@/pages/dashboard"); };
 const prefetchMyAccount = () => { import("@/pages/my-account"); };
 const prefetchBlog = () => { import("@/pages/blog"); };
+const prefetchPricing = () => { import("@/pages/pricing"); };
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -107,12 +108,20 @@ export default function Header() {
             <span className="font-satoshi text-xl font-black tracking-[-0.03em] text-gray-950">RepShield</span>
           </Link>
           
-          <nav aria-label="Main navigation" className="hidden md:flex items-center space-x-8">
-            <Link href="/scan" className="text-gray-700 hover:text-gray-900 transition-colors flex items-center gap-2" onMouseEnter={prefetchScan}>
+          <nav aria-label="Main navigation" className="hidden md:flex items-center space-x-6">
+            <Link href="/scan" className="text-gray-700 hover:text-gray-900 transition-colors flex items-center gap-1.5 text-sm font-medium" onMouseEnter={prefetchScan}>
               <Search className="h-4 w-4" />
-              Live Scanner
+              Free Brand Scan
             </Link>
-            <Link href="/ticket-status" className="text-gray-700 hover:text-gray-900 transition-colors flex items-center gap-2">
+            <Link href="/pricing" className="text-gray-700 hover:text-gray-900 transition-colors flex items-center gap-1.5 text-sm font-medium" onMouseEnter={prefetchPricing}>
+              <DollarSign className="h-4 w-4" />
+              Pricing
+            </Link>
+            <Link href="/monitoring" className="text-gray-700 hover:text-gray-900 transition-colors flex items-center gap-1.5 text-sm font-medium">
+              <Shield className="h-4 w-4" />
+              Monitoring
+            </Link>
+            <Link href="/ticket-status" className="text-gray-700 hover:text-gray-900 transition-colors flex items-center gap-1.5 text-sm font-medium">
               <Ticket className="h-4 w-4" />
               Check Status
             </Link>
@@ -203,7 +212,15 @@ export default function Header() {
             <nav aria-label="Mobile navigation" className="flex flex-col space-y-4 p-4">
               <Link href="/scan" className="text-gray-700 hover:text-gray-900 transition-colors flex items-center gap-2" onMouseEnter={prefetchScan} onClick={() => setIsMenuOpen(false)}>
                 <Search className="h-4 w-4" />
-                Live Scanner
+                Free Brand Scan
+              </Link>
+              <Link href="/pricing" className="text-gray-700 hover:text-gray-900 transition-colors flex items-center gap-2" onMouseEnter={prefetchPricing} onClick={() => setIsMenuOpen(false)}>
+                <DollarSign className="h-4 w-4" />
+                Pricing
+              </Link>
+              <Link href="/monitoring" className="text-gray-700 hover:text-gray-900 transition-colors flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
+                <Shield className="h-4 w-4" />
+                Monitoring
               </Link>
               <Link href="/ticket-status" className="text-gray-700 hover:text-gray-900 transition-colors flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
                 <Ticket className="h-4 w-4" />

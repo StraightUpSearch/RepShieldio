@@ -6,7 +6,7 @@ const steps = [
     step: 1,
     title: "Paste the URL",
     description:
-      "Submit the Reddit post, thread or comment link. We review it for removal eligibility within 4 hours and send a quote.",
+      "Submit the Reddit post, thread or comment link. We review it for removal eligibility within 4 hours and send a quote. The sooner you act, the fewer people see it — most Reddit posts hit their peak visibility in the first 72 hours.",
     action: "Start a case",
     href: "/contact",
   },

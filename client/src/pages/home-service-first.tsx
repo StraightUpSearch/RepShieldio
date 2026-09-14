@@ -3,6 +3,8 @@ import Header from "@/components/header";
 import Footer from "@/components/footer";
 import HeroServiceFirst from "@/components/hero-service-first";
 import ServiceFlow from "@/components/service-flow";
+import BrandScanPromo from "@/components/brand-scan-promo";
+import MonitoringPromo from "@/components/monitoring-promo";
 import TestimonialsServiceProof from "@/components/testimonials-service-proof";
 import FinalServiceCTA from "@/components/final-service-cta";
 
@@ -67,7 +69,9 @@ export default function HomeServiceFirst() {
       <Header />
       <HeroServiceFirst />
       <ServiceFlow />
+      <BrandScanPromo />
       <TestimonialsServiceProof />
+      <MonitoringPromo />
       <FinalServiceCTA />
       <Footer />
     </div>

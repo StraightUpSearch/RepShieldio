@@ -65,6 +65,9 @@ export default function FinalServiceCTA() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <div className="mb-10">
+          <p className="text-sm font-semibold text-orange-400 mb-4 uppercase tracking-wide">
+            Don't let it sit — Reddit content gets harder to remove the longer it's live.
+          </p>
           <h2 className="font-satoshi text-4xl lg:text-5xl font-black tracking-[-0.03em] leading-[1.05] mb-5">
             1,650+ Reddit cases resolved.<br />
             Yours could be next.

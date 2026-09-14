@@ -20,6 +20,7 @@ import NotFound from "@/pages/not-found";
 
 // Lazy-loaded imports - heavier pages split into separate chunks
 const Scan = lazy(() => import("@/pages/scan"));
+const Pricing = lazy(() => import("@/pages/pricing"));
 const Dashboard = lazy(() => import("@/pages/dashboard"));
 const AdminPanel = lazy(() => import("@/pages/admin"));
 const MyAccount = lazy(() => import("@/pages/my-account"));
@@ -66,6 +67,7 @@ function Router() {
 
         {/* Lazy-loaded routes - separate chunks */}
         <Route path="/scan" component={Scan} />
+        <Route path="/pricing" component={Pricing} />
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/my-account" component={MyAccount} />
         <Route path="/admin" component={AdminPanel} />

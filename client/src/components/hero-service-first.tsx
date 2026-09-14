@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SiReddit, SiTelegram } from "react-icons/si";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Search, ArrowRight } from "lucide-react";
+import { Link } from "wouter";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -100,6 +101,12 @@ export default function HeroServiceFirst() {
               removed. Fast.
             </h1>
 
+            {/* Urgency line */}
+            <p className="text-sm text-orange-600 font-medium mb-3 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse inline-block" />
+              Every hour a post stays up, it reaches more searches and gets indexed deeper by Google.
+            </p>
+
             <p className="text-xl text-gray-500 mb-6 lg:mb-10 max-w-[500px] leading-relaxed">
               Paste the URL below. Our legal team opens your case within 4 hours.
               Pay only after the content is gone.
@@ -189,13 +196,21 @@ export default function HeroServiceFirst() {
               </div>
             </form>
 
+            {/* Prominent trust chips */}
+            <div className="flex flex-wrap gap-2 mb-5">
+              <span className="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-800 text-sm font-semibold px-3 py-1.5 rounded-full">
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                No removal, no fee — you only pay when content is gone
+              </span>
+              <span className="inline-flex items-center gap-1.5 bg-gray-100 border border-gray-200 text-gray-700 text-sm font-medium px-3 py-1.5 rounded-full">
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-green-500" />
+                Results in 24–72 hours on average
+              </span>
+            </div>
+
             {/* Trust bar */}
             <div className="flex flex-wrap items-center gap-5 text-sm text-gray-500 mb-4">
-              {[
-                "No upfront payment",
-                "95% success rate",
-                "Legal and confidential",
-              ].map((item) => (
+              {["95% success rate", "Legal and confidential"].map((item) => (
                 <span key={item} className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
                   {item}
@@ -203,12 +218,22 @@ export default function HeroServiceFirst() {
               ))}
             </div>
 
+            {/* Secondary scan CTA */}
+            <Link
+              href="/scan"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-orange-500 transition-colors mb-4"
+            >
+              <Search className="w-4 h-4" />
+              Or scan your brand name for free
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+
             {/* Telegram quick CTA */}
             <a
               href="https://t.me/repshield"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-[#0088CC] transition-colors"
+              className="flex items-center gap-2 text-sm text-gray-500 hover:text-[#0088CC] transition-colors"
             >
               <SiTelegram className="w-4 h-4 text-[#0088CC]" />
               Prefer to chat first? Message us on Telegram for a free assessment.
