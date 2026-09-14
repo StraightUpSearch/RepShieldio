@@ -2,8 +2,6 @@ import { getDatabaseConfig } from './config/database';
 import postgres from 'postgres';
 import { createRequire } from 'module';
 
-const require = createRequire(import.meta.url);
-
 const config = getDatabaseConfig();
 const isPostgres = config.type === 'postgresql';
 
@@ -18,6 +16,7 @@ export async function initializeDatabase(): Promise<void> {
     if (isPostgres) {
       await initializePostgresql();
     } else {
+      const require = createRequire(import.meta.url);
       const { createClient } = require('@libsql/client');
       const dbPath = config.url.replace('sqlite://', '');
       const client = createClient({ url: `file:${dbPath}` });

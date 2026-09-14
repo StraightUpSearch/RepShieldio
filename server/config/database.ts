@@ -3,9 +3,6 @@ import postgres from 'postgres';
 import * as schema from '@shared/schema';
 import { createRequire } from 'module';
 
-// createRequire needed because this package is type:module but sqlite deps use CJS
-const require = createRequire(import.meta.url);
-
 interface DatabaseConfig {
   url: string;
   type: 'sqlite' | 'postgresql';
@@ -73,8 +70,9 @@ function initializeDatabase() {
     console.log(`✅ Using PostgreSQL database for ${config.environment}`);
     return db;
   } else {
-    // SQLite — dynamic import so @libsql/client isn't loaded on Vercel (production)
+    // SQLite — createRequire here so import.meta.url is never accessed in production CJS bundles
     // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const require = createRequire(import.meta.url);
     const { createClient } = require('@libsql/client');
     const { drizzle: drizzleSqlite } = require('drizzle-orm/libsql');
     const dbPath = config.url.replace('sqlite://', '');
