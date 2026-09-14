@@ -161,7 +161,7 @@ test.describe('Account Page', () => {
 test.describe('Public Pages', () => {
   test('scan page loads', async ({ page }) => {
     await page.goto('/scan');
-    await expect(page.getByRole('heading', { name: /Scanner/i }).first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Reddit/i }).first()).toBeVisible();
   });
 
   test('ticket status page loads', async ({ page }) => {
