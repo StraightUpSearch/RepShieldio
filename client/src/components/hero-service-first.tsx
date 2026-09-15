@@ -3,6 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SiReddit, SiTelegram } from "react-icons/si";
 import { CheckCircle2, Search, ArrowRight } from "lucide-react";
+
+const JAMIE_PHOTO =
+  "https://media.licdn.com/dms/image/v2/D4E03AQHHmyaMTgwJSg/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1667558672803?e=1790812800&v=beta&t=mIUDgECtD9tYPTdNiNmryyjCvQqdl9ZnFDAs1v5wLRU";
 import { Link } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -233,6 +236,10 @@ export default function HeroServiceFirst() {
               <span className="inline-flex items-center gap-1.5 bg-gray-100 border border-gray-200 text-gray-700 text-sm font-medium px-3 py-1.5 rounded-full">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-green-500" />
                 Results in 24–72 hours on average
+              </span>
+              <span className="inline-flex items-center gap-1.5 bg-gray-50 border border-gray-200 text-gray-700 text-sm font-medium px-3 py-1.5 rounded-full">
+                <img src={JAMIE_PHOTO} alt="Jamie Irwin" className="w-4 h-4 rounded-full object-cover flex-shrink-0" />
+                Expert: Jamie Irwin, The Reddit SEO
               </span>
             </div>
 

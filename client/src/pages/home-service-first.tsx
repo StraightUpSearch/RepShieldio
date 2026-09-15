@@ -6,6 +6,7 @@ import ServiceFlow from "@/components/service-flow";
 import BrandScanPromo from "@/components/brand-scan-promo";
 import MonitoringPromo from "@/components/monitoring-promo";
 import TestimonialsServiceProof from "@/components/testimonials-service-proof";
+import FounderCredibility from "@/components/founder-credibility";
 import FinalServiceCTA from "@/components/final-service-cta";
 
 const homepageStructuredData = {
@@ -71,6 +72,7 @@ export default function HomeServiceFirst() {
       <ServiceFlow />
       <BrandScanPromo />
       <TestimonialsServiceProof />
+      <FounderCredibility />
       <MonitoringPromo />
       <FinalServiceCTA />
       <Footer />

@@ -1,10 +1,15 @@
+import { useEffect } from "react";
 import { useRoute, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import { Calendar, Clock, ArrowLeft, ArrowRight } from "lucide-react";
+import { SiLinkedin } from "react-icons/si";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import SEOHead from "@/components/seo-head";
+
+const JAMIE_PHOTO =
+  "https://media.licdn.com/dms/image/v2/D4E03AQHHmyaMTgwJSg/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1667558672803?e=1790812800&v=beta&t=mIUDgECtD9tYPTdNiNmryyjCvQqdl9ZnFDAs1v5wLRU";
 
 interface BlogPost {
   id: number;
@@ -29,6 +34,40 @@ export default function BlogPost() {
     queryKey: [`/api/blog/posts/${slug}`],
     enabled: !!slug,
   });
+
+  useEffect(() => {
+    if (!post) return;
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "headline": post.title,
+      "description": post.excerpt,
+      "datePublished": post.publishedAt,
+      "author": {
+        "@type": "Person",
+        "name": "Jamie Irwin",
+        "jobTitle": "The Reddit SEO",
+        "url": "https://www.linkedin.com/in/jamieirwin/",
+        "image": JAMIE_PHOTO,
+      },
+      "publisher": {
+        "@type": "Organization",
+        "name": "RepShield",
+        "url": "https://removefromreddit.com",
+      },
+    };
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.setAttribute("data-schema", "blog-article");
+    script.textContent = JSON.stringify(schema);
+    const existing = document.querySelector('script[data-schema="blog-article"]');
+    if (existing) existing.remove();
+    document.head.appendChild(script);
+    return () => {
+      const el = document.querySelector('script[data-schema="blog-article"]');
+      if (el) el.remove();
+    };
+  }, [post]);
 
   if (isLoading) {
     return (
@@ -97,7 +136,29 @@ export default function BlogPost() {
                 {post.title}
               </h1>
               <p className="mt-4 text-gray-400 text-lg leading-relaxed">{post.excerpt}</p>
-              <p className="mt-5 text-sm text-gray-500">By {post.author}</p>
+
+              {/* Author byline */}
+              <a
+                href="https://www.linkedin.com/in/jamieirwin/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-6 inline-flex items-center gap-3 group"
+              >
+                <img
+                  src={JAMIE_PHOTO}
+                  alt="Jamie Irwin"
+                  width={36}
+                  height={36}
+                  className="w-9 h-9 rounded-full object-cover ring-2 ring-white/20"
+                />
+                <div>
+                  <div className="text-sm font-semibold text-white group-hover:text-orange-400 transition-colors flex items-center gap-1.5">
+                    Jamie Irwin
+                    <SiLinkedin className="w-3.5 h-3.5 text-[#0A66C2]" />
+                  </div>
+                  <div className="text-xs text-gray-500">The Reddit SEO</div>
+                </div>
+              </a>
             </div>
           </div>
 
