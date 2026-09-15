@@ -320,6 +320,7 @@ export default function AdminPanel() {
             )}
           </main>
         </div>
+        )}
       </div>
     </AdminRoute>
   );
@@ -650,7 +651,6 @@ function TicketDetail({ ticket, onBack }: { ticket: Ticket; onBack: () => void }
           </div>
         </aside>
       </div>
-        )}
     </div>
   );
 }
