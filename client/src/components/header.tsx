@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Search, User, LogOut, Settings, Ticket, DollarSign, Shield } from "lucide-react";
+import { Menu, X, Search, User, LogOut, Settings, Ticket, DollarSign, Shield, MessageSquare } from "lucide-react";
 import { SiReddit } from "react-icons/si";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -121,6 +121,10 @@ export default function Header() {
               <Shield className="h-4 w-4" />
               Monitoring
             </Link>
+            <Link href="/reddit-mentions" className="text-gray-700 hover:text-gray-900 transition-colors flex items-center gap-1.5 text-sm font-medium">
+              <MessageSquare className="h-4 w-4" />
+              Reddit Mentions
+            </Link>
             <Link href="/ticket-status" className="text-gray-700 hover:text-gray-900 transition-colors flex items-center gap-1.5 text-sm font-medium">
               <Ticket className="h-4 w-4" />
               Check Status
@@ -221,6 +225,10 @@ export default function Header() {
               <Link href="/monitoring" className="text-gray-700 hover:text-gray-900 transition-colors flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
                 <Shield className="h-4 w-4" />
                 Monitoring
+              </Link>
+              <Link href="/reddit-mentions" className="text-gray-700 hover:text-gray-900 transition-colors flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
+                <MessageSquare className="h-4 w-4" />
+                Reddit Mentions
               </Link>
               <Link href="/ticket-status" className="text-gray-700 hover:text-gray-900 transition-colors flex items-center gap-2" onClick={() => setIsMenuOpen(false)}>
                 <Ticket className="h-4 w-4" />

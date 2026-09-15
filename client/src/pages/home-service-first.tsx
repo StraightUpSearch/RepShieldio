@@ -7,6 +7,7 @@ import BrandScanPromo from "@/components/brand-scan-promo";
 import MonitoringPromo from "@/components/monitoring-promo";
 import TestimonialsServiceProof from "@/components/testimonials-service-proof";
 import FounderCredibility from "@/components/founder-credibility";
+import RedditMentionsPromo from "@/components/reddit-mentions-promo";
 import FinalServiceCTA from "@/components/final-service-cta";
 
 const homepageStructuredData = {
@@ -73,6 +74,7 @@ export default function HomeServiceFirst() {
       <BrandScanPromo />
       <TestimonialsServiceProof />
       <FounderCredibility />
+      <RedditMentionsPromo />
       <MonitoringPromo />
       <FinalServiceCTA />
       <Footer />
