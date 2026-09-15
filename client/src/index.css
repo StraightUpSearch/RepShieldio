@@ -130,9 +130,10 @@
   background-size: 28px 28px;
 }
 
-/* Smooth scrolling */
+/* Smooth scrolling + offset for fixed header (h-16 = 64px, add 16px breathing room) */
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 80px;
 }
 
 /* Animation utilities */

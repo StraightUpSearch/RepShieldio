@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SchemaOrg } from "@/components/schema-org";
 import SEOHead from "@/components/seo-head";
 import AdvancedSEO from "@/components/advanced-seo";
+import { ScrollToTop } from "@/components/scroll-to-top";
 import { ErrorBoundary } from "@/components/error-boundary";
 import TelegramWidget from "@/components/telegram-widget";
 import CookieConsent from "@/components/cookie-consent";
@@ -58,6 +59,7 @@ const LazyFallback = () => (
 function Router() {
   return (
     <Suspense fallback={<LazyFallback />}>
+      <ScrollToTop />
       <Switch>
         {/* Static routes - no code splitting needed */}
         <Route path="/" component={HomeServiceFirst} />
