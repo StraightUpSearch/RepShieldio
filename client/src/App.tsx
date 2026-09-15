@@ -37,6 +37,7 @@ const BlogAdmin = lazy(() => import("@/pages/admin/blog"));
 const Monitoring = lazy(() => import("@/pages/monitoring"));
 const ResetPassword = lazy(() => import("@/pages/reset-password"));
 const RedditMentions = lazy(() => import("@/pages/reddit-mentions"));
+const RedditMentionsSuccess = lazy(() => import("@/pages/reddit-mentions-success"));
 
 const LazyFallback = () => (
   <div className="min-h-screen pt-20 px-4">
@@ -86,6 +87,7 @@ function Router() {
         <Route path="/blog/:slug" component={BlogPostPage} />
         <Route path="/monitoring" component={Monitoring} />
         <Route path="/reddit-mentions" component={RedditMentions} />
+        <Route path="/reddit-mentions/success" component={RedditMentionsSuccess} />
         <Route path="/reset-password" component={ResetPassword} />
 
         {/* Fallback */}

@@ -115,6 +115,40 @@ export async function createSubscriptionCheckoutSession(params: {
   });
 }
 
+export async function createMentionsCheckoutSession(params: {
+  package: string;
+  amountCents: number;
+  description: string;
+  customerEmail?: string;
+  successUrl: string;
+  cancelUrl: string;
+}): Promise<Stripe.Checkout.Session> {
+  if (!stripe) throw new Error('Stripe not configured');
+
+  return stripe.checkout.sessions.create({
+    payment_method_types: ['card'],
+    line_items: [{
+      price_data: {
+        currency: 'usd',
+        product_data: {
+          name: `Reddit Mentions — ${params.package} Package`,
+          description: params.description,
+        },
+        unit_amount: params.amountCents,
+      },
+      quantity: 1,
+    }],
+    mode: 'payment',
+    success_url: params.successUrl,
+    cancel_url: params.cancelUrl,
+    ...(params.customerEmail ? { customer_email: params.customerEmail } : {}),
+    metadata: {
+      package: params.package,
+      type: 'reddit_mentions',
+    },
+  });
+}
+
 export async function cancelStripeSubscription(subscriptionId: string): Promise<void> {
   if (!stripe) throw new Error('Stripe not configured');
   await stripe.subscriptions.cancel(subscriptionId);

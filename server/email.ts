@@ -369,6 +369,69 @@ export async function sendDripEmail(data: { to: string; subject: string; html: s
   await sendMail({ to: data.to, from: FROM_EMAIL, subject: data.subject, html: data.html });
 }
 
+export async function sendMentionsOrderAdminEmail(data: {
+  orderId: number;
+  package: string;
+  customerEmail: string;
+  amountPaid: string;
+}): Promise<void> {
+  const BASE = process.env.RESET_URL_BASE ||
+    (process.env.NODE_ENV === 'production' ? 'https://removefromreddit.com' : 'http://localhost:3000');
+  try {
+    await sendMail({
+      to: ADMIN_EMAIL,
+      from: FROM_EMAIL,
+      subject: `New Reddit Mentions Order — ${data.package} — ${data.customerEmail}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #111827;">New Reddit Mentions Order</h2>
+          <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr><td style="padding: 8px 0; color: #666;">Order ID</td><td style="padding: 8px 0; font-weight: bold;">#${data.orderId}</td></tr>
+            <tr><td style="padding: 8px 0; color: #666;">Package</td><td style="padding: 8px 0; font-weight: bold;">${escapeHtml(data.package)}</td></tr>
+            <tr><td style="padding: 8px 0; color: #666;">Customer Email</td><td style="padding: 8px 0;">${escapeHtml(data.customerEmail)}</td></tr>
+            <tr><td style="padding: 8px 0; color: #666;">Amount Paid</td><td style="padding: 8px 0; font-weight: bold;">$${escapeHtml(data.amountPaid)}</td></tr>
+          </table>
+          <a href="${BASE}/admin" style="display: inline-block; background: #111827; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">View in admin panel →</a>
+          <p style="color: #666; font-size: 12px; margin-top: 24px;">Action: email the customer within 1 business day to collect brand details.</p>
+        </div>
+      `,
+    });
+  } catch (error) {
+    console.error('Error sending mentions order admin email:', error);
+  }
+}
+
+export async function sendMentionsOrderConfirmationEmail(data: {
+  customerEmail: string;
+  package: string;
+  amountPaid: string;
+}): Promise<void> {
+  try {
+    await sendMail({
+      to: data.customerEmail,
+      from: FROM_EMAIL,
+      subject: `Your Reddit Mentions order is confirmed`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #111827;">Your order is confirmed</h2>
+          <p>Thank you for ordering the <strong>${escapeHtml(data.package)}</strong> Reddit Mentions package. Here's what happens next:</p>
+          <ol style="line-height: 2; color: #374151;">
+            <li>We review your order within 1 business day</li>
+            <li>We'll email you to collect your brand details (keywords, competitors, target niche)</li>
+            <li>Work begins within 48 hours of receiving your info</li>
+            <li>You receive a full report with live URLs to every placement</li>
+          </ol>
+          <hr style="margin: 24px 0; border: none; border-top: 1px solid #e5e7eb;">
+          <p style="color: #374151;">Questions? Reply to this email — I read every one.</p>
+          <p style="color: #374151; font-weight: bold;">Jamie Irwin<br><span style="color: #f97316; font-weight: normal;">The Reddit SEO</span></p>
+        </div>
+      `,
+    });
+  } catch (error) {
+    console.error('Error sending mentions confirmation email:', error);
+  }
+}
+
 export async function sendCustomerMessageNotification(data: {
   customerEmail: string;
   ticketId: number;

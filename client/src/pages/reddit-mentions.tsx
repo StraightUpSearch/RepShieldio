@@ -1,11 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "wouter";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import SEOHead from "@/components/seo-head";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, ArrowRight } from "lucide-react";
+import { CheckCircle2, ArrowRight, Loader2 } from "lucide-react";
 import { SiLinkedin } from "react-icons/si";
+import { useToast } from "@/hooks/use-toast";
 
 const JAMIE_PHOTO =
   "https://media.licdn.com/dms/image/v2/D4E03AQHHmyaMTgwJSg/profile-displayphoto-shrink_400_400/profile-displayphoto-shrink_400_400/0/1667558672803?e=1790812800&v=beta&t=mIUDgECtD9tYPTdNiNmryyjCvQqdl9ZnFDAs1v5wLRU";
@@ -131,6 +132,27 @@ const faqs = [
 ];
 
 export default function RedditMentions() {
+  const { toast } = useToast();
+  const [checkingOut, setCheckingOut] = useState<string | null>(null);
+
+  const handleCheckout = async (planName: string) => {
+    const pkgKey = planName.toLowerCase();
+    setCheckingOut(pkgKey);
+    try {
+      const res = await fetch("/api/reddit-mentions/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ package: pkgKey }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Checkout failed");
+      window.location.href = data.url;
+    } catch (err: any) {
+      toast({ title: "Checkout failed", description: err.message || "Please try again.", variant: "destructive" });
+      setCheckingOut(null);
+    }
+  };
+
   useEffect(() => {
     const schema = {
       "@context": "https://schema.org",
@@ -313,16 +335,19 @@ export default function RedditMentions() {
                   </ul>
 
                   <Button
-                    asChild
+                    onClick={() => handleCheckout(plan.name)}
+                    disabled={checkingOut === plan.name.toLowerCase()}
                     className={`w-full h-12 font-semibold rounded-xl ${
                       plan.highlight
                         ? "bg-orange-500 hover:bg-orange-600 text-white"
                         : "bg-gray-950 hover:bg-gray-800 text-white"
                     }`}
                   >
-                    <Link href="/contact">
-                      {plan.cta} <ArrowRight className="w-4 h-4 ml-2" />
-                    </Link>
+                    {checkingOut === plan.name.toLowerCase() ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing…</>
+                    ) : (
+                      <>{plan.cta} <ArrowRight className="w-4 h-4 ml-2" /></>
+                    )}
                   </Button>
                 </div>
               ))}

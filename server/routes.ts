@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { z } from "zod";
-import { isStripeConfigured, createTicketCheckoutSession, createCreditPurchaseSession, createSubscriptionCheckoutSession, cancelStripeSubscription, constructWebhookEvent, CREDIT_PACKAGES } from './stripe';
+import { isStripeConfigured, createTicketCheckoutSession, createCreditPurchaseSession, createSubscriptionCheckoutSession, createMentionsCheckoutSession, cancelStripeSubscription, constructWebhookEvent, CREDIT_PACKAGES, stripe } from './stripe';
 import { storage } from "./storage";
 import { setupSimpleAuth, isAuthenticated, sanitizeUser } from "./simple-auth";
 import { insertAuditRequestSchema, insertQuoteRequestSchema, insertBrandScanTicketSchema } from "@shared/schema";
@@ -12,7 +12,7 @@ import { ticketLifecycle } from './ticket-lifecycle';
 import { trackEvent, FUNNEL_EVENTS } from './analytics';
 import { isOpenAIConfigured, generateSpecialistReport, getChatbotResponse } from './openai';
 import { sendWelcomeEmail } from './email';
-import { sendQuoteNotification, sendContactNotification, sendPasswordResetEmail, sendCustomerMessageNotification } from "./email";
+import { sendQuoteNotification, sendContactNotification, sendPasswordResetEmail, sendCustomerMessageNotification, sendMentionsOrderAdminEmail, sendMentionsOrderConfirmationEmail } from "./email";
 import { redditAPI } from "./reddit";
 import { scrapingBeeAPI } from "./scrapingbee";
 import { telegramBot } from "./telegram";
@@ -1663,6 +1663,85 @@ Date: ${new Date().toISOString()}
     }
   });
 
+  // ============ REDDIT MENTIONS ORDERS ============
+
+  const MENTIONS_PACKAGES: Record<string, { label: string; amountCents: number; description: string }> = {
+    starter:   { label: 'Starter',   amountCents: 65000,  description: '10 natural mentions in relevant subreddits, no links, 14-day delivery' },
+    growth:    { label: 'Growth',    amountCents: 104000, description: '10 mentions with links in threads ranking on Google, 14-day delivery' },
+    authority: { label: 'Authority', amountCents: 195000, description: '5 premium threads + 10 comments, aged accounts, 30-day delivery + strategy call' },
+  };
+
+  app.post('/api/reddit-mentions/checkout', async (req: any, res) => {
+    if (!isStripeConfigured()) {
+      return res.status(503).json({ message: 'Payment processing not available. Contact us at contact@removefromreddit.com' });
+    }
+    try {
+      const { package: pkg, customerEmail } = req.body;
+      const plan = MENTIONS_PACKAGES[pkg?.toLowerCase()];
+      if (!plan) return res.status(400).json({ message: 'Invalid package. Choose starter, growth, or authority.' });
+
+      const base = process.env.RESET_URL_BASE || 'http://localhost:3000';
+      const session = await createMentionsCheckoutSession({
+        package: plan.label,
+        amountCents: plan.amountCents,
+        description: plan.description,
+        customerEmail: customerEmail || undefined,
+        successUrl: `${base}/reddit-mentions/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${base}/reddit-mentions`,
+      });
+
+      res.json({ url: session.url });
+    } catch (error) {
+      console.error('Mentions checkout error:', error);
+      res.status(500).json({ message: 'Failed to create checkout session' });
+    }
+  });
+
+  app.get('/api/reddit-mentions/order', async (req: any, res) => {
+    const { session_id } = req.query;
+    if (!session_id) return res.status(400).json({ message: 'session_id required' });
+    try {
+      const order = await storage.getMentionOrderBySessionId(session_id as string);
+      if (order) {
+        return res.json({ package: order.package || order.package_name, customerEmail: order.customer_email, amountPaid: order.amount_paid });
+      }
+      // Fallback: retrieve from Stripe directly if webhook hasn't fired yet
+      if (stripe) {
+        const session = await (stripe as any).checkout.sessions.retrieve(session_id as string);
+        const meta = session.metadata || {};
+        return res.json({ package: meta.package || 'Unknown', customerEmail: session.customer_email, amountPaid: String((session.amount_total || 0) / 100) });
+      }
+      res.status(404).json({ message: 'Order not found' });
+    } catch (error) {
+      console.error('Mentions order fetch error:', error);
+      res.status(500).json({ message: 'Failed to retrieve order' });
+    }
+  });
+
+  app.get('/api/admin/reddit-mention-orders', isAuthenticated, async (req: any, res) => {
+    if (req.user?.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
+    try {
+      const orders = await storage.getMentionOrders();
+      res.json({ success: true, data: orders });
+    } catch (error) {
+      console.error('Fetch mention orders error:', error);
+      res.status(500).json({ message: 'Failed to fetch orders' });
+    }
+  });
+
+  app.patch('/api/admin/reddit-mention-orders/:id', isAuthenticated, async (req: any, res) => {
+    if (req.user?.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
+    try {
+      const id = parseInt(req.params.id);
+      const { status, notes } = req.body;
+      await storage.updateMentionOrder(id, { status, notes });
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Update mention order error:', error);
+      res.status(500).json({ message: 'Failed to update order' });
+    }
+  });
+
   // ============ STRIPE WEBHOOK ============
 
   // Stripe webhook - must use raw body (not JSON parsed)
@@ -1722,6 +1801,19 @@ Date: ${new Date().toISOString()}
               stripeSubscriptionId: session.subscription,
               stripeCustomerId: session.customer,
             });
+          }
+
+          if (metadata.type === 'reddit_mentions' && metadata.package) {
+            const amountPaid = String((session.amount_total || 0) / 100);
+            const customerEmail = session.customer_email || 'unknown';
+            const order = await storage.createMentionOrder({
+              package: metadata.package,
+              customerEmail,
+              amountPaid,
+              stripeSessionId: session.id,
+            });
+            await sendMentionsOrderAdminEmail({ orderId: order.id, package: metadata.package, customerEmail, amountPaid });
+            await sendMentionsOrderConfirmationEmail({ customerEmail, package: metadata.package, amountPaid });
           }
           break;
         }

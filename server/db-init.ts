@@ -227,6 +227,20 @@ export async function initializeDatabase(): Promise<void> {
         )
       `);
 
+      await ensureTable(client, 'reddit_mention_orders', `
+        CREATE TABLE reddit_mention_orders (
+          id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+          package TEXT NOT NULL,
+          customer_email TEXT NOT NULL,
+          amount_paid TEXT NOT NULL,
+          stripe_session_id TEXT NOT NULL UNIQUE,
+          status TEXT DEFAULT 'new' NOT NULL,
+          notes TEXT,
+          created_at INTEGER,
+          updated_at INTEGER
+        )
+      `);
+
       // Create indexes for common query patterns (SQLite)
       console.log('📋 Creating database indexes...');
       const indexes = [
@@ -506,6 +520,18 @@ async function initializePostgresql(): Promise<void> {
         send_at TIMESTAMP NOT NULL,
         sent BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT NOW()
+      );
+
+      CREATE TABLE IF NOT EXISTS reddit_mention_orders (
+        id SERIAL PRIMARY KEY,
+        package TEXT NOT NULL,
+        customer_email TEXT NOT NULL,
+        amount_paid TEXT NOT NULL,
+        stripe_session_id TEXT NOT NULL UNIQUE,
+        status TEXT DEFAULT 'new' NOT NULL,
+        notes TEXT,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
 

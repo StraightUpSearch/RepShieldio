@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import {
   Download, Users, FileText, Clock, CheckCircle, AlertTriangle,
-  RefreshCw, Send, Lock, ArrowLeft, ExternalLink, Search, BookOpen,
+  RefreshCw, Send, Lock, ArrowLeft, ExternalLink, Search, BookOpen, MessageSquare,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -43,6 +43,19 @@ interface TicketMessage {
   createdAt: string;
 }
 
+interface MentionOrder {
+  id: number;
+  package: string;
+  customerEmail: string;
+  amountPaid: string;
+  stripeSessionId: string;
+  status: string;
+  notes: string | null;
+  createdAt: string | number;
+}
+
+const MENTION_ORDER_STATUSES = ["new", "in_progress", "completed", "cancelled"];
+
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }> = {
   pending: { label: "Pending", color: "bg-amber-50 text-amber-700 border-amber-200", icon: Clock },
   approved: { label: "Quote Sent", color: "bg-blue-50 text-blue-700 border-blue-200", icon: FileText },
@@ -54,6 +67,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any }>
 export default function AdminPanel() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [activeView, setActiveView] = useState<"tickets" | "reddit-mentions">("tickets");
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -68,6 +82,24 @@ export default function AdminPanel() {
   const { data: messagesSummary = [] } = useQuery<{ ticketId: number; latestAt: string }[]>({
     queryKey: ["/api/admin/messages-summary"],
     refetchInterval: 30000,
+  });
+
+  const { data: mentionOrders = [], refetch: refetchMentionOrders } = useQuery<MentionOrder[]>({
+    queryKey: ["/api/admin/reddit-mention-orders"],
+    retry: false,
+  });
+
+  const updateMentionOrder = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: { status?: string; notes?: string } }) => {
+      return apiRequest("PATCH", `/api/admin/reddit-mention-orders/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/reddit-mention-orders"] });
+      toast({ title: "Order updated" });
+    },
+    onError: () => {
+      toast({ title: "Failed to update order", variant: "destructive" });
+    },
   });
 
   const unreadTicketIds = useMemo(() => {
@@ -153,6 +185,15 @@ export default function AdminPanel() {
             <p className="text-sm text-gray-500">{stats.total} total cases</p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant={activeView === "reddit-mentions" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setActiveView(activeView === "reddit-mentions" ? "tickets" : "reddit-mentions")}
+              className={activeView === "reddit-mentions" ? "bg-orange-500 hover:bg-orange-600 text-white" : ""}
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Reddit Mentions {mentionOrders.length > 0 && `(${mentionOrders.length})`}
+            </Button>
             <a href="/admin/blog">
               <Button variant="outline" size="sm">
                 <BookOpen className="w-4 h-4 mr-2" />
@@ -166,7 +207,7 @@ export default function AdminPanel() {
           </div>
         </header>
 
-        {/* Stats row */}
+        {activeView === "tickets" && (
         <div className="px-6 py-4 flex gap-3 shrink-0 border-b bg-white">
           {[
             { label: "Pending", value: stats.pending, color: "text-amber-600" },
@@ -179,8 +220,17 @@ export default function AdminPanel() {
             </div>
           ))}
         </div>
+        )}
 
         {/* Main content: sidebar + detail */}
+        {activeView === "reddit-mentions" && (
+          <RedditMentionsOrdersPanel
+            orders={mentionOrders}
+            onUpdate={(id, data) => updateMentionOrder.mutate({ id, data })}
+            isPending={updateMentionOrder.isPending}
+          />
+        )}
+        {activeView === "tickets" && (
         <div className="flex flex-1 min-h-0">
           {/* Sidebar: ticket list */}
           <aside className="w-[380px] border-r bg-white flex flex-col shrink-0">
@@ -599,6 +649,121 @@ function TicketDetail({ ticket, onBack }: { ticket: Ticket; onBack: () => void }
             )}
           </div>
         </aside>
+      </div>
+        )}
+    </div>
+  );
+}
+
+function RedditMentionsOrdersPanel({
+  orders,
+  onUpdate,
+  isPending,
+}: {
+  orders: MentionOrder[];
+  onUpdate: (id: number, data: { status?: string; notes?: string }) => void;
+  isPending: boolean;
+}) {
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editStatus, setEditStatus] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+
+  const startEdit = (order: MentionOrder) => {
+    setEditingId(order.id);
+    setEditStatus(order.status);
+    setEditNotes(order.notes || "");
+  };
+
+  const saveEdit = () => {
+    if (editingId === null) return;
+    onUpdate(editingId, { status: editStatus, notes: editNotes });
+    setEditingId(null);
+  };
+
+  return (
+    <div className="flex-1 overflow-auto p-6">
+      <div className="max-w-5xl mx-auto">
+        <h2 className="text-base font-semibold text-gray-900 mb-4">
+          Reddit Mentions Orders
+          <span className="ml-2 text-sm font-normal text-gray-400">{orders.length} total</span>
+        </h2>
+        {orders.length === 0 ? (
+          <div className="text-center py-16 text-gray-400 text-sm">No orders yet</div>
+        ) : (
+          <div className="space-y-3">
+            {orders.map((order) => (
+              <div key={order.id} className="bg-white border rounded-xl p-4">
+                {editingId === order.id ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 text-sm text-gray-500 mb-2">
+                      <span className="font-medium text-gray-900">#{order.id}</span>
+                      <span>{order.package} — ${order.amountPaid}</span>
+                      <span>{order.customerEmail}</span>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="flex-1">
+                        <Label className="text-xs text-gray-500">Status</Label>
+                        <Select value={editStatus} onValueChange={setEditStatus}>
+                          <SelectTrigger className="mt-1 h-8 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {MENTION_ORDER_STATUSES.map(s => (
+                              <SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex-[2]">
+                        <Label className="text-xs text-gray-500">Notes</Label>
+                        <Input
+                          value={editNotes}
+                          onChange={e => setEditNotes(e.target.value)}
+                          className="mt-1 h-8 text-sm"
+                          placeholder="Internal notes..."
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" onClick={saveEdit} disabled={isPending} className="bg-gray-900 hover:bg-gray-800 text-xs h-7">
+                        Save
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setEditingId(null)} className="text-xs h-7">
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-4">
+                    <span className="text-xs font-mono text-gray-400 w-8">#{order.id}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-medium text-gray-900">{order.package}</span>
+                        <span className="text-xs text-gray-500">${order.amountPaid}</span>
+                        <span className="text-xs text-gray-500">{order.customerEmail}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          order.status === "completed" ? "bg-emerald-50 text-emerald-700" :
+                          order.status === "in_progress" ? "bg-violet-50 text-violet-700" :
+                          order.status === "cancelled" ? "bg-gray-100 text-gray-500" :
+                          "bg-amber-50 text-amber-700"
+                        }`}>{order.status.replace("_", " ")}</span>
+                      </div>
+                      {order.notes && (
+                        <p className="text-xs text-gray-400 mt-1 truncate">{order.notes}</p>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-400 shrink-0">
+                      {new Date(typeof order.createdAt === "number" ? order.createdAt * 1000 : order.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => startEdit(order)} className="text-xs h-7 shrink-0">
+                      Edit
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

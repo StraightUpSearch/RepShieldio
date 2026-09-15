@@ -149,6 +149,12 @@ export interface IStorage {
   createDripEmail(data: { email: string; ticketId: number; dripStep: number; sendAt: number }): Promise<void>;
   getDueDripEmails(): Promise<{ id: number; email: string; ticketId: number; dripStep: number }[]>;
   markDripEmailSent(id: number): Promise<void>;
+
+  // Reddit mention orders
+  createMentionOrder(data: { package: string; customerEmail: string; amountPaid: string; stripeSessionId: string }): Promise<{ id: number }>;
+  getMentionOrders(): Promise<any[]>;
+  updateMentionOrder(id: number, data: { status?: string; notes?: string }): Promise<void>;
+  getMentionOrderBySessionId(sessionId: string): Promise<any | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1113,6 +1119,39 @@ export class DatabaseStorage implements IStorage {
     const sentVal = isPostgres ? true : 1;
     await db.execute(sql`UPDATE drip_emails SET sent = ${sentVal} WHERE id = ${id}`);
   }
+
+  async createMentionOrder(data: { package: string; customerEmail: string; amountPaid: string; stripeSessionId: string }): Promise<{ id: number }> {
+    const now = isPostgres ? new Date().toISOString() : Math.floor(Date.now() / 1000);
+    const rows: any = await db.execute(sql`
+      INSERT INTO reddit_mention_orders (package, customer_email, amount_paid, stripe_session_id, status, created_at, updated_at)
+      VALUES (${data.package}, ${data.customerEmail}, ${data.amountPaid}, ${data.stripeSessionId}, 'new', ${now}, ${now})
+      RETURNING id
+    `);
+    const result = (rows.rows || rows) as any[];
+    return { id: result[0]?.id ?? result[0]?.[0] };
+  }
+
+  async getMentionOrders(): Promise<any[]> {
+    const rows: any = await db.execute(sql`SELECT * FROM reddit_mention_orders ORDER BY created_at DESC`);
+    return (rows.rows || rows) as any[];
+  }
+
+  async updateMentionOrder(id: number, data: { status?: string; notes?: string }): Promise<void> {
+    const now = isPostgres ? new Date().toISOString() : Math.floor(Date.now() / 1000);
+    if (data.status !== undefined && data.notes !== undefined) {
+      await db.execute(sql`UPDATE reddit_mention_orders SET status = ${data.status}, notes = ${data.notes}, updated_at = ${now} WHERE id = ${id}`);
+    } else if (data.status !== undefined) {
+      await db.execute(sql`UPDATE reddit_mention_orders SET status = ${data.status}, updated_at = ${now} WHERE id = ${id}`);
+    } else if (data.notes !== undefined) {
+      await db.execute(sql`UPDATE reddit_mention_orders SET notes = ${data.notes}, updated_at = ${now} WHERE id = ${id}`);
+    }
+  }
+
+  async getMentionOrderBySessionId(sessionId: string): Promise<any | undefined> {
+    const rows: any = await db.execute(sql`SELECT * FROM reddit_mention_orders WHERE stripe_session_id = ${sessionId} LIMIT 1`);
+    const result = (rows.rows || rows) as any[];
+    return result[0];
+  }
 }
 
 // Temporary: Use memory storage for legacy operations until database is fully migrated
@@ -1602,6 +1641,21 @@ export class MemStorage implements IStorage {
   async markDripEmailSent(id: number): Promise<void> {
     const drip = this.dripEmails.find(d => d.id === id);
     if (drip) drip.sent = true;
+  }
+
+  private mentionOrders: any[] = [];
+  async createMentionOrder(data: { package: string; customerEmail: string; amountPaid: string; stripeSessionId: string }): Promise<{ id: number }> {
+    const id = this.mentionOrders.length + 1;
+    this.mentionOrders.push({ id, ...data, status: 'new', notes: null, createdAt: new Date(), updatedAt: new Date() });
+    return { id };
+  }
+  async getMentionOrders(): Promise<any[]> { return [...this.mentionOrders].reverse(); }
+  async updateMentionOrder(id: number, data: { status?: string; notes?: string }): Promise<void> {
+    const o = this.mentionOrders.find(o => o.id === id);
+    if (o) { if (data.status) o.status = data.status; if (data.notes !== undefined) o.notes = data.notes; o.updatedAt = new Date(); }
+  }
+  async getMentionOrderBySessionId(sessionId: string): Promise<any | undefined> {
+    return this.mentionOrders.find(o => o.stripeSessionId === sessionId || o.stripe_session_id === sessionId);
   }
 }
 
